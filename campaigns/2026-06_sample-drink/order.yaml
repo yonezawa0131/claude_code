@@ -1,0 +1,17 @@
+campaign_id: 2026-06_sample-drink
+advertiser: サンプル飲料株式会社
+product: スパークリングレモン（無糖炭酸飲料）
+objective: video_views
+kpi: views
+period:
+  start: 2026-06-01
+  end: 2026-06-30
+budget_total: 8000000
+target:
+  age: [20, 49]
+  gender: all
+  interests: [健康, フィットネス]
+  area: 全国
+preferred_media: []
+excluded_media: [tver]
+notes: 夏に向けた飲用喚起。完全視聴よりも視聴数の最大化を優先。

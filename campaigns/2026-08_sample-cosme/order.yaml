@@ -1,0 +1,17 @@
+campaign_id: 2026-08_sample-cosme
+advertiser: 株式会社サンプルコスメ
+product: グロウリップス（リップ美容液）
+objective: awareness
+kpi: reach
+period:
+  start: 2026-08-01
+  end: 2026-08-31
+budget_total: 10000000
+target:
+  age: [20, 34]
+  gender: female
+  interests: [美容, コスメ, スキンケア]
+  area: 全国
+preferred_media: [youtube]
+excluded_media: [abema]
+notes: 新商品ローンチ。8月キャンペーンに合わせて認知最大化。TVCMは無し。
