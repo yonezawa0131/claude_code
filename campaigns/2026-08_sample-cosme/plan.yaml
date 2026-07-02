@@ -1,0 +1,99 @@
+campaign_id: 2026-08_sample-cosme
+generated_at: '2026-07-02T00:12:09.331143'
+objective: awareness
+strategy_summary: 目的「認知拡大」に対しターゲット適合度とスコアが高いInstagram（リール/ストーリーズ動画）・TikTok（インフィード動画）を中心に、計3媒体を選定した。希望媒体として指定されたYouTube（スキッパブルインストリーム）も選定に含めている。予算は各媒体のスコア（目的適合度×ターゲット適合度）比率で配分し、最低出稿金額を下回る媒体は除外のうえ再配分することで実行可能な構成とした。
+allocations:
+- media: youtube
+  media_name: YouTube（スキッパブルインストリーム）
+  budget: 3626000
+  share: 0.363
+  score: 1.86
+  optimization: 目標インプレッション単価（tCPM）
+  targeting:
+    age:
+    - 20
+    - 34
+    gender: female
+    segments: &id001
+    - 美容
+    - コスメ
+    - スキンケア
+  operation_notes:
+  - フリークエンシーキャップ 週3回を初期設定
+  - コンテンツ除外（DL-MSB相当）とチャンネル除外リストを適用
+  - 開始1週間はプレースメントレポートを毎日確認し低質面を除外
+  - リーチ×フリークエンシーを週次で確認し、FQ超過時は配信調整
+- media: instagram_reels
+  media_name: Instagram（リール/ストーリーズ動画）
+  budget: 3370000
+  share: 0.337
+  score: 1.73
+  optimization: 認知度目的（推定広告想起リフト最適化）
+  targeting:
+    age:
+    - 20
+    - 34
+    gender: female
+    segments: *id001
+  operation_notes:
+  - 縦型9:16素材を主軸に、フィード用1:1も入稿して面を確保
+  - Advantage+ 配置は初速確認後に低質面を除外
+  - 広告想起リフト調査（BLS）は予算200万以上で申請
+  - リーチ×フリークエンシーを週次で確認し、FQ超過時は配信調整
+- media: tiktok
+  media_name: TikTok（インフィード動画）
+  budget: 3004000
+  share: 0.3
+  score: 1.54
+  optimization: リーチ&フリークエンシー予約型 or 最小単価（リーチ目的）
+  targeting:
+    age:
+    - 20
+    - 34
+    gender: female
+    segments: *id001
+  operation_notes:
+  - ネイティブ感のある縦型素材必須。冒頭1秒で商品を出す
+  - Spark Ads（公式アカウント投稿のブースト）を検討
+  - CPMが高騰しやすいためオーディエンス拡張はONで開始
+  - リーチ×フリークエンシーを週次で確認し、FQ超過時は配信調整
+simulation:
+  total:
+    budget: 10000000
+    impressions: 16413680
+    views: 3871111
+    completed_views: 2526296
+    reach: 4709533
+    cpm: 609.2
+    cpv: 2.58
+  by_media:
+  - media: youtube
+    budget: 3626000
+    impressions: 6592727
+    views: 2307454
+    completed_views: 1648182
+    reach: 2197576
+    cpm: 550
+    cpv: 1.57
+    vtr: 0.35
+    view_definition: 30秒視聴 or 完全視聴
+  - media: instagram_reels
+    budget: 3370000
+    impressions: 4814286
+    views: 962857
+    completed_views: 577714
+    reach: 1604762
+    cpm: 700
+    cpv: 3.5
+    vtr: 0.2
+    view_definition: ThruPlay（15秒 or 完全視聴）
+  - media: tiktok
+    budget: 3004000
+    impressions: 5006667
+    views: 600800
+    completed_views: 300400
+    reach: 1430476
+    cpm: 600
+    cpv: 5.0
+    vtr: 0.12
+    view_definition: 6秒視聴

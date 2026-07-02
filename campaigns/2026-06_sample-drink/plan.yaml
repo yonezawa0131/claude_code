@@ -1,0 +1,98 @@
+campaign_id: 2026-06_sample-drink
+generated_at: '2026-07-02T00:12:09.397598'
+objective: video_views
+strategy_summary: 目的「動画視聴最大化」に対しターゲット適合度とスコアが高いYouTube（スキッパブルインストリーム）・Instagram（リール/ストーリーズ動画）・X（プロモビデオ）を中心に、計3媒体を選定した。予算は各媒体のスコア（目的適合度×ターゲット適合度）比率で配分し、最低出稿金額を下回る媒体は除外のうえ再配分することで実行可能な構成とした。
+allocations:
+- media: youtube
+  media_name: YouTube（スキッパブルインストリーム）
+  budget: 3406000
+  share: 0.426
+  score: 1.52
+  optimization: 上限広告視聴単価（CPV）
+  targeting:
+    age:
+    - 20
+    - 49
+    gender: all
+    segments: &id001
+    - 健康
+    - フィットネス
+  operation_notes:
+  - フリークエンシーキャップ 週3回を初期設定
+  - コンテンツ除外（DL-MSB相当）とチャンネル除外リストを適用
+  - 開始1週間はプレースメントレポートを毎日確認し低質面を除外
+  - CPVと視聴率を日次確認し、低VTR素材は早期に差し替え
+- media: instagram_reels
+  media_name: Instagram（リール/ストーリーズ動画）
+  budget: 2471000
+  share: 0.309
+  score: 1.1
+  optimization: ThruPlay最適化
+  targeting:
+    age:
+    - 20
+    - 49
+    gender: all
+    segments: *id001
+  operation_notes:
+  - 縦型9:16素材を主軸に、フィード用1:1も入稿して面を確保
+  - Advantage+ 配置は初速確認後に低質面を除外
+  - 広告想起リフト調査（BLS）は予算200万以上で申請
+  - CPVと視聴率を日次確認し、低VTR素材は早期に差し替え
+- media: x_video
+  media_name: X（プロモビデオ）
+  budget: 2123000
+  share: 0.265
+  score: 0.95
+  optimization: 動画再生数入札（上限CPV）
+  targeting:
+    age:
+    - 20
+    - 49
+    gender: all
+    segments: *id001
+  operation_notes:
+  - 話題化と相性が良い。トレンド/会話ターゲティングを併用
+  - 視聴定義が浅い（2秒）ためVTRは他媒体と直接比較しない
+  - リプライ欄の炎上リスク監視を運用ルールに含める
+  - CPVと視聴率を日次確認し、低VTR素材は早期に差し替え
+simulation:
+  total:
+    budget: 8000000
+    impressions: 14440505
+    views: 4760565
+    completed_views: 2207671
+    reach: 4615218
+    cpm: 554.0
+    cpv: 1.68
+  by_media:
+  - media: youtube
+    budget: 3406000
+    impressions: 6192727
+    views: 2167454
+    completed_views: 1548182
+    reach: 2064242
+    cpm: 550
+    cpv: 1.57
+    vtr: 0.35
+    view_definition: 30秒視聴 or 完全視聴
+  - media: instagram_reels
+    budget: 2471000
+    impressions: 3530000
+    views: 706000
+    completed_views: 423600
+    reach: 1176667
+    cpm: 700
+    cpv: 3.5
+    vtr: 0.2
+    view_definition: ThruPlay（15秒 or 完全視聴）
+  - media: x_video
+    budget: 2123000
+    impressions: 4717778
+    views: 1887111
+    completed_views: 235889
+    reach: 1887111
+    cpm: 450
+    cpv: 1.13
+    vtr: 0.4
+    view_definition: 50%表示×2秒
