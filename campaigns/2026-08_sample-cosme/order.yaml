@@ -7,6 +7,7 @@ period:
   start: 2026-08-01
   end: 2026-08-31
 budget_total: 10000000
+kpi_target: 5000000
 target:
   age: [20, 34]
   gender: female

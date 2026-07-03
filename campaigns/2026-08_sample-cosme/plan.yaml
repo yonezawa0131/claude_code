@@ -1,14 +1,16 @@
 campaign_id: 2026-08_sample-cosme
-generated_at: '2026-07-02T00:12:09.331143'
+generated_at: '2026-07-03T07:01:43.306069'
 objective: awareness
-strategy_summary: 目的「認知拡大」に対しターゲット適合度とスコアが高いInstagram（リール/ストーリーズ動画）・TikTok（インフィード動画）を中心に、計3媒体を選定した。希望媒体として指定されたYouTube（スキッパブルインストリーム）も選定に含めている。予算は各媒体のスコア（目的適合度×ターゲット適合度）比率で配分し、最低出稿金額を下回る媒体は除外のうえ再配分することで実行可能な構成とした。
+strategy_summary: 目的「認知拡大」に対しターゲット適合度とスコアが高いMeta（Facebook/Instagram）・TikTokを中心に、計3媒体を選定した。（希望媒体のYouTube（Google
+  Ads 動画/Demand Gen）を含む）配信ラインは目的に直結するリーチ最適モードに予算の75%、補完となる視聴最適モードに25%を配分し、効率とリーチの網羅性を両立させる。予約型枠の追加条件（目的が認知/リーチ、かつ月額換算予算が潤沢）を満たさないため、通常配信のみで構成する。リーチは媒体内・媒体間の重複を排除した純リーチで評価する。
 allocations:
 - media: youtube
-  media_name: YouTube（スキッパブルインストリーム）
-  budget: 3626000
-  share: 0.363
-  score: 1.86
-  optimization: 目標インプレッション単価（tCPM）
+  media_name: YouTube（Google Ads 動画/Demand Gen）
+  mode: reach_opt
+  optimization: リーチ最適（FQ最小化・Reach最大化）
+  budget: 2786000
+  share: 0.279
+  score: 1.93
   targeting:
     age:
     - 20
@@ -18,82 +20,268 @@ allocations:
     - 美容
     - コスメ
     - スキンケア
+    note: デモグラ広域（年齢/性別/地域/言語）。セグメント最小化でFQ最小・最大リーチ
   operation_notes:
   - フリークエンシーキャップ 週3回を初期設定
-  - コンテンツ除外（DL-MSB相当）とチャンネル除外リストを適用
+  - コンテンツ除外とチャンネル除外リストを適用
   - 開始1週間はプレースメントレポートを毎日確認し低質面を除外
+  - リーチ最適ラインは6秒バンパー素材の併用でFQ効率を改善
   - リーチ×フリークエンシーを週次で確認し、FQ超過時は配信調整
-- media: instagram_reels
-  media_name: Instagram（リール/ストーリーズ動画）
-  budget: 3370000
-  share: 0.337
-  score: 1.73
-  optimization: 認知度目的（推定広告想起リフト最適化）
+- media: youtube
+  media_name: YouTube（Google Ads 動画/Demand Gen）
+  mode: view_opt
+  optimization: 視聴最適（視聴数最大化）
+  budget: 928000
+  share: 0.093
+  score: 1.93
   targeting:
     age:
     - 20
     - 34
     gender: female
     segments: *id001
+    note: デモグラ広域 + 視聴傾向ユーザーへ入札集中し視聴数最大化
+  operation_notes:
+  - フリークエンシーキャップ 週3回を初期設定
+  - コンテンツ除外とチャンネル除外リストを適用
+  - 開始1週間はプレースメントレポートを毎日確認し低質面を除外
+  - リーチ最適ラインは6秒バンパー素材の併用でFQ効率を改善
+  - リーチ×フリークエンシーを週次で確認し、FQ超過時は配信調整
+- media: meta
+  media_name: Meta（Facebook/Instagram）
+  mode: reach_opt
+  optimization: リーチ最適（FQ最小化・Reach最大化）
+  budget: 2493000
+  share: 0.249
+  score: 1.73
+  targeting:
+    age:
+    - 20
+    - 34
+    gender: female
+    segments: *id001
+    note: Advantage+オーディエンス（地域・最小年齢のみ指定しAIに委譲）でFQ最小・最大リーチ
+  operation_notes:
+  - 縦型9:16素材を主軸に、フィード用1:1も入稿して面を確保
+  - Advantage+ 配置は初速確認後に低質面を除外
+  - 広告想起リフト調査（BLS）は予算200万以上で申請
+  - リーチ×フリークエンシーを週次で確認し、FQ超過時は配信調整
+- media: meta
+  media_name: Meta（Facebook/Instagram）
+  mode: view_opt
+  optimization: 視聴最適（視聴数最大化）
+  budget: 831000
+  share: 0.083
+  score: 1.73
+  targeting:
+    age:
+    - 20
+    - 34
+    gender: female
+    segments: *id001
+    note: Advantage+オーディエンス + 視聴傾向ユーザーへ入札集中
   operation_notes:
   - 縦型9:16素材を主軸に、フィード用1:1も入稿して面を確保
   - Advantage+ 配置は初速確認後に低質面を除外
   - 広告想起リフト調査（BLS）は予算200万以上で申請
   - リーチ×フリークエンシーを週次で確認し、FQ超過時は配信調整
 - media: tiktok
-  media_name: TikTok（インフィード動画）
-  budget: 3004000
-  share: 0.3
+  media_name: TikTok
+  mode: reach_opt
+  optimization: リーチ最適（FQ最小化・Reach最大化）
+  budget: 2222000
+  share: 0.222
   score: 1.54
-  optimization: リーチ&フリークエンシー予約型 or 最小単価（リーチ目的）
   targeting:
     age:
     - 20
     - 34
     gender: female
     segments: *id001
+    note: コアデモ（年齢帯/性別/地域）+ Smart Targetingで広域・最大リーチ
+  operation_notes:
+  - ネイティブ感のある縦型素材必須。冒頭1秒で商品を出す
+  - Spark Ads（公式アカウント投稿のブースト）を検討
+  - CPMが高騰しやすいためオーディエンス拡張はONで開始
+  - リーチ×フリークエンシーを週次で確認し、FQ超過時は配信調整
+- media: tiktok
+  media_name: TikTok
+  mode: view_opt
+  optimization: 視聴最適（視聴数最大化）
+  budget: 740000
+  share: 0.074
+  score: 1.54
+  targeting:
+    age:
+    - 20
+    - 34
+    gender: female
+    segments: *id001
+    note: コアデモ + Smart Targeting、視聴傾向ユーザーへ配信集中
   operation_notes:
   - ネイティブ感のある縦型素材必須。冒頭1秒で商品を出す
   - Spark Ads（公式アカウント投稿のブースト）を検討
   - CPMが高騰しやすいためオーディエンス拡張はONで開始
   - リーチ×フリークエンシーを週次で確認し、FQ超過時は配信調整
 simulation:
-  total:
-    budget: 10000000
-    impressions: 16413680
-    views: 3871111
-    completed_views: 2526296
-    reach: 4709533
-    cpm: 609.2
-    cpv: 2.58
+  by_line:
+  - media: youtube
+    mode: reach_opt
+    budget: 2786000
+    impressions: 4012096
+    reach: 1285928
+    fq: 3.12
+    cpr: 2.17
+    views: 1845564
+    completed_views: 682056
+    clicks: 16048
+    engagements: 12036
+    cpm: 694.4
+    cpv: 1.51
+    cpc: 173.6
+    cpe: 231.5
+    vtr: 0.46
+    completion_rate: 0.17
+    ctr: 0.004
+  - media: youtube
+    mode: view_opt
+    budget: 928000
+    impressions: 941558
+    reach: 217953
+    fq: 4.32
+    cpr: 4.26
+    views: 593181
+    completed_views: 291882
+    clicks: 5649
+    engagements: 3954
+    cpm: 985.6
+    cpv: 1.56
+    cpc: 164.3
+    cpe: 234.7
+    vtr: 0.63
+    completion_rate: 0.31
+    ctr: 0.006
+  - media: meta
+    mode: reach_opt
+    budget: 2493000
+    impressions: 4122023
+    reach: 1431257
+    fq: 2.88
+    cpr: 1.74
+    views: 1236606
+    completed_views: 370982
+    clicks: 32976
+    engagements: 37098
+    cpm: 604.8
+    cpv: 2.02
+    cpc: 75.6
+    cpe: 67.2
+    vtr: 0.3
+    completion_rate: 0.09
+    ctr: 0.008
+  - media: meta
+    mode: view_opt
+    budget: 831000
+    impressions: 976268
+    reach: 239281
+    fq: 4.08
+    cpr: 3.47
+    views: 468608
+    completed_views: 146440
+    clicks: 9274
+    engagements: 11715
+    cpm: 851.2
+    cpv: 1.77
+    cpc: 89.6
+    cpe: 70.9
+    vtr: 0.48
+    completion_rate: 0.15
+    ctr: 0.0095
+  - media: tiktok
+    mode: reach_opt
+    budget: 2222000
+    impressions: 4408730
+    reach: 1669973
+    fq: 2.64
+    cpr: 1.33
+    views: 2424801
+    completed_views: 264523
+    clicks: 39678
+    engagements: 66130
+    cpm: 504.0
+    cpv: 0.92
+    cpc: 56.0
+    cpe: 33.6
+    vtr: 0.55
+    completion_rate: 0.06
+    ctr: 0.009
+  - media: tiktok
+    mode: view_opt
+    budget: 740000
+    impressions: 971638
+    reach: 245363
+    fq: 3.96
+    cpr: 3.02
+    views: 699579
+    completed_views: 106880
+    clicks: 10202
+    engagements: 19432
+    cpm: 761.6
+    cpv: 1.06
+    cpc: 72.5
+    cpe: 38.1
+    vtr: 0.72
+    completion_rate: 0.11
+    ctr: 0.0105
   by_media:
   - media: youtube
-    budget: 3626000
-    impressions: 6592727
-    views: 2307454
-    completed_views: 1648182
-    reach: 2197576
-    cpm: 550
-    cpv: 1.57
-    vtr: 0.35
-    view_definition: 30秒視聴 or 完全視聴
-  - media: instagram_reels
-    budget: 3370000
-    impressions: 4814286
-    views: 962857
-    completed_views: 577714
-    reach: 1604762
-    cpm: 700
-    cpv: 3.5
-    vtr: 0.2
-    view_definition: ThruPlay（15秒 or 完全視聴）
+    budget: 3714000
+    impressions: 4953654
+    views: 2438745
+    completed_views: 973938
+    reach: 1384006
+    clicks: 21697
+    cpm: 749.7
+    cpv: 1.52
+    vtr: 0.4923
+    view_definition: TrueViewビュー（30秒到達 or 完了 or 広告要素クリック）
+  - media: meta
+    budget: 3324000
+    impressions: 5098291
+    views: 1705214
+    completed_views: 517422
+    reach: 1538933
+    clicks: 42250
+    cpm: 652.0
+    cpv: 1.95
+    vtr: 0.3345
+    view_definition: 2秒以上の連続動画再生
   - media: tiktok
-    budget: 3004000
-    impressions: 5006667
-    views: 600800
-    completed_views: 300400
-    reach: 1430476
-    cpm: 600
-    cpv: 5.0
-    vtr: 0.12
-    view_definition: 6秒視聴
+    budget: 2962000
+    impressions: 5380368
+    views: 3124380
+    completed_views: 371403
+    reach: 1780386
+    clicks: 49880
+    cpm: 550.5
+    cpv: 0.95
+    vtr: 0.5807
+    view_definition: 2秒再生（リプレイ除外）
+  total:
+    budget: 10000000
+    impressions: 15432313
+    views: 7268339
+    completed_views: 1862763
+    reach: 3262657
+    clicks: 113827
+    cpm: 648.0
+    cpv: 1.38
+    ctr: 0.0074
+kpi_projection:
+  kpi: reach
+  target: 5000000
+  projected: 3262657
+  achievement: 0.653
+  note: 主KPI『reach』→ 純リーチ 3,262,657人（与件 5,000,000人に対し達成見込み 65.3%）
+warnings:
+- 主KPI(reach)の与件達成見込みが100%を下回っています（65.3%）。予算増額または与件調整の相談を推奨

@@ -1,120 +1,187 @@
-# 媒体マスタ / ベンチマーク設定
-# - 数値は日本市場のプランニング用参考値。実績が溜まったら自社実績で上書きしていくこと。
-# - cpm: 円。vtr: 各媒体の視聴定義に基づく視聴率。completion_rate: 完全視聴率。
-# - avg_frequency: 配信期間1ヶ月あたりの平均フリークエンシー想定（リーチ = imp / avg_frequency）。
-# - objective_fit: 目的別の適合スコア（0.0〜1.5）。媒体選定スコアの主成分。
-# - audience_affinity: ターゲット適合の乗数。age は [min, max, multiplier] の行を上から評価し最初に合致した値を使う。
-# - optimization_by_objective: 目的別に推奨する入札・最適化設定。
-# - min_budget: この金額未満の配分になった場合はその媒体を落として再配分する。
+# 媒体マスタ / ベンチマーク設定 v2
+#
+# 出典:
+#   [過去資産] knowledge/archive/2026-07/media_plan.{csv,md,xlsx}
+#     … 2026-07取り込みの過去プランニング実物（目的=reach/予算45,000,000円/3ヶ月）。
+#        youtube / meta / tiktok の モード別 CPM・VTR・FQ・CTR・ENGR、リーチ重複排除モデル、
+#        予約型追加ルール（基準2）、View/ENG媒体別定義（基準1）はここから採用。
+#   [参考値] 上記に含まれない媒体・項目は v1 のプランニング用参考値を継続。
+# 更新運用: 案件実績が溜まったら実勢値に更新（人間の承認を経ること）。
+#
+# 構造:
+#   media.<key>.modes.<mode_key>: 買い方×最適化の1ライン。プランはこの単位で組む。
+#     role: reach（リーチ最適）/ view（視聴最適）/ reserved（予約型）/ standard（単一モード媒体）
+#     cpm: 円 / vtr: View定義に基づく視聴率 / completion_rate: View(100%)率 / fq: 平均フリークエンシー
+#     ctr: クリック率 / engr: エンゲージメント率（未計測媒体は省略可）
+#   目的別のモード配分は mode_split（主role 75% / 補完role 25%）。
+#     awareness・reach → 主: reach / 補完: view
+#     video_views・consideration → 主: view / 補完: reach
 
-reach_overlap_rate: 0.05   # 媒体を1つ跨ぐごとにユニークリーチを5%控除
+# ── リーチ重複排除モデル（基準4）[過去資産] ──────────────────────
+# ライン reach = imp / fq
+# 媒体内: 最大ライン + (1 - intra_media_overlap) × その他ライン合計（媒体内重複55%）
+# 媒体間: 最大媒体 + (1 - inter_media_overlap) × その他媒体合計（媒体間重複15%）
+# 母集団: U = base × 年齢構成比（重なり按分）× 性別構成比。純リーチ = U × (1 - exp(-raw/U))
+#   ※ 過去資産の実物値（単純合算22.18M → 純リーチ18.19M, U=62M broad）に対し本式は-4%程度の保守側。
+reach_model:
+  intra_media_overlap: 0.55
+  inter_media_overlap: 0.15
+  universe:
+    base: 62000000            # 広域（デモグラのみ）時の到達可能母集団 [過去資産]
+    gender_share: {male: 0.49, female: 0.51, all: 1.0}
+    age_share:                # [min, max, baseに占める構成比] 概算 [参考値]
+      - [13, 19, 0.10]
+      - [20, 34, 0.24]
+      - [35, 49, 0.30]
+      - [50, 69, 0.36]
+    floor: 3000000            # ターゲットが狭すぎる場合の下限母集団
+
+# ── モード配分（基準: 過去資産の実物 75:25）──────────────────────
+mode_split:
+  primary: 0.75
+  secondary: 0.25
+
+# ── 予約型追加ルール（基準2）[過去資産] ─────────────────────────
+# 月額予算 >= threshold（潤沢予算）かつ目的が awareness/reach のとき、
+# 予約型モード（role: reserved）を持つ最高適合媒体に総予算の share_of_total を確保。
+reserved:
+  monthly_budget_threshold: 10000000
+  share_of_total: 0.18
 
 media:
   youtube:
-    name: YouTube（スキッパブルインストリーム）
-    view_definition: 30秒視聴 or 完全視聴
-    cpm: 550
-    vtr: 0.35
-    completion_rate: 0.25
-    avg_frequency: 3.0
+    name: YouTube（Google Ads 動画/Demand Gen）
+    view_definition: TrueViewビュー（30秒到達 or 完了 or 広告要素クリック）      # 基準1 [過去資産]
+    completed_view_definition: 完全視聴（動画100%再生）
+    engagement_definition: いいね/コメント/共有/チャンネル登録/CTA等
     min_budget: 300000
-    objective_fit: {awareness: 1.3, reach: 1.2, video_views: 1.4, consideration: 1.1}
+    objective_fit: {awareness: 1.35, reach: 1.35, video_views: 1.4, consideration: 1.1}   # reach適性9/10 [過去資産]
     audience_affinity:
       gender: {male: 1.0, female: 1.0, all: 1.0}
       age:
         - [13, 24, 1.1]
         - [25, 44, 1.1]
         - [45, 99, 1.0]
-    optimization_by_objective:
-      awareness: 目標インプレッション単価（tCPM）
-      reach: 目標インプレッション単価（tCPM）+ リーチ最大化
-      video_views: 上限広告視聴単価（CPV）
-      consideration: 上限広告視聴単価（CPV）+ 拡張比較視聴
+    modes:
+      reach_opt:
+        label: リーチ最適（FQ最小化・Reach最大化）
+        role: reach
+        cpm: 694.4        # [過去資産]
+        vtr: 0.46
+        completion_rate: 0.17
+        fq: 3.12
+        ctr: 0.004
+        engr: 0.003
+        targeting_note: デモグラ広域（年齢/性別/地域/言語）。セグメント最小化でFQ最小・最大リーチ
+      view_opt:
+        label: 視聴最適（視聴数最大化）
+        role: view
+        cpm: 985.6        # [過去資産]
+        vtr: 0.63
+        completion_rate: 0.31
+        fq: 4.32
+        ctr: 0.006
+        engr: 0.0042
+        targeting_note: デモグラ広域 + 視聴傾向ユーザーへ入札集中し視聴数最大化
+      masthead:
+        label: YouTube マストヘッド/予約型（指定リーチ）
+        role: reserved
+        cpm: 537.6        # [過去資産]
+        vtr: 0.50
+        completion_rate: 0.20
+        fq: 2.04
+        ctr: 0.0035
+        engr: 0.0028
+        min_budget: 3000000
+        targeting_note: 指定リーチを固定確保し短期で爆発的到達
     operation_notes:
       - フリークエンシーキャップ 週3回を初期設定
-      - コンテンツ除外（DL-MSB相当）とチャンネル除外リストを適用
+      - コンテンツ除外とチャンネル除外リストを適用
       - 開始1週間はプレースメントレポートを毎日確認し低質面を除外
+      - リーチ最適ラインは6秒バンパー素材の併用でFQ効率を改善
 
-  youtube_bumper:
-    name: YouTube（バンパー6秒・ノンスキップ）
-    view_definition: 完全視聴（強制視聴）
-    cpm: 650
-    vtr: 0.95
-    completion_rate: 0.90
-    avg_frequency: 4.0
+  meta:
+    name: Meta（Facebook/Instagram）
+    view_definition: 2秒以上の連続動画再生                                    # 基準1 [過去資産]
+    completed_view_definition: ThruPlay（尺15秒未満は完全再生 / 15秒以上は15秒再生）
+    engagement_definition: リアクション/コメント/シェア/保存等ポストエンゲージメント
     min_budget: 300000
-    objective_fit: {awareness: 1.2, reach: 1.3, video_views: 0.6, consideration: 0.7}
-    audience_affinity:
-      gender: {male: 1.0, female: 1.0, all: 1.0}
-      age:
-        - [13, 44, 1.1]
-        - [45, 99, 1.0]
-    optimization_by_objective:
-      awareness: 目標インプレッション単価（tCPM）
-      reach: 目標インプレッション単価（tCPM）+ フリークエンシー目標
-      video_views: 目標インプレッション単価（tCPM）
-      consideration: 目標インプレッション単価（tCPM）
-    operation_notes:
-      - スキッパブルと併走しリーチ×フリークエンシーを補完
-      - 6秒素材はメイン素材のカットダウンで冒頭メッセージを固定
-
-  tiktok:
-    name: TikTok（インフィード動画）
-    view_definition: 6秒視聴
-    cpm: 600
-    vtr: 0.12
-    completion_rate: 0.06
-    avg_frequency: 3.5
-    min_budget: 500000
-    objective_fit: {awareness: 1.2, reach: 1.1, video_views: 1.0, consideration: 0.9}
-    audience_affinity:
-      gender: {male: 0.9, female: 1.1, all: 1.0}
-      age:
-        - [13, 24, 1.3]
-        - [25, 34, 1.1]
-        - [35, 99, 0.7]
-    optimization_by_objective:
-      awareness: リーチ&フリークエンシー予約型 or 最小単価（リーチ目的）
-      reach: リーチ&フリークエンシー予約型
-      video_views: 最小単価（動画視聴目的・6秒視聴最適化）
-      consideration: 最小単価（トラフィック/視聴ハイブリッド）
-    operation_notes:
-      - ネイティブ感のある縦型素材必須。冒頭1秒で商品を出す
-      - Spark Ads（公式アカウント投稿のブースト）を検討
-      - CPMが高騰しやすいためオーディエンス拡張はONで開始
-
-  instagram_reels:
-    name: Instagram（リール/ストーリーズ動画）
-    view_definition: ThruPlay（15秒 or 完全視聴）
-    cpm: 700
-    vtr: 0.20
-    completion_rate: 0.12
-    avg_frequency: 3.0
-    min_budget: 300000
-    objective_fit: {awareness: 1.2, reach: 1.2, video_views: 1.0, consideration: 1.0}
+    objective_fit: {awareness: 1.2, reach: 1.2, video_views: 1.0, consideration: 1.0}     # reach適性8/10 [過去資産]
     audience_affinity:
       gender: {male: 0.9, female: 1.2, all: 1.0}
       age:
         - [18, 34, 1.2]
         - [35, 49, 1.0]
         - [50, 99, 0.8]
-    optimization_by_objective:
-      awareness: 認知度目的（推定広告想起リフト最適化）
-      reach: リーチ目的 + フリークエンシーキャップ
-      video_views: ThruPlay最適化
-      consideration: トラフィック目的（LPV最適化）
+    modes:
+      reach_opt:
+        label: リーチ最適（FQ最小化・Reach最大化）
+        role: reach
+        cpm: 604.8        # [過去資産]
+        vtr: 0.30
+        completion_rate: 0.09
+        fq: 2.88
+        ctr: 0.008
+        engr: 0.009
+        targeting_note: Advantage+オーディエンス（地域・最小年齢のみ指定しAIに委譲）でFQ最小・最大リーチ
+      view_opt:
+        label: 視聴最適（視聴数最大化）
+        role: view
+        cpm: 851.2        # [過去資産]
+        vtr: 0.48
+        completion_rate: 0.15
+        fq: 4.08
+        ctr: 0.0095
+        engr: 0.012
+        targeting_note: Advantage+オーディエンス + 視聴傾向ユーザーへ入札集中
     operation_notes:
       - 縦型9:16素材を主軸に、フィード用1:1も入稿して面を確保
       - Advantage+ 配置は初速確認後に低質面を除外
       - 広告想起リフト調査（BLS）は予算200万以上で申請
 
+  tiktok:
+    name: TikTok
+    view_definition: 2秒再生（リプレイ除外）                                   # 基準1 [過去資産]
+    completed_view_definition: 100%再生到達（Video Views at 100%）
+    engagement_definition: いいね/コメント/シェア/フォロー
+    min_budget: 500000
+    objective_fit: {awareness: 1.2, reach: 1.2, video_views: 1.0, consideration: 0.9}     # reach適性8/10 [過去資産]
+    audience_affinity:
+      gender: {male: 0.9, female: 1.1, all: 1.0}
+      age:
+        - [13, 24, 1.3]
+        - [25, 34, 1.1]
+        - [35, 99, 0.7]
+    modes:
+      reach_opt:
+        label: リーチ最適（FQ最小化・Reach最大化）
+        role: reach
+        cpm: 504.0        # [過去資産]
+        vtr: 0.55
+        completion_rate: 0.06
+        fq: 2.64
+        ctr: 0.009
+        engr: 0.015
+        targeting_note: コアデモ（年齢帯/性別/地域）+ Smart Targetingで広域・最大リーチ
+      view_opt:
+        label: 視聴最適（視聴数最大化）
+        role: view
+        cpm: 761.6        # [過去資産]
+        vtr: 0.72
+        completion_rate: 0.11
+        fq: 3.96
+        ctr: 0.0105
+        engr: 0.02
+        targeting_note: コアデモ + Smart Targeting、視聴傾向ユーザーへ配信集中
+    operation_notes:
+      - ネイティブ感のある縦型素材必須。冒頭1秒で商品を出す
+      - Spark Ads（公式アカウント投稿のブースト）を検討
+      - CPMが高騰しやすいためオーディエンス拡張はONで開始
+
   x_video:
     name: X（プロモビデオ）
     view_definition: 50%表示×2秒
-    cpm: 450
-    vtr: 0.40
-    completion_rate: 0.05
-    avg_frequency: 2.5
+    completed_view_definition: 完全視聴
     min_budget: 300000
     objective_fit: {awareness: 1.0, reach: 1.0, video_views: 0.9, consideration: 0.8}
     audience_affinity:
@@ -123,11 +190,15 @@ media:
         - [18, 34, 1.1]
         - [35, 49, 1.0]
         - [50, 99, 0.8]
-    optimization_by_objective:
-      awareness: 動画再生数入札（自動）
-      reach: リーチ&フリークエンシー
-      video_views: 動画再生数入札（上限CPV）
-      consideration: ウェブサイト誘導入札
+    modes:
+      standard:
+        label: 動画再生数入札（自動）/ リーチ&フリークエンシー
+        role: standard
+        cpm: 450          # [参考値]
+        vtr: 0.40
+        completion_rate: 0.05
+        fq: 2.5
+        ctr: 0.008
     operation_notes:
       - 話題化と相性が良い。トレンド/会話ターゲティングを併用
       - 視聴定義が浅い（2秒）ためVTRは他媒体と直接比較しない
@@ -136,10 +207,7 @@ media:
   line_video:
     name: LINE（VOOM/トークリスト動画）
     view_definition: 3秒視聴
-    cpm: 500
-    vtr: 0.25
-    completion_rate: 0.08
-    avg_frequency: 2.5
+    completed_view_definition: 完全視聴
     min_budget: 500000
     objective_fit: {awareness: 1.0, reach: 1.2, video_views: 0.8, consideration: 0.8}
     audience_affinity:
@@ -148,11 +216,15 @@ media:
         - [18, 34, 1.0]
         - [35, 59, 1.1]
         - [60, 99, 1.0]
-    optimization_by_objective:
-      awareness: 自動入札（インプレッション最大化）
-      reach: 自動入札（リーチ最大化）
-      video_views: 自動入札（動画再生最大化）
-      consideration: 自動入札（クリック最大化）
+    modes:
+      standard:
+        label: 自動入札(リーチ/再生最大化)
+        role: standard
+        cpm: 500          # [参考値]
+        vtr: 0.25
+        completion_rate: 0.08
+        fq: 2.5
+        ctr: 0.004
     operation_notes:
       - 他SNS非利用層への到達補完として位置づける
       - みなし属性ターゲティングのため属性精度は割り引いて評価
@@ -160,10 +232,7 @@ media:
   tver:
     name: TVer（インストリーム・ノンスキップ）
     view_definition: 完全視聴（15/30秒ノンスキップ）
-    cpm: 1200
-    vtr: 0.97
-    completion_rate: 0.95
-    avg_frequency: 3.0
+    completed_view_definition: 完全視聴
     min_budget: 3000000
     objective_fit: {awareness: 1.4, reach: 1.1, video_views: 0.8, consideration: 0.7}
     audience_affinity:
@@ -172,11 +241,15 @@ media:
         - [18, 34, 0.9]
         - [35, 59, 1.2]
         - [60, 99, 1.1]
-    optimization_by_objective:
-      awareness: 完全視聴保証型（デモグラ指定）
-      reach: 完全視聴保証型 + フリークエンシーコントロール
-      video_views: 完全視聴保証型
-      consideration: 完全視聴保証型
+    modes:
+      standard:
+        label: 完全視聴保証型（デモグラ指定）
+        role: standard
+        cpm: 1200         # [参考値]
+        vtr: 0.97
+        completion_rate: 0.95
+        fq: 3.0
+        ctr: 0.001
     operation_notes:
       - CPMは高いが完全視聴・ブランドセーフティが強み。TVCM併用案件と好相性
       - 番組ジャンル指定はリーチを絞りすぎない範囲で
@@ -184,10 +257,7 @@ media:
   abema:
     name: ABEMA（インストリーム）
     view_definition: 完全視聴（ノンスキップ主体）
-    cpm: 950
-    vtr: 0.95
-    completion_rate: 0.90
-    avg_frequency: 3.0
+    completed_view_definition: 完全視聴
     min_budget: 2000000
     objective_fit: {awareness: 1.2, reach: 1.0, video_views: 0.8, consideration: 0.7}
     audience_affinity:
@@ -196,32 +266,37 @@ media:
         - [13, 34, 1.2]
         - [35, 49, 1.0]
         - [50, 99, 0.8]
-    optimization_by_objective:
-      awareness: 完全視聴保証型（デモグラ/ジャンル指定）
-      reach: 完全視聴保証型
-      video_views: 完全視聴保証型
-      consideration: 完全視聴保証型
+    modes:
+      standard:
+        label: 完全視聴保証型（デモグラ/ジャンル指定）
+        role: standard
+        cpm: 950          # [参考値]
+        vtr: 0.95
+        completion_rate: 0.90
+        fq: 3.0
+        ctr: 0.0015
     operation_notes:
       - 若年男性に強い。スポーツ/アニメ文脈のジャンル指定が有効
 
   display_video:
     name: ディスプレイ動画面（GDN/YDA アウトストリーム）
     view_definition: 50%表示×2秒
-    cpm: 200
-    vtr: 0.15
-    completion_rate: 0.03
-    avg_frequency: 4.0
+    completed_view_definition: 完全視聴
     min_budget: 200000
     objective_fit: {awareness: 0.7, reach: 1.0, video_views: 0.7, consideration: 0.8}
     audience_affinity:
       gender: {male: 1.0, female: 1.0, all: 1.0}
       age:
         - [13, 99, 1.0]
-    optimization_by_objective:
-      awareness: 視認可能インプレッション課金（vCPM）
-      reach: vCPM + フリークエンシーキャップ
-      video_views: 上限CPV
-      consideration: クリック最適化
+    modes:
+      standard:
+        label: 視認可能インプレッション課金（vCPM）
+        role: standard
+        cpm: 200          # [参考値]
+        vtr: 0.15
+        completion_rate: 0.03
+        fq: 4.0
+        ctr: 0.003
     operation_notes:
       - 低CPMでの面取り用途。アテンションは低いためKPIには含め方を注意
       - プレースメント除外を週次でメンテナンス

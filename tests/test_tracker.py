@@ -193,6 +193,42 @@ def test_campaign_status_by_media(campaign_dir):
     assert tk["vtr_ratio"] == pytest.approx(0.833)
 
 
+def test_campaign_status_sums_budget_across_multiple_lines_per_media(campaign_dir):
+    """v2では1媒体が複数ライン（媒体×モード）に分かれる。media_budgets はライン予算の合算、
+    media_name は最初に出たラインの値を採用すること（`adops/tracker.py` の集計修正の対象）。
+    """
+    _write_order(campaign_dir)
+    _write_plan(campaign_dir, allocations=[
+        {
+            "media": "youtube", "media_name": "YouTube（テスト）", "mode": "reach_opt",
+            "budget": 200000, "share": 0.4, "score": 1.0, "optimization": "リーチ最適",
+            "targeting": {"age": [20, 34], "gender": "female", "segments": []},
+            "operation_notes": [],
+        },
+        {
+            # 表記ゆれの2本目media_name。集計には使われない（最初に出た値が優先される）ことを確認する。
+            "media": "youtube", "media_name": "YouTube（表記ゆれ・2本目）", "mode": "view_opt",
+            "budget": 100000, "share": 0.2, "score": 1.0, "optimization": "視聴最適",
+            "targeting": {"age": [20, 34], "gender": "female", "segments": []},
+            "operation_notes": [],
+        },
+        {
+            "media": "tiktok", "media_name": "TikTok（テスト）", "mode": "reach_opt",
+            "budget": 200000, "share": 0.4, "score": 0.9, "optimization": "min",
+            "targeting": {"age": [20, 34], "gender": "female", "segments": []},
+            "operation_notes": [],
+        },
+    ])
+    _write_actuals(campaign_dir, [])
+
+    status = tracker.campaign_status(campaign_dir)
+    by_media = {m["media"]: m for m in status["by_media"]}
+
+    assert by_media["youtube"]["budget"] == 300000  # 200000 + 100000 の合算
+    assert by_media["youtube"]["media_name"] == "YouTube（テスト）"  # 最初に出た値
+    assert by_media["tiktok"]["budget"] == 200000
+
+
 def test_days_elapsed_and_pace_zero_when_no_actuals(campaign_dir):
     _write_order(campaign_dir)
     _write_plan(campaign_dir)

@@ -22,6 +22,7 @@ period:
   start: 2026-08-01
   end: 2026-08-31
 budget_total: 10000000                 # 円（税抜グロス）
+kpi_target: 5000000                    # 主KPIの与件数値（任意。あれば達成見込みチェックに使う）
 target:
   age: [20, 34]                        # [min, max]
   gender: female                       # male | female | all
@@ -34,45 +35,83 @@ notes: 新商品ローンチに合わせて認知最大化   # 任意
 
 ## plan.yaml（`adops plan` の生成物）
 
+プランの最小単位は「ライン」= 媒体 × 最適化モード（例: YouTube×リーチ最適、YouTube×視聴最適）。
+モードは `config/benchmarks.yaml` の `media.<key>.modes` に定義され、目的に応じて主モード75% / 補完モード25%で配分される。
+
 ```yaml
 campaign_id: 2026-08_glowlips
 generated_at: "2026-07-02T10:00:00"
 objective: awareness
 strategy_summary: <選定ロジックの要約文>
-allocations:                           # 媒体別配分
+allocations:                           # ライン（媒体×モード）ごとの配分
   - media: youtube                     # benchmarks.yaml の media key
-    media_name: YouTube（スキッパブルインストリーム）
-    budget: 5000000
-    share: 0.5                         # 予算構成比
-    score: 1.23                        # 選定スコア（objective_fit × audience_fit）
-    optimization: 目標インプレッション単価（tCPM）
+    media_name: YouTube（Google Ads 動画/Demand Gen）
+    mode: reach_opt                    # benchmarks.yaml の mode key
+    optimization: リーチ最適（FQ最小化・Reach最大化）   # モードの label
+    budget: 3750000
+    share: 0.375                       # 予算構成比（全体比）
+    score: 1.23                        # 媒体の選定スコア（objective_fit × audience_fit）
     targeting:
       age: [20, 34]
       gender: female
       segments: [美容, コスメ]
+      note: デモグラ広域。セグメント最小化でFQ最小・最大リーチ   # モードの targeting_note
     operation_notes:                   # 運用手法（文字列リスト）
       - フリークエンシーキャップ 週3回
 simulation:
+  by_line:                             # ライン単位のフル指標
+    - media: youtube
+      mode: reach_opt
+      budget: 3750000
+      impressions: 5400000
+      reach: 1730000                   # = impressions / fq
+      fq: 3.12
+      cpr: 2.17                        # = budget / reach
+      views: 2484000                   # 媒体のView定義に基づく
+      completed_views: 918000          # View(100%)
+      clicks: 21600
+      engagements: 16200               # engr 未定義の媒体では null
+      cpm: 694.4
+      cpv: 1.51
+      cpc: 173.6
+      cpe: 231.5                       # engagements が null なら null
+      vtr: 0.46
+      completion_rate: 0.17
+      ctr: 0.004
+  by_media:                            # 媒体単位に集約（tracker が actuals と突合する単位）
+    - media: youtube
+      budget: 5000000                  # ライン合計
+      impressions: 6400000
+      views: 2900000
+      completed_views: 1200000
+      reach: 2100000                   # 媒体内重複排除後
+      clicks: 25000
+      cpm: 781.0                       # 加重（budget/impressions×1000）
+      cpv: 1.72
+      vtr: 0.45
+      view_definition: TrueViewビュー（30秒到達 or 完了 or 広告要素クリック）
   total:
     budget: 10000000
-    impressions: 18181818
-    views: 5454545                     # 媒体ごとに視聴定義が異なる点に注意
-    completed_views: 3636363
-    reach: 6060606                     # 重複控除後のユニークリーチ推定
-    cpm: 550.0
-    cpv: 1.83
-  by_media:
-    - media: youtube
-      budget: 5000000
-      impressions: 9090909
-      views: 3181818
-      completed_views: 2272727
-      reach: 3030303
-      cpm: 550.0
-      cpv: 1.57
-      vtr: 0.35
-      view_definition: 30秒視聴 or 完全視聴
+    impressions: 16000000
+    views: 5400000
+    completed_views: 2400000
+    reach: 6060606                     # 純リーチ（媒体内55%/媒体間15%重複排除 + 母集団キャップ）
+    clicks: 60000
+    cpm: 625.0
+    cpv: 1.85
+    ctr: 0.0038
+kpi_projection:                        # 与件達成見込み（基準6）
+  kpi: reach
+  target: 5000000                      # order.kpi_target（未設定なら null）
+  projected: 6060606                   # 主KPIに対応するシミュレーション値
+  achievement: 1.212                   # target 未設定なら null。cpm/cpv は target/projected で計算
+  note: 主目的『認知/リーチ』→ 純リーチ 6,060,606人（与件 5,000,000人に対し達成見込み 121.2%）
+warnings: []                           # 与件適合チェックで検知した警告（達成見込み<100% 等）
 ```
+
+- 純リーチの算出モデル・モード配分比・予約型追加ルールは `config/benchmarks.yaml` 冒頭のコメントを参照。
+- v1 からの変更: `instagram_reels` → `meta` に改称、`youtube_bumper` は youtube の運用ノートに統合。
+  allocations は媒体単位 → ライン単位になった（tracker が使う simulation.by_media の形は維持）。
 
 ## actuals.csv（実績入力）
 

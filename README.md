@@ -74,3 +74,5 @@ tests/
 ## 精度を上げていくには
 
 シミュレーション精度はすべて `config/benchmarks.yaml` に依存します。案件が終わるたびに report.md の「シミュレーション精度の振り返り」を確認し、実勢と乖離した媒体の CPM/VTR を実績値ベースで更新してください。
+
+現在の値の由来: YouTube / Meta / TikTok のモード別数値（CPM/VTR/FQ/CTR/ENGR）と純リーチモデル・予約型ルールは、過去のプランニング資産（`knowledge/archive/2026-07/`）から取り込んだ実物ベース。その他媒体は初期参考値です。過去資産の追加取り込みは `docs/KNOWLEDGE_INTAKE.md` の手順で行えます。

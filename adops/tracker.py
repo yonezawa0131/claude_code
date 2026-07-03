@@ -118,8 +118,18 @@ def campaign_status(campaign_dir) -> dict:
     total = _build_metrics(budget, _aggregate(actuals), sim_total)
 
     allocations = plan.get("allocations") or []
-    media_names = {a["media"]: a.get("media_name", a["media"]) for a in allocations}
-    media_budgets = {a["media"]: a.get("budget") for a in allocations}
+    # v2 では1媒体が複数ライン（媒体×モード）に分かれるため、media_name は最初に出た値を採用し、
+    # budget はライン予算を合算する（budget が None のラインは0扱い、全ラインNoneならNone）。
+    media_names: dict = {}
+    media_budget_lines: dict = {}
+    for a in allocations:
+        media = a["media"]
+        media_names.setdefault(media, a.get("media_name", media))
+        media_budget_lines.setdefault(media, []).append(a.get("budget"))
+    media_budgets = {
+        media: (None if all(b is None for b in lines) else sum((b or 0) for b in lines))
+        for media, lines in media_budget_lines.items()
+    }
     sim_by_media = {m["media"]: m for m in (simulation.get("by_media") or [])}
 
     # plan にある媒体を先に、actuals にしかない媒体（拾い漏れ防止）を後ろに追加

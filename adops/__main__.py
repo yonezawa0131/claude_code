@@ -25,16 +25,21 @@ def cmd_plan(args: argparse.Namespace) -> int:
 
     print(f"✔ プランを生成しました: {path}")
     print(f"\n■ 戦略方針\n{plan['strategy_summary']}\n")
-    print("■ 媒体配分")
+    print("■ 配分（媒体×最適化ライン）")
     for a in plan["allocations"]:
-        print(f"  - {a['media_name']}: {io.fmt_yen(a['budget'])} ({io.fmt_pct(a['share'])})")
-        print(f"      最適化: {a['optimization']}")
+        print(f"  - {a['media_name']} × {a['optimization']}")
+        print(f"      {io.fmt_yen(a['budget'])} ({io.fmt_pct(a['share'])})")
     total = plan["simulation"]["total"]
     print("\n■ シミュレーション（合計）")
     print(f"  imp: {io.fmt_num(total['impressions'])} / 視聴: {io.fmt_num(total['views'])}"
           f" / 完全視聴: {io.fmt_num(total['completed_views'])}")
-    print(f"  推定リーチ: {io.fmt_num(total['reach'])} / CPM: {io.fmt_yen(total['cpm'])}"
+    print(f"  純リーチ: {io.fmt_num(total['reach'])} / CPM: {io.fmt_yen(total['cpm'])}"
           f" / CPV: {io.fmt_yen(total['cpv'])}")
+    proj = plan.get("kpi_projection") or {}
+    if proj:
+        print(f"\n■ 与件達成見込み\n  {proj.get('note', '-')}")
+    for w in plan.get("warnings") or []:
+        print(f"  ⚠ {w}")
     return 0
 
 
