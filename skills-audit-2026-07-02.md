@@ -113,3 +113,13 @@ description: >
 1. **knowledge-intake をSkill化する（H-2）** — 実務で最も発火頻度が高いのに現状は発見不能。手順書は完成しているため作業は移植のみ。暫定でも CLAUDE.md に1行リンクを足すだけで発見可能性は回復する。
 2. **memory-dream を正式Skillに作り直す（H-1）** — 完成済み手順書の置き場所を直すだけで、別セッション・別ブランチからも使えるようになる。
 3. **session-start-hook の name 統一 + description 書き換え（M-1）** — 唯一ユーザーが編集できるSkillの唯一の欠陥。§3の案を適用し、update-config との衝突を解消する。
+
+---
+
+## 8. 実施記録（2026-07-04）
+
+「今すぐやる3つ」を全て実施した。
+
+1. **knowledge-intake のSkill化 — 完了**: `claude/ad-workflow-automation-idw5ta` に `.claude/skills/knowledge-intake/SKILL.md` を追加し、`docs/KNOWLEDGE_INTAKE.md` は単一情報源維持のためポインタ化（commit 5d1046a）。なお実施時点でリモートに知識取り込み実施済みのコミット（d2910e9, benchmarks v2）が先行しており、リベースの上で反映した。
+2. **memory-dream のSkill化 — 完了**: `claude/memory-consolidation-playbook-4qlrr3` に `.claude/skills/memory-dream/SKILL.md` を追加（トリガー句入りdescription、`{agent_global_home}` 解決手順を冒頭に明記、Skill仕様外の `type` フィールド除去）。`notes/playbook/memory-dream.md` は本Skill自身の単一定義原則に従いポインタ化（commit 80ac3e4）。
+3. **session-start-hook の修正 — 完了（要・恒久化）**: コンテナ内の `~/.claude/skills/session-start-hook/SKILL.md`（2コピーとも）に name 統一とdescription書き換えを適用済み。**ただしリモートコンテナは揮発性のため、この修正はセッション終了で失われる。** 修正版を本ブランチの `proposals/session-start-hook.SKILL.md` に保存した。恒久化するにはローカルマシンの `~/.claude/skills/session-start-hook/SKILL.md` にこのファイルを上書きコピーすること。
