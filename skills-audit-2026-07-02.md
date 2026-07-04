@@ -123,3 +123,18 @@ description: >
 1. **knowledge-intake のSkill化 — 完了**: `claude/ad-workflow-automation-idw5ta` に `.claude/skills/knowledge-intake/SKILL.md` を追加し、`docs/KNOWLEDGE_INTAKE.md` は単一情報源維持のためポインタ化（commit 5d1046a）。なお実施時点でリモートに知識取り込み実施済みのコミット（d2910e9, benchmarks v2）が先行しており、リベースの上で反映した。
 2. **memory-dream のSkill化 — 完了**: `claude/memory-consolidation-playbook-4qlrr3` に `.claude/skills/memory-dream/SKILL.md` を追加（トリガー句入りdescription、`{agent_global_home}` 解決手順を冒頭に明記、Skill仕様外の `type` フィールド除去）。`notes/playbook/memory-dream.md` は本Skill自身の単一定義原則に従いポインタ化（commit 80ac3e4）。
 3. **session-start-hook の修正 — 完了（要・恒久化）**: コンテナ内の `~/.claude/skills/session-start-hook/SKILL.md`（2コピーとも）に name 統一とdescription書き換えを適用済み。**ただしリモートコンテナは揮発性のため、この修正はセッション終了で失われる。** 修正版を本ブランチの `proposals/session-start-hook.SKILL.md` に保存した。恒久化するにはローカルマシンの `~/.claude/skills/session-start-hook/SKILL.md` にこのファイルを上書きコピーすること。
+
+## 9. 恒久化対応（2026-07-04 追記）
+
+§8-3 の揮発性問題を解消するため、SessionStart フックによる自動再適用を導入した。
+
+- `.claude/hooks/assets/session-start-hook.SKILL.md` — 修正版の正本（git管理）
+- `.claude/hooks/sync-personal-skills.sh` — リモート環境でのみ、セッション開始時に個人Skillへ正本を上書きコピーする（検証済み: ストック版に戻した状態から実行し修正版が再適用されることを確認）
+- `.claude/settings.json` — 上記フックの SessionStart 登録
+
+同じ仕組みを3ブランチ（skills-audit / ad-workflow-automation / memory-consolidation-playbook）すべてに配置した。これにより、**これらのブランチをチェックアウトする全ての今後のWebセッションで修正が自動適用される**。
+
+残る制約（要確認）:
+- 本セッションの指定ブランチは空の状態（unborn branch）で開始された。新規セッションが既存ブランチの内容を引き継がずに始まる設定の場合、フックも載らないため修正は適用されない。確実にしたい場合は、Claude Code on the web の環境設定（セットアップスクリプト）に `cp` の1行を入れるのが最強:
+  `curl -fsSL https://raw.githubusercontent.com/yonezawa0131/claude_code/claude/skills-audit-bp210w/proposals/session-start-hook.SKILL.md -o ~/.claude/skills/session-start-hook/SKILL.md`（プライベートリポジトリの場合は認証が必要な点に注意）
+- ローカルマシンの Claude Code では、`proposals/session-start-hook.SKILL.md` を `~/.claude/skills/session-start-hook/SKILL.md` に一度手動コピーすれば永続する（ローカルはフック対象外に設計してある）。
