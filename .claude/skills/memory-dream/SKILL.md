@@ -35,7 +35,7 @@ Obsidian vault を運用している場合（構造は `notes/playbook/obsidian-
 7. `entities/*.md`, `concepts/*.md` — コンパイル済み知識。dream の主対象
 8. `INDEX.md` — 全ページ 1 行索引。実ファイルとの同期を dream で保証する
 
-**vault の `raw/` は不可侵**（ground truth。会話エクスポート等の無加工素材）。dream では読むだけで、書き換え・削除をしない。
+**vault の `raw/` は不可侵**（ground truth。会話エクスポート等の無加工素材）。dream では読むだけで、書き換え・削除をしない。`reviews/` も日付付きのスナップショット記録なので原則書き換えない（Mine フェーズの入力としては有用）。
 
 ## 4 フェーズ手順
 
@@ -52,7 +52,9 @@ Obsidian vault を運用している場合（構造は `notes/playbook/obsidian-
 
    vault 対象の dream では lint も行う:
 
-   - `[[wikilink]]` 切れ（リンク先ページが存在しない）を修復 or 除去
+   - `[[wikilink]]` 切れの精査。**意図的な仮リンク（forward reference）と腐敗を区別する**: 仮リンクは「ページを作る / まだ待つ / 消す」を判断し、単なるリンク切れ（リネーム・削除起因）は修復 or 除去
+   - 孤立ノート（どこからもリンクされていないページ）を検出し、リンク接続 or 削除候補としてフラグ
+   - タグが INDEX.md の固定スキーマに収まっているか確認（スキーマ外タグは統合 or スキーマ更新を提案）
    - `INDEX.md` を実ファイル一覧と同期（1 ページ 1 行、1 行説明付き）
    - raw/ への出典リンクが無い compiled ページをフラグし、検証 or 除去
 
@@ -82,7 +84,9 @@ Obsidian vault を運用している場合（構造は `notes/playbook/obsidian-
 - [ ] 索引（MEMORY.md / auto-memory/MEMORY.md）が lean
 - [ ] `MEMORY.md` の「notes 一覧」を `find notes -type f -name '*.md' | sort` で再生成・同期した
 - [ ] （vault）raw/ に一切書き込んでいない
-- [ ] （vault）`[[wikilink]]` 切れが無い・INDEX.md が実ファイルと同期している
+- [ ] （vault）`[[wikilink]]` 切れが無い（仮リンクは作る/待つ/消すを判断済み）・INDEX.md が実ファイルと同期している
+- [ ] （vault）孤立ノートを検出し、接続 or 削除候補として処理した
+- [ ] （vault）タグが INDEX.md の固定スキーマに収まっている
 - [ ] 変更を論理単位ごとに commit し、ユーザーがレビュー可能（push は保留）
 - [ ] 採用前に出力をレビュー（dream 出力は hallucination 混入の懸念があるため鵜呑みにしない）
 
