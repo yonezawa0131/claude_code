@@ -1,6 +1,6 @@
 ---
 name: memory-dream
-description: agents-share の記憶階層（MEMORY.md / auto-memory / notes / projects）を再編し、重複・矛盾・陳腐化エントリを除去する consolidation を実施する。トリガー:「記憶を整理して」「dreamして」「memory consolidation」「メモリーが散らかってきた」、または大規模リファクタ直後・20〜30セッション蓄積時。変更は論理単位ごとの commit で提示し、push はユーザーの明示指示まで保留する。
+description: agents-share の記憶階層（MEMORY.md / auto-memory / notes / projects）と Obsidian vault（entities / concepts / INDEX.md）を再編し、重複・矛盾・陳腐化エントリを除去する consolidation を実施する。トリガー:「記憶を整理して」「dreamして」「memory consolidation」「メモリーが散らかってきた」、または大規模リファクタ直後・20〜30セッション蓄積時。変更は論理単位ごとの commit で提示し、push はユーザーの明示指示まで保留する。
 ---
 
 # memory dream（記憶の整理／consolidation）
@@ -30,6 +30,13 @@ Dreams は人間の REM 睡眠による記憶定着のメタファ。過去セ�
 5. `projects/{project_dir_canonical}.md` — プロジェクト固有
 6. `notes/*.md`（on-demand）
 
+Obsidian vault を運用している場合（構造は `notes/playbook/obsidian-vault.md` 参照）は次も対象:
+
+7. `entities/*.md`, `concepts/*.md` — コンパイル済み知識。dream の主対象
+8. `INDEX.md` — 全ページ 1 行索引。実ファイルとの同期を dream で保証する
+
+**vault の `raw/` は不可侵**（ground truth。会話エクスポート等の無加工素材）。dream では読むだけで、書き換え・削除をしない。
+
 ## 4 フェーズ手順
 
 1. **Mine（採掘）**: 直近セッションの transcript / 作業内容から、繰り返し出た指摘・確定した方針・新事実を抽出する。一回限りのデバッグメモは拾わない。
@@ -43,12 +50,19 @@ Dreams は人間の REM 睡眠による記憶定着のメタファ。過去セ�
 
    出力で `MEMORY.md` のコードブロックを丸ごと置換する。notes の追加・移動・削除を行った dream では必須。
 
+   vault 対象の dream では lint も行う:
+
+   - `[[wikilink]]` 切れ（リンク先ページが存在しない）を修復 or 除去
+   - `INDEX.md` を実ファイル一覧と同期（1 ページ 1 行、1 行説明付き）
+   - raw/ への出典リンクが無い compiled ページをフラグし、検証 or 除去
+
 ## 重複排除の判定ルール
 
 - 重複は常に「下位 → 上位」方向で発生する。**修正は下位レイヤ側**で行い、AGENTS.md（最上位・自己整合）は触らない。
 - 各情報は定義箇所を一つに保つ。上位が定めるルールは下位から単に消す（必要なら手順の所在だけを 1 句で指す。例: 「PR 本文は `notes/playbook/github-pr.md` に従う」）。
 - ディレクトリ構造・コミット運用・記憶貢献ルールなどの「世界のルール」は AGENTS.md が定める。notes/projects は固有情報のみ書く。
 - specs/（設計文書）はプロジェクト固有でルール重複の対象外。dream では原則触らない。
+- vault の raw/ も同様に触らない（specs/ が「設計の ground truth」なら raw/ は「素材の ground truth」）。
 
 ### 成果ファイルの書き方（重要）
 
@@ -67,6 +81,8 @@ Dreams は人間の REM 睡眠による記憶定着のメタファ。過去セ�
 - [ ] 存在しないファイル/シンボルへの参照を除去 or 現存確認した
 - [ ] 索引（MEMORY.md / auto-memory/MEMORY.md）が lean
 - [ ] `MEMORY.md` の「notes 一覧」を `find notes -type f -name '*.md' | sort` で再生成・同期した
+- [ ] （vault）raw/ に一切書き込んでいない
+- [ ] （vault）`[[wikilink]]` 切れが無い・INDEX.md が実ファイルと同期している
 - [ ] 変更を論理単位ごとに commit し、ユーザーがレビュー可能（push は保留）
 - [ ] 採用前に出力をレビュー（dream 出力は hallucination 混入の懸念があるため鵜呑みにしない）
 
