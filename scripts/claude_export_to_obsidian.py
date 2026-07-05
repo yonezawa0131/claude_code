@@ -3,8 +3,14 @@
 
 入力:  claude.ai の「設定 → プライバシー → データをエクスポート」で届く
        ZIP(そのまま渡せる)、または展開済みの conversations.json。
-出力:  vault の `inbox/ClaudeChat Memory/` 配下に 1 会話 = 1 Markdown。
+出力:  vault の `raw/ClaudeChat Memory/` 配下に 1 会話 = 1 Markdown。
        併せて全会話への索引ノート `_Index.md` を再生成する。
+
+会話エクスポートは vault の raw 層(無加工の ground truth)として扱う。
+このフォルダは本スクリプトだけが上書き管理し、手編集・エージェントによる
+書き換えはしない(vault 構造は notes/playbook/obsidian-vault.md 参照)。
+以前の既定 `inbox/ClaudeChat Memory` から移行する場合はフォルダを
+`raw/` 配下へ移動するだけでよい(照合は uuid なので再実行しても重複しない)。
 
 使い方:
     python3 scripts/claude_export_to_obsidian.py <export.zip | conversations.json> --vault <vaultのパス>
@@ -26,7 +32,7 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-DEFAULT_DEST = "inbox/ClaudeChat Memory"
+DEFAULT_DEST = "raw/ClaudeChat Memory"
 INDEX_NAME = "_Index.md"
 
 # Obsidian のファイル名・wikilink で問題になる文字
