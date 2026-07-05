@@ -66,7 +66,7 @@ class ExecutionLoop:
                     effort=decision.effort,
                 )
             except ModelRefusedError as e:
-                # フォールバック込みで拒否された。記録してエスカレーション
+                # モデルが拒否した。記録してエスカレーション
                 self._state.record_error(f"refusal: {e}")
                 return self._finish(
                     task, decision, "escalate", best[1], attempt, best[0],

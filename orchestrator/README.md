@@ -40,8 +40,8 @@ Task ──▶ Router ──────▶ ExecutionLoop ──▶ Provider (As
 - 検証タスクは常に Haiku(実行者と検証者を分離する原則も兼ねる)
 - 予算超過見積り時は自動で安いティアへダウングレード
 - 同種タスクで成功率90%以上の実績(3件以上)があるモデルは既定より優先
-- claude-fable-5 使用時はサーバーサイド refusal フォールバック
-  (→ claude-opus-4-8)を既定で有効化(安全分類器の誤検知対策、公式推奨)
+- claude-fable-5 で安全分類器が拒否した場合はフォールバックせず
+  `ModelRefusedError` → ExecutionLoop がエスカレーションとして扱う
 
 ## 使い方
 
