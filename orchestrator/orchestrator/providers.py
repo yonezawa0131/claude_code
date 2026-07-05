@@ -22,7 +22,7 @@ class ModelRefusedError(Exception):
 @dataclass
 class Completion:
     text: str
-    model: str
+    model: str  # 実際に応答したモデル(フォールバック時は要求と異なりうる)
     input_tokens: int
     output_tokens: int
     stop_reason: str | None = None
@@ -44,12 +44,15 @@ class Provider(Protocol):
 class AnthropicProvider:
     """公式 Anthropic SDK 実装。
 
+    - claude-fable-5 にはサーバーサイド refusal フォールバック
+      (beta: server-side-fallback-2026-06-01 → claude-opus-4-8) を既定で付ける。
+      安全分類器の誤検知でリクエストが止まらないようにするための公式推奨設定。
     - effort はサポートするモデルにだけ渡す(Haiku 4.5 では 400 になるため)。
     - output_schema を渡すと structured outputs (output_config.format) で
       有効な JSON を保証する。
-    - claude-fable-5 で安全分類器が拒否した場合は ModelRefusedError になる
-      (refusal フォールバックは未使用。ExecutionLoop がエスカレーション処理する)。
     """
+
+    FABLE_FALLBACK_BETA = "server-side-fallback-2026-06-01"
 
     def __init__(self, client=None):
         if client is None:
@@ -87,7 +90,12 @@ class AnthropicProvider:
         if output_config:
             kwargs["output_config"] = output_config
 
-        response = await self._client.messages.create(**kwargs)
+        if model == "claude-fable-5":
+            kwargs["betas"] = [self.FABLE_FALLBACK_BETA]
+            kwargs["fallbacks"] = [{"model": "claude-opus-4-8"}]
+            response = await self._client.beta.messages.create(**kwargs)
+        else:
+            response = await self._client.messages.create(**kwargs)
 
         if response.stop_reason == "refusal":
             details = getattr(response, "stop_details", None)
