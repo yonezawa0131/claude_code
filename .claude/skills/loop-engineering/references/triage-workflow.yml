@@ -1,0 +1,71 @@
+# triage-workflow.yml
+# 「スケジューリング」を担う GitHub Actions ワークフロー・テンプレート。
+# morning-triage スキルを毎朝定刻に走らせ、結果を人間レビュー待ちのPRとして残す。
+# このワークフローは gh pr merge を一切呼ばない。auto-mergeは意図的に組み込んでいない。
+
+name: morning-triage
+
+on:
+  schedule:
+    # change: cron はUTC表記。日本時間(JST=UTC+9)の朝6:00に走らせたい場合は
+    # UTC 21:00(前日)を指定する必要がある点に注意。下記は UTC 06:00 = JST 15:00 の例。
+    # 自分のタイムゾーンで「朝」になる時刻を逆算してから変更すること。
+    - cron: '0 6 * * *'  # change: 実行時刻(UTC)。ここをプロジェクトの希望する朝の時刻に合わせて変える
+  workflow_dispatch: {}
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45  # change: per-runの時間キャップ。ループが暴走して課金/時間を食い潰さないための上限
+    env:
+      DAILY_BUDGET_USD: '5'     # change: 1日あたりのAPI費用上限。プロジェクトのコスト許容度に合わせて変更する
+      MAX_RETRIES: '2'          # change: 1findingあたりの最大リトライ回数。上げすぎるとコストが跳ねる
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 昨日以降のcommit差分をmorning-triageが読めるようfull historyを取得
+
+      - name: Run morning-triage skill
+        run: |
+          # 注意: 下記は「発見スキルを起動し、3層キャップを渡す」という *意図を示す擬似コマンド* である。
+          #       --max-retries / --daily-budget-usd 等のフラグ名は実在の Claude Code CLI とは限らない。
+          # change: 自プロジェクトの実際の起動方法(claude -p / SDK / ラッパースクリプト等)に置き換える。
+          #         CLI がキャップをフラグで受けない場合は、env の MAX_RETRIES / DAILY_BUDGET_USD を
+          #         読むラッパー側で per-run 停止・リトライ上限・予算超過中断を必ず実装すること
+          #         (キャップはサーキットブレーカーであり、省略してはならない)。
+          claude -p "run the morning-triage skill" \
+            2>&1 | tee ./state/triage-run.log
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Create draft PRs for review
+        run: |
+          # morning-triage が切った fix/<slug> ブランチごとに draft PR を作る。
+          # auto-merge はしない。人間が読んで merge する前提のドラフト。
+          for branch in $(git branch --list 'fix/*' --format='%(refname:short)'); do
+            git push -u origin "$branch" || continue
+            gh pr create \
+              --draft \
+              --base main \
+              --head "$branch" \
+              --title "triage: $(date +%Y-%m-%d) / ${branch}" \
+              --body "自動生成された draft PR です。auto-merge はしません。レビューして問題なければ手動で merge してください。" \
+              || echo "PR 作成をスキップ(既存か head==base): ${branch}"
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # NOTE: ここに `gh pr merge` は無い。意図的に無い。
+        # このワークフローの役目は PR を"提案"するところまでで、merge するかどうかは常に人間が判断する。
+
+      - name: Route uncertain findings to human review
+        run: |
+          # ./inbox/ にあるファイルは「自信が持てない発見」。PR化せず、
+          # 人間が見るためのissueコメント/Slack通知等に回す。
+          if [ -d "./inbox" ] && [ "$(ls -A ./inbox 2>/dev/null)" ]; then
+            echo "inbox に人間レビュー待ちのfindingがあります:"
+            ls -A ./inbox
+            # change: 通知先(Slack Webhook / gh issue comment 等)をプロジェクトに合わせて追加する
+          else
+            echo "inbox は空です"
+          fi
