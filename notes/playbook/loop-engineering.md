@@ -8,6 +8,33 @@ type: playbook
 
 エージェントに毎回プロンプトを渡す代わりに、**プロンプトを渡す仕組みそのもの**を設計する。組み込みの `/loop` は「一定間隔で再実行するだけ・止める判断を持たない」素のループに過ぎない。これに規律を与え、飼い慣らすための思想と判断基準をまとめる。SKILL.md 側は手順だけを持ち、ここに書くのは「なぜそう作るか」と「何を守れば壊れないか」。
 
+## ループの 4 類型(まず一番簡単な型を選ぶ)
+
+Claude Code チーム公式の定義: **ループ = 停止条件が満たされるまでエージェントが作業サイクルを繰り返すこと**。全タスクに複雑なループが要るわけではなく、**最も単純な解から始め、パターンは選択的に使う**のが公式の推奨。この playbook の後半で扱う「5 つの動き」「5 つの病」「6 つの能力」は非公式フレームワーク側の解剖だが、ここで先に示す 4 類型は Claude Code チーム自身が定めた公式マップ(どのプリミティブをどこで使うか)であり、両者は補完関係にある。まずこの 4 類型で「どの型を作るべきか」を決め、必要な型だけを後半の規律で武装する、という順で読むとよい。
+
+| 型 | トリガー | 停止条件 | 使うプリミティブ | 向くタスク | 使用量の管理 |
+|---|---|---|---|---|---|
+| Turn-based(エージェントループ) | ユーザーのプロンプト | Claude が完了、または追加コンテキストが必要と判断 | —(専用コマンドなし・通常の対話) | 定期でない短いタスク | 具体的なプロンプト + 検証を skill に encode してターン数を減らす |
+| Goal-based | リアルタイムの手動プロンプト | ゴール達成、または最大ターン到達 | `/goal` | 検証可能な終了条件があるタスク | 明確な完了条件 + 明示的なターン上限("stop after 5 tries" 等) |
+| Time-based | 指定した時間間隔 | キャンセル、または作業完了(PR が merge、キューが空 等) | `/loop`・`/schedule` | 繰り返し作業、外部システムとの接続 | 間隔を長くする、時間でなくイベントで反応させる |
+| Proactive(自走) | イベントまたはスケジュール、リアルタイムの人間なし | 各タスクはゴール達成で終了、routine 自体は止めるまで動き続ける | `/schedule` + `/goal` + 検証 skill + dynamic workflows + auto mode | よく定義された反復ストリーム(バグ報告・issue triage・マイグレーション・依存更新) | routine を小さく速いモデルにルーティングし、判断が要る所だけ最上位モデルを使う |
+
+- **Turn-based**: 毎プロンプトそのものが「あなたが各ターンを指揮する手動ループ」である、という点が公式の要点。検証ステップを skill に encode すると自己検証が進みターン数が減る(→ `.claude/skills/loop-engineering/references/verify-frontend-change.SKILL.md`)。
+- **Goal-based**: Claude が止まろうとするたびに**評価者モデル**が停止条件を確認し、満たすまで作業に戻す。だから「テスト通過数」「スコア閾値」のような決定論的基準がよく効く。例: `/goal get the homepage Lighthouse score to 90 or above, stop after 5 tries`。
+- **Time-based**: `/loop` は自分の PC 上で動くため、PC を閉じると止まる。`/schedule` で routine を作るとクラウド側に移せる(research preview)。例: `/loop 5m check my PR, address review comments, and fix failing CI`。
+- **Proactive**: `/schedule` + `/goal` + 検証 skill に加えて、**dynamic workflows(research preview、エージェントをオーケストレーションする機能)** と **auto mode(許可を尋ねず走る)** を合成する。この playbook の後半(5 つの動き〜)は主にこの Proactive 型を堅牢に組むための解剖にあたる。
+
+4 類型は難易度・自動化度のスペクトルであり、段階を上がるごとに人間が手放す責務が増えていく: **検査 → 停止条件 → トリガー → プロンプトそのもの**。
+
+### 使い分け早見表
+
+| ループ | 手放すもの | 使う場面 | 手に取るもの |
+|---|---|---|---|
+| Turn-based | 検査 | 探索・判断がまだ途中で、定型化する前 | カスタム検証 skill |
+| Goal-based | 停止条件 | 完了の形が分かっている | `/goal` |
+| Time-based | トリガー | プロジェクトの外でスケジュール的に発生する仕事 | `/loop`・`/schedule` |
+| Proactive | プロンプトそのもの | 反復的かつよく定義されている | 上記全部 + dynamic workflows |
+
 ## 3 つのループ(時間スケール別)
 
 Andrew Ng の整理では、開発は入れ子になった 3 つのループが同時に回っている。
@@ -89,11 +116,14 @@ Anthropic の Prithvi Rajasekaran の言葉を借りると、「独立した評�
 
 | スケジューラ | 最小間隔 | マシン電源 | セッション | ローカルファイル |
 |---|---|---|---|---|
-| Cloud(GH Actions) | 1 時間 | 不要 | 不要 | 見えない |
-| Desktop scheduled | 1 分 | 必要 | 不要 | 見える |
 | `/loop`(Claude Code 内) | 1 分 | 必要 | 必要 | 見える |
+| Desktop scheduled | 1 分 | 必要 | 不要 | 見える |
+| `/schedule`(クラウド routine, research preview) | —(未確定) | 不要 | 不要 | —(未確定) |
+| Cloud(GH Actions) | 1 時間 | 不要 | 不要 | 見えない |
 
-判断基準は「この仕事はラップトップを離れられるか」の一点。ローカルファイルを毎分ポーリングする仕事は `/loop`、深夜 3 時の GitHub 巡回は cloud に置く。Manual Loop の節で触れた「ローカルタイマーは寝てる間も走る」という誤解は、この表で言えば `/loop` や desktop scheduled をセッションが無いのに使おうとするところで起きる。
+判断基準は「この仕事はラップトップを離れられるか」の一点。ローカルファイルを毎分ポーリングする仕事は `/loop`、深夜 3 時の GitHub 巡回はクラウド(`/schedule` routine か GH Actions)に置く。Manual Loop の節で触れた「ローカルタイマーは寝てる間も走る」という誤解は、この表で言えば `/loop` や desktop scheduled をセッションが無いのに使おうとするところで起きる。
+
+Claude Code のネイティブな移行経路は `/loop`(ローカル)→ `/schedule`(クラウド routine, research preview)。仕事がラップトップを離れられると分かった時点で、`/loop` のプロンプトをそのまま `/schedule` の routine に移すのが最短。ただし `/schedule` の最小間隔やローカルファイル可視性は research preview のため未確定で、上表の GH Actions の値をそのまま当てはめないこと。使用量の管理は「間隔を長くする」より「時間でなくイベントで反応させる」方が効く場面が多い(PR 更新・CI 完了・新規 issue など、監視対象が変わったときだけ起きる)。
 
 ## 6 つの能力(ベンダー非依存)
 
@@ -106,9 +136,30 @@ Anthropic の Prithvi Rajasekaran の言葉を借りると、「独立した評�
 - external connect
 - explicit skill
 
-Claude Code での対応は: scheduling = `/loop`・worker、run-to-condition = `/goal`、parallel isolation = `--worktree`、sub-agents = `.claude/agents/`、external connect = MCP + plugins、explicit skill = SKILL.md。
+Claude Code での対応は: scheduling = `/loop`(ローカル)・`/schedule`(クラウド routine)・worker、run-to-condition = `/goal`、parallel isolation = `--worktree`・dynamic workflows(research preview)、sub-agents = `.claude/agents/`、external connect = MCP + plugins、explicit skill = SKILL.md。
 
-`/loop`(一定間隔で再実行するだけ、停止判断なし = 危険)と `/goal`(新鮮なモデルが条件を true と判定するまで走る)は別物であることを強調しておく。`/loop` に Verification を組み込まずに使うと、そのまま Blind Loop か Nodding Loop に落ちる。
+`/loop`(一定間隔で再実行する、それ自体は停止判断を持たない)と `/goal`(新鮮なモデルが条件を true と判定するまで走る)は別物であることを強調しておく。`/loop` は正当な time-based プリミティブだが、Verification を組み込まずに重い自走ループへ育てると、そのまま Blind Loop か Nodding Loop に落ちる。
+
+## コード品質を保つ(個別修正でなく系を改善する)
+
+ループの出力の質は、ループ単体でなく**その周囲の系**で決まる(Claude Code チーム公式)。
+
+- **クリーンなコードベースを保つ**: Claude は既存の慣習・パターンに従うため、コードベース自体が綺麗なら出力も綺麗になる。
+- **自己検証の手段を与える**: 「良い」の定義を skill に encode する。定量的なほどエージェントが自分で合否を判定でき、自己検証が効く。
+- **ドキュメントに手が届くようにする**: フレームワーク/ライブラリの最新ベストプラクティスを参照できる状態にする。
+- **コードレビューに第 2 エージェントを使う**: fresh context のレビュアーは主エージェントの推論に影響されずバイアスが少ない。組み込みの `/code-review` skill や GitHub 向け Code Review を使う(これは「検証の扉」を既製プリミティブで据えることに等しい)。
+- **最重要の原則**: 個別の結果が基準を満たさないとき、その個別問題を直して終わりにせず、**将来の全反復のために系(system)を改善するよう encode する**。1 回の失敗を 1 回直すのは harness の仕事、失敗を二度と起こさせないよう skill/検証/停止条件を更新するのが loop の仕事。
+
+## トークン使用量を管理する
+
+ループには明確な境界を持たせる(Claude Code チーム公式)。キャップ(サーキットブレーカー)に加え、次を守る。
+
+- **仕事に合ったプリミティブとモデルを選ぶ**: 小さいタスクに複数エージェントやループは要らない。安く速いモデルで足りるものもある(4 類型の「まず一番簡単な型を選ぶ」と同じ判断)。
+- **明確な成功/停止条件を定義する**: 「完了」を具体化すると、早すぎず・遅すぎず解に着地する。
+- **大規模実行の前に pilot する**: dynamic workflows は数百エージェントを spawn しうる。小さいスライスでまず使用量を測ってから本番に掛ける。
+- **決定論的な作業はスクリプトで**: スクリプト実行は毎回推論するより安い(例: PDF フォーム記入スクリプトを skill に同梱し、毎回それを走らせる)。
+- **routine を必要以上に頻繁に走らせない**: 監視対象が変わる頻度に間隔を合わせる。
+- **使用量をレビューする**: `/usage`(skill/subagent/MCP 別の内訳)、`/goal`(引数なしで現在のターン数とトークン使用量)、`/workflows`(各エージェントのトークン使用量を確認し、任意で停止)。
 
 ## 静かに積む 4 つの負債
 
@@ -125,4 +176,6 @@ VERIFICATION DEBT が COMPREHENSION ROT を招き、地図を失うと COGNITIVE
 
 ## 出典
 
-Andrew Ng(3 つのループ)、Addy Osmani(抽象度の梯子・6 能力・締めの言葉)、Peter Steinberger、Boris Cherny、Prithvi Rajasekaran(検証の扉)、Stripe・Uber の運用事例を出典として参照した。
+非公式フレームワーク側: Andrew Ng(3 つのループ)、Addy Osmani(抽象度の梯子・6 能力・締めの言葉)、Peter Steinberger、Boris Cherny、Prithvi Rajasekaran(検証の扉)、Stripe・Uber の運用事例。
+
+公式側: Claude Code チームの loop 解説(ループの定義・4 類型 Turn-based/Goal-based/Time-based/Proactive・`/goal`・`/loop`・`/schedule`・dynamic workflows・auto mode・`/code-review`・`/usage`・`/workflows`・コード品質とトークン管理の指針)。research preview の機能(`/schedule`・dynamic workflows)は将来変更されうる。
