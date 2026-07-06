@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>SLIDE-PATTERN-donut-chart-spoke-labels</title>
+<style>
+  body { background: #E8E8E8; padding: 40px 20px; font-family: sans-serif; margin: 0; }
+  .slide-label { font-size: 16px; line-height: 1; color: #666; text-align: center; margin: 0 0 12px; }
+  .slide-outer { margin: 0 auto 32px; width: 1440px; /* 1920 × 0.75 */ }
+  .slide-wrapper { width: 1920px; transform-origin: top left; transform: scale(0.75); margin-bottom: -270px; /* 1080 × (1 - 0.75) */ }
+  .slide { width: 1920px; height: 1080px; background: #FFFFFF; border: 1px solid #CCCCCC; box-sizing: border-box; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+  .area-label { font-size: 20px; color: #999999; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+
+  /* コンテンツエリア */
+  .content-area { flex: 1; position: relative; overflow: hidden; }
+
+  .content-area-label {
+    position: absolute;
+    top: 12px;
+    left: 24px;
+    font-size: 20px;
+    color: #BBBBBB;
+    text-transform: uppercase;
+    z-index: 10;
+  }
+
+  /* テキストブロック */
+  .text-block {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .text-block-label {
+    font-size: 18px;
+    color: #AAAAAA;
+    text-transform: uppercase;
+  }
+
+  .text-block-heading {
+    font-size: 22px;
+    font-weight: bold;
+    color: #444444;
+    margin-top: 2px;
+  }
+
+  .text-block-body {
+    font-size: 20px;
+    color: #666666;
+    line-height: 1.5;
+    margin-top: 4px;
+    max-width: 380px;
+  }
+</style>
+</head>
+<body>
+<p class="slide-label">[donut-chart-spoke-labels]</p>
+<div class="slide-outer">
+  <div class="slide-wrapper">
+    <div class="slide">
+
+      <!-- タイトルエリア（SLIDE.mdの Slide Frame で定義） -->
+      <div style="padding:28px 80px 24px; border-bottom:1px dashed #CCCCCC; flex-shrink:0; background:#FAFAFA;">
+        <div class="area-label">Title Area — SLIDE.md 参照</div>
+        <div style="font-size:32px; color:#CCCCCC; margin-top:8px;">スライドタイトルが入ります</div>
+      </div>
+
+      <!-- コンテンツエリア：donut-chart-spoke-labels pattern -->
+      <div class="content-area">
+        <div class="content-area-label">Content Area — donut-chart-spoke-labels pattern</div>
+
+        <!--
+          SVG構成（1920px基準・2倍スケール）：
+          - コンテンツエリア: 1920 × 860px
+          - ドーナツ中心: (960, 436)
+          - 外径 R=240, 内径 r=120
+          - 5等分セグメント（72°ずつ）
+          - セグメント開始角: -90° (上から時計回り)
+        -->
+        <svg style="position:absolute;top:0;left:0;width:1920px;height:860px;" viewBox="0 0 1920 860">
+
+          <!-- ドーナツセグメント (5等分, グレースケール, 番号ラベル付き) -->
+          <!-- セグメント01: -90° → -18° -->
+          <path d="M960,196 A240,240 0 0,1 1188,364 L1080,294 A120,120 0 0,0 960,316 Z"
+                fill="#E8E8E8" stroke="#FFFFFF" stroke-width="4"/>
+          <text x="1094" y="264" text-anchor="middle" font-size="22" font-weight="bold" fill="#555555">01</text>
+
+          <!-- セグメント02: -18° → 54° -->
+          <path d="M1188,364 A240,240 0 0,1 1100,640 L1006,522 A120,120 0 0,0 1080,294 Z"
+                fill="#DCDCDC" stroke="#FFFFFF" stroke-width="4"/>
+          <text x="1168" y="512" text-anchor="middle" font-size="22" font-weight="bold" fill="#555555">02</text>
+
+          <!-- セグメント03: 54° → 126° -->
+          <path d="M1100,640 A240,240 0 0,1 820,640 L914,522 A120,120 0 0,0 1006,522 Z"
+                fill="#D0D0D0" stroke="#FFFFFF" stroke-width="4"/>
+          <text x="960" y="676" text-anchor="middle" font-size="22" font-weight="bold" fill="#555555">03</text>
+
+          <!-- セグメント04: 126° → 198° -->
+          <path d="M820,640 A240,240 0 0,1 732,364 L840,294 A120,120 0 0,0 914,522 Z"
+                fill="#C8C8C8" stroke="#FFFFFF" stroke-width="4"/>
+          <text x="752" y="512" text-anchor="middle" font-size="22" font-weight="bold" fill="#555555">04</text>
+
+          <!-- セグメント05: 198° → 270° (-90°) -->
+          <path d="M732,364 A240,240 0 0,1 960,196 L960,316 A120,120 0 0,0 840,294 Z"
+                fill="#BCBCBC" stroke="#FFFFFF" stroke-width="4"/>
+          <text x="826" y="264" text-anchor="middle" font-size="22" font-weight="bold" fill="#555555">05</text>
+
+          <!-- ドーナツ内円（白抜き穴の表現） -->
+          <circle cx="960" cy="436" r="120" fill="#FFFFFF" stroke="#CCCCCC" stroke-width="2"/>
+
+          <!-- 中央テーマラベル -->
+          <text x="960" y="426" text-anchor="middle" font-size="24" font-weight="bold" fill="#444444">テーマ名</text>
+          <text x="960" y="458" text-anchor="middle" font-size="18" fill="#999999">center label</text>
+
+          <!-- 引き出し線：各セグメント重心 → テキストブロック -->
+          <!-- 01(上右): セグメント重心→右上テキスト -->
+          <line x1="1094" y1="264" x2="1400" y2="160" stroke="#CCCCCC" stroke-width="1.6"/>
+          <line x1="1400" y1="160" x2="1520" y2="160" stroke="#CCCCCC" stroke-width="1.6"/>
+          <!-- 02(右): セグメント重心→右中テキスト -->
+          <line x1="1168" y1="460" x2="1400" y2="420" stroke="#CCCCCC" stroke-width="1.6"/>
+          <line x1="1400" y1="420" x2="1520" y2="420" stroke="#CCCCCC" stroke-width="1.6"/>
+          <!-- 03(下): セグメント重心→右下テキスト -->
+          <line x1="960" y1="676" x2="1400" y2="680" stroke="#CCCCCC" stroke-width="1.6"/>
+          <line x1="1400" y1="680" x2="1520" y2="680" stroke="#CCCCCC" stroke-width="1.6"/>
+          <!-- 04(左下): セグメント重心→左下テキスト -->
+          <line x1="752" y1="512" x2="520" y2="600" stroke="#CCCCCC" stroke-width="1.6"/>
+          <line x1="520" y1="600" x2="400" y2="600" stroke="#CCCCCC" stroke-width="1.6"/>
+          <!-- 05(上左): セグメント重心→左上テキスト -->
+          <line x1="826" y1="264" x2="520" y2="200" stroke="#CCCCCC" stroke-width="1.6"/>
+          <line x1="520" y1="200" x2="400" y2="200" stroke="#CCCCCC" stroke-width="1.6"/>
+        </svg>
+
+        <!-- テキストブロック：右上 (01) -->
+        <div class="text-block" style="left:1524px; top:104px; width:380px;">
+          <span class="text-block-label">heading (01)</span>
+          <span class="text-block-heading">見出し 01</span>
+          <p class="text-block-body">説明テキストが入ります。統計データや補足情報を2〜3行で記述します。</p>
+        </div>
+
+        <!-- テキストブロック：右中 (02) -->
+        <div class="text-block" style="left:1524px; top:364px; width:380px;">
+          <span class="text-block-label">heading (02)</span>
+          <span class="text-block-heading">見出し 02</span>
+          <p class="text-block-body">説明テキストが入ります。統計データや補足情報を2〜3行で記述します。</p>
+        </div>
+
+        <!-- テキストブロック：右下 (03) -->
+        <div class="text-block" style="left:1524px; top:624px; width:380px;">
+          <span class="text-block-label">heading (03)</span>
+          <span class="text-block-heading">見出し 03</span>
+          <p class="text-block-body">説明テキストが入ります。統計データや補足情報を記述します。</p>
+        </div>
+
+        <!-- テキストブロック：左下 (04) -->
+        <div class="text-block" style="top:520px; width:380px; left:16px; text-align:left;">
+          <span class="text-block-label">heading (04)</span>
+          <span class="text-block-heading">見出し 04</span>
+          <p class="text-block-body">説明テキストが入ります。統計データや補足情報を2〜3行で記述します。</p>
+        </div>
+
+        <!-- テキストブロック：左上 (05) -->
+        <div class="text-block" style="left:16px; top:104px; width:380px; text-align:left;">
+          <span class="text-block-label">heading (05)</span>
+          <span class="text-block-heading">見出し 05</span>
+          <p class="text-block-body">説明テキストが入ります。統計データや補足情報を2〜3行で記述します。</p>
+        </div>
+
+      </div>
+
+      <!-- フッターエリア（SLIDE.mdの Slide Frame で定義） -->
+      <div style="padding:16px 80px 20px; border-top:1px dashed #CCCCCC; flex-shrink:0; background:#FAFAFA; display:flex; justify-content:space-between; align-items:flex-end;">
+        <div>
+          <div class="area-label" style="margin-bottom:4px;">Footer Area — SLIDE.md 参照</div>
+          <div style="font-size:18px; color:#CCCCCC;">ブランドフッター</div>
+        </div>
+        <div style="font-size:18px; color:#CCCCCC;">ページ番号</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>

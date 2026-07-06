@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DESIGN SYSTEM — Sample Slides</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --color-primary:      #FFCA28;
+    --color-secondary:    #FFF9C4;
+    --color-accent:       #DD8C00;
+    --color-background:   #FEFDF7;
+    --color-text:         #1E1E1E;
+    --color-text-sub:     #3D3D3D;
+    --color-text-muted:   #666666;
+    --color-surface:      #FFF9C4;
+    --color-surface-soft: #FFFDE7;
+    --color-border:       rgba(221,140,0,0.12);
+    --font-display:       'Noto Sans JP', system-ui, sans-serif;
+    --font-body:          'Noto Sans JP', system-ui, sans-serif;
+    --font-mono:          'Courier New', monospace;
+    --gradient-main:      linear-gradient(90deg, #FFCA28, #DD8C00);
+    --gradient-vert:      linear-gradient(180deg, #FFCA28, #DD8C00);
+    --slide-padding-v:    60px;
+    --slide-padding-h:    80px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #E0DDD4;
+    padding: 40px 20px;
+    font-family: var(--font-display);
+  }
+
+  .slide-outer {
+    margin: 0 auto 32px;
+    width: 1440px;
+  }
+
+  .slide-wrapper {
+    width: 1920px;
+    transform-origin: top left;
+    transform: scale(0.75);
+    margin-bottom: -270px;
+  }
+
+  .slide {
+    width: 1920px;
+    height: 1080px;
+    background: var(--color-background);
+    font-family: var(--font-display);
+    color: var(--color-text);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ===== ページ共通フレーム ===== */
+
+  /* ヘッダーバー（ページ1以外に使用） */
+  .slide-header {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 52px;
+    background: var(--color-primary);
+    display: flex;
+    align-items: center;
+    padding: 0 var(--slide-padding-h);
+    gap: 16px;
+    z-index: 10;
+  }
+  .slide-header .sec-num {
+    font-size: 16px;
+    font-weight: 900;
+    color: var(--color-text);
+  }
+  .slide-header .sec-name {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+  .slide-header .sep {
+    width: 1px;
+    height: 18px;
+    background: rgba(30,30,30,0.3);
+  }
+  .slide-header .sec-sub {
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--color-text-sub);
+  }
+
+  /* フッター */
+  .slide-footer {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-top: 2px solid var(--color-primary);
+    z-index: 10;
+  }
+  .slide-footer .footer-text {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--color-text-muted);
+  }
+  .slide-footer .page-num {
+    position: absolute;
+    right: var(--slide-padding-h);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-text-muted);
+  }
+
+  /* 左右半円装飾 */
+  .deco-circle-left {
+    position: absolute;
+    left: -120px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 360px;
+    height: 360px;
+    border-radius: 50%;
+    background: var(--color-secondary);
+    opacity: 0.7;
+    pointer-events: none;
+  }
+  .deco-circle-right {
+    position: absolute;
+    right: -120px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 360px;
+    height: 360px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    opacity: 0.25;
+    pointer-events: none;
+  }
+
+  /* コンテンツエリア（ヘッダー・フッターを除く） */
+  .slide-body {
+    position: absolute;
+    top: 52px;
+    bottom: 48px;
+    left: 0; right: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 48px var(--slide-padding-h) 36px;
+  }
+
+  /* 番号バッジ */
+  .num-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    background: var(--color-primary);
+    border-radius: 10px;
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--color-text);
+    flex-shrink: 0;
+  }
+
+  /* カード */
+  .card {
+    background: var(--color-surface);
+    border-radius: 20px;
+    padding: 40px 36px;
+    border: none;
+    box-shadow: none;
+  }
+
+
+  /* ===================== */
+  /* ページ1：デザインシステム概要 */
+  /* ===================== */
+  #page1 {
+    background: var(--color-background);
+  }
+  #page1 .p1-inner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 36px 56px 36px;
+    gap: 20px;
+  }
+  #page1 .p1-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: 14px;
+  }
+  #page1 .p1-header .ds-name {
+    font-size: 40px;
+    font-weight: 900;
+    color: var(--color-primary);
+    letter-spacing: -0.01em;
+  }
+  #page1 .p1-header .ds-meta {
+    font-size: 16px;
+    color: var(--color-text-muted);
+    font-weight: 400;
+  }
+
+  /* カラーパレット行 */
+  #page1 .palette-row {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+  }
+  .palette-sep {
+    width: 1px;
+    background: var(--color-border);
+    align-self: stretch;
+    margin: 0 4px;
+  }
+  .palette-group {
+    display: flex;
+    gap: 8px;
+  }
+  .color-card {
+    border-radius: 10px;
+    overflow: hidden;
+    width: 128px;
+  }
+  .color-swatch {
+    height: 68px;
+  }
+  .color-info {
+    padding: 7px 10px;
+    background: var(--color-surface-soft);
+  }
+  .color-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-text);
+    line-height: 1.2;
+  }
+  .color-hex {
+    font-size: 13px;
+    font-family: var(--font-mono);
+    color: var(--color-text-muted);
+    margin-top: 2px;
+  }
+
+  /* 下段3カラム */
+  #page1 .p1-bottom {
+    display: flex;
+    gap: 20px;
+    flex: 1;
+    min-height: 0;
+  }
+  #page1 .p1-col {
+    background: var(--color-surface);
+    border-radius: 16px;
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #page1 .p1-col-parts { flex: 1.6; }
+  #page1 .p1-col-typo { flex: 1.05; }
+  #page1 .p1-col-dont { flex: 1; }
+  .col-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .col-title-bar {
+    width: 5px;
+    height: 24px;
+    border-radius: 3px;
+    background: var(--color-primary);
+    flex-shrink: 0;
+  }
+  .col-title-text {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--color-text);
+  }
+
+  /* パーツグリッド */
+  .parts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 24px;
+    align-content: space-between;
+    flex: 1;
+  }
+  .part-item {}
+  .part-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    margin-bottom: 6px;
+  }
+
+  /* タイポグラフィ */
+  .typo-list {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex: 1;
+    gap: 4px;
+  }
+  .typo-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px dashed var(--color-border);
+    padding-bottom: 4px;
+  }
+  .typo-sample { color: var(--color-text); line-height: 1; }
+  .typo-spec {
+    font-size: 13px;
+    font-family: var(--font-mono);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+  .typo-font-block {
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--color-text-muted);
+    border-top: 1px solid var(--color-border);
+    padding-top: 8px;
+  }
+  .layout-block {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--color-text-muted);
+    line-height: 1.7;
+  }
+
+  /* Do / Don't */
+  .do-block, .dont-block {
+    border-radius: 12px;
+    padding: 14px 16px;
+    flex: 1;
+  }
+  .do-block { background: #F0F9E8; }
+  .dont-block { background: #FFF8E1; margin-top: 10px; }
+  .do-title, .dont-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 19px;
+    font-weight: 900;
+  }
+  .do-icon {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: #43A047;
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 900; flex-shrink: 0;
+  }
+  .dont-icon {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 900; flex-shrink: 0;
+  }
+  .do-list, .dont-list {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--color-text-sub);
+    padding-left: 4px;
+  }
+  .do-list li, .dont-list li {
+    list-style: none;
+    padding-left: 12px;
+    position: relative;
+    margin-bottom: 3px;
+  }
+  .do-list li::before { content: "✓ "; color: #43A047; font-weight: 700; }
+  .dont-list li::before { content: "✕ "; color: var(--color-accent); font-weight: 700; }
+
+</style>
+</head>
+<body>
+
+<!-- ======================== -->
+<!-- ページ1：デザインシステム概要 -->
+<!-- ======================== -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide" id="page1">
+  <div class="p1-inner">
+    <!-- ヘッダー -->
+    <div class="p1-header">
+      <div class="ds-name">WARM YELLOW DESIGN SYSTEM</div>
+      <div class="ds-meta">Style Sheet / v1.0 · 16:9</div>
+    </div>
+
+    <!-- カラーパレット行 -->
+    <div class="palette-row">
+      <!-- Brand Colors -->
+      <div class="palette-group">
+        <div class="color-card">
+          <div class="color-swatch" style="background:#FFCA28;"></div>
+          <div class="color-info"><div class="color-name">Primary</div><div class="color-hex">#FFCA28</div></div>
+        </div>
+        <div class="color-card">
+          <div class="color-swatch" style="background:#DD8C00;"></div>
+          <div class="color-info"><div class="color-name">Accent</div><div class="color-hex">#DD8C00</div></div>
+        </div>
+        <div class="color-card">
+          <div class="color-swatch" style="background:#FFF9C4;"></div>
+          <div class="color-info"><div class="color-name">Secondary</div><div class="color-hex">#FFF9C4</div></div>
+        </div>
+      </div>
+      <div class="palette-sep"></div>
+      <!-- Text Colors -->
+      <div class="palette-group">
+        <div class="color-card">
+          <div class="color-swatch" style="background:#1E1E1E;"></div>
+          <div class="color-info"><div class="color-name">Text</div><div class="color-hex">#1E1E1E</div></div>
+        </div>
+        <div class="color-card">
+          <div class="color-swatch" style="background:#3D3D3D;"></div>
+          <div class="color-info"><div class="color-name">Text Sub</div><div class="color-hex">#3D3D3D</div></div>
+        </div>
+        <div class="color-card">
+          <div class="color-swatch" style="background:#666666;"></div>
+          <div class="color-info"><div class="color-name">Text Muted</div><div class="color-hex">#666666</div></div>
+        </div>
+      </div>
+      <div class="palette-sep"></div>
+      <!-- Surface Colors -->
+      <div class="palette-group">
+        <div class="color-card">
+          <div class="color-swatch" style="background:#FEFDF7; border:1px solid rgba(0,0,0,0.06);"></div>
+          <div class="color-info"><div class="color-name">Background</div><div class="color-hex">#FEFDF7</div></div>
+        </div>
+        <div class="color-card">
+          <div class="color-swatch" style="background:#FFF9C4;"></div>
+          <div class="color-info"><div class="color-name">Surface</div><div class="color-hex">#FFF9C4</div></div>
+        </div>
+        <div class="color-card">
+          <div class="color-swatch" style="background:#FFFDE7;"></div>
+          <div class="color-info"><div class="color-name">Surface Soft</div><div class="color-hex">#FFFDE7</div></div>
+        </div>
+        <div class="color-card">
+          <div class="color-swatch" style="background:rgba(221,140,0,0.12); border:1px solid rgba(0,0,0,0.06);"></div>
+          <div class="color-info"><div class="color-name">Border</div><div class="color-hex">DD8C00/12%</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 下段3カラム -->
+    <div class="p1-bottom">
+
+      <!-- パーツ -->
+      <div class="p1-col p1-col-parts">
+        <div class="col-title">
+          <div class="col-title-bar"></div>
+          <div class="col-title-text">スライドで使うパーツ</div>
+        </div>
+        <div class="parts-grid">
+          <!-- ボタン -->
+          <div class="part-item">
+            <div class="part-label">ボタン</div>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+              <div style="background:var(--color-primary);border-radius:999px;padding:11px 28px;font-size:17px;font-weight:700;color:var(--color-text);display:inline-block;">実行する</div>
+              <div style="background:transparent;border:2px solid var(--color-primary);border-radius:999px;padding:9px 24px;font-size:17px;font-weight:700;color:var(--color-text);display:inline-block;">戻る</div>
+            </div>
+          </div>
+          <!-- 番号バッジ -->
+          <div class="part-item">
+            <div class="part-label">番号バッジ</div>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <div style="background:var(--color-primary);border-radius:8px;width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;">01</div>
+              <div style="background:var(--color-primary);border-radius:8px;width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;">02</div>
+              <div style="background:var(--color-primary);border-radius:8px;width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;">03</div>
+            </div>
+          </div>
+          <!-- タイトルバー -->
+          <div class="part-item">
+            <div class="part-label">タイトルバー（ヘッダー）</div>
+            <div style="background:var(--color-primary);border-radius:8px;padding:10px 20px;font-size:16px;font-weight:700;color:var(--color-text);">01　Section Name　｜　サブタイトル</div>
+          </div>
+          <!-- カード -->
+          <div class="part-item">
+            <div class="part-label">コンテンツカード</div>
+            <div style="background:var(--color-surface);border-radius:16px;padding:14px 18px;">
+              <div style="font-size:16px;font-weight:700;margin-bottom:4px;">カード見出し</div>
+              <div style="font-size:14px;color:var(--color-text-muted);">本文テキストが入ります。</div>
+            </div>
+          </div>
+          <!-- 箇条書き -->
+          <div class="part-item">
+            <div class="part-label">箇条書きマーカー</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div style="display:flex;align-items:center;gap:10px;"><div style="width:10px;height:10px;border-radius:50%;background:var(--color-primary);flex-shrink:0;"></div><span style="font-size:16px;">項目テキスト A</span></div>
+              <div style="display:flex;align-items:center;gap:10px;"><div style="width:10px;height:10px;border-radius:50%;background:var(--color-primary);flex-shrink:0;"></div><span style="font-size:16px;">項目テキスト B</span></div>
+              <div style="display:flex;align-items:center;gap:10px;"><div style="width:10px;height:10px;border-radius:50%;background:var(--color-primary);flex-shrink:0;"></div><span style="font-size:16px;">項目テキスト C</span></div>
+            </div>
+          </div>
+          <!-- チップ -->
+          <div class="part-item">
+            <div class="part-label">チップ / ラベル</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <div style="background:var(--color-primary);border-radius:999px;padding:6px 16px;font-size:14px;font-weight:700;">ラベルA</div>
+              <div style="background:var(--color-surface);border-radius:999px;padding:6px 16px;font-size:14px;font-weight:700;border:1.5px solid var(--color-primary);">ラベルB</div>
+            </div>
+          </div>
+          <!-- 仕切り線 -->
+          <div class="part-item">
+            <div class="part-label">仕切り線</div>
+            <div style="height:2px;background:var(--color-primary);border-radius:1px;margin:8px 0;"></div>
+            <div style="height:1px;background:var(--color-border);margin:4px 0;"></div>
+          </div>
+          <!-- ページ番号 -->
+          <div class="part-item">
+            <div class="part-label">ページ番号</div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="color:var(--color-text-muted);font-size:18px;font-weight:400;">|</span>
+              <span style="font-size:18px;font-weight:700;color:var(--color-text-muted);">04</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- タイポグラフィ -->
+      <div class="p1-col p1-col-typo">
+        <div class="col-title">
+          <div class="col-title-bar"></div>
+          <div class="col-title-text">タイポグラフィ</div>
+        </div>
+        <div class="typo-list">
+          <div class="typo-row">
+            <div class="typo-sample" style="font-size:52px;font-weight:900;line-height:1;letter-spacing:-0.02em;">表紙タイトル</div>
+            <div class="typo-spec">900 / 100px</div>
+          </div>
+          <div class="typo-row">
+            <div class="typo-sample" style="font-size:36px;font-weight:900;line-height:1;">大見出し H1</div>
+            <div class="typo-spec">900 / 64px</div>
+          </div>
+          <div class="typo-row">
+            <div class="typo-sample" style="font-size:26px;font-weight:700;line-height:1;">中見出し H2</div>
+            <div class="typo-spec">700 / 44px</div>
+          </div>
+          <div class="typo-row">
+            <div class="typo-sample" style="font-size:20px;font-weight:700;line-height:1;">小見出し H3</div>
+            <div class="typo-spec">700 / 32px</div>
+          </div>
+          <div class="typo-row">
+            <div class="typo-sample" style="font-size:17px;font-weight:400;line-height:1;">本文（大）Body L</div>
+            <div class="typo-spec">400 / 24px</div>
+          </div>
+          <div class="typo-row">
+            <div class="typo-sample" style="font-size:14px;font-weight:400;line-height:1;">本文（小）Body S</div>
+            <div class="typo-spec">400 / 20px</div>
+          </div>
+          <div class="typo-row">
+            <div class="typo-sample" style="font-size:12px;font-weight:400;color:var(--color-text-muted);line-height:1;">キャプション Caption</div>
+            <div class="typo-spec">400 / 14px</div>
+          </div>
+        </div>
+        <div class="typo-font-block">
+          フォント：Noto Sans JP（400 / 700 / 900）
+        </div>
+        <div class="layout-block">
+          レイアウト：16:9 / 1920×1080px<br>
+          余白：上下 60px・左右 80px<br>
+          整列：左寄せ（セクション：中央）
+        </div>
+      </div>
+
+      <!-- Do / Don't -->
+      <div class="p1-col p1-col-dont">
+        <div class="col-title">
+          <div class="col-title-bar"></div>
+          <div class="col-title-text">Do &amp; Don't</div>
+        </div>
+        <div class="do-block" style="flex:1;">
+          <div class="do-title">
+            <div class="do-icon">✓</div>
+            <span style="color:#2E7D32;">Do</span>
+          </div>
+          <ul class="do-list">
+            <li>イエローを主役に温かみを前面に出す</li>
+            <li>全幅ヘッダーバーで区切りを明確に</li>
+            <li>ウェイト差（900 vs 400）でヒエラルキーを表現</li>
+            <li>カード背景はクリームイエローを使う</li>
+          </ul>
+        </div>
+        <div class="dont-block" style="flex:1;">
+          <div class="dont-title">
+            <div class="dont-icon">✕</div>
+            <span style="color:#BF6000;">Don't</span>
+          </div>
+          <ul class="dont-list">
+            <li>白（#fff）を背景・カードに使わない</li>
+            <li>青・赤・紫などの寒色をメインにしない</li>
+            <li>複数の派手なグラデーションを混在させない</li>
+            <li>重い影やボーダーをカードに加えない</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+</div>
+</div>
+
+
+<!-- ======================== -->
+<!-- ページ2：表紙            -->
+<!-- ======================== -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide" id="page2">
+  <!-- 右上の大きな円 -->
+  <div style="position:absolute;top:-160px;right:-140px;width:680px;height:680px;border-radius:50%;background:#FFCA28;pointer-events:none;"></div>
+  <!-- 右中央の濃いオレンジ円 -->
+  <div style="position:absolute;top:160px;right:-100px;width:540px;height:540px;border-radius:50%;background:#DD8C00;pointer-events:none;"></div>
+  <!-- 右下の薄いイエロー円 -->
+  <div style="position:absolute;bottom:-160px;right:80px;width:480px;height:480px;border-radius:50%;background:#FFF176;pointer-events:none;"></div>
+  <!-- 左下のクリームイエロー円 -->
+  <div style="position:absolute;bottom:-120px;left:-100px;width:400px;height:400px;border-radius:50%;background:#FFF9C4;pointer-events:none;"></div>
+
+  <!-- コンテンツ -->
+  <div style="position:absolute;left:100px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;max-width:820px;">
+    <div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:36px;">
+      <div style="width:52px;height:52px;background:var(--color-primary);border-radius:14px;display:flex;align-items:center;justify-content:center;">
+        <div style="width:28px;height:28px;background:var(--color-text);border-radius:50%;"></div>
+      </div>
+      <span style="font-size:22px;font-weight:900;color:var(--color-text);">DESIGN SYSTEM</span>
+    </div>
+    <div style="font-size:16px;font-weight:700;letter-spacing:0.24em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:20px;">Business Presentation</div>
+    <h1 style="font-size:108px;font-weight:900;line-height:1.02;letter-spacing:-0.03em;color:var(--color-text);">年度<br>事業計画</h1>
+    <div style="font-size:30px;font-weight:500;color:var(--color-text-sub);margin-top:28px;">サンプル株式会社 — 2025年度 全社発表資料</div>
+    <div style="width:280px;height:8px;border-radius:999px;background:var(--color-primary);margin:40px 0;"></div>
+    <div style="font-size:18px;font-weight:500;color:var(--color-text-muted);">2025年04月01日　●　サンプル株式会社</div>
+  </div>
+
+  <!-- フッター（表紙のみ簡略版） -->
+  <div style="position:absolute;bottom:0;left:0;right:0;height:48px;display:flex;align-items:center;justify-content:center;border-top:2px solid var(--color-primary);">
+    <span style="font-size:14px;color:var(--color-text-muted);">Copyright © サンプル株式会社</span>
+  </div>
+</section>
+</div>
+</div>
+
+
+<!-- ======================== -->
+<!-- ページ3：セクションタイトル -->
+<!-- ======================== -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide" id="page3">
+  <!-- 背景全面イエロー -->
+  <div style="position:absolute;inset:0;background:var(--color-primary);"></div>
+  <!-- 背景装飾円 -->
+  <div style="position:absolute;top:-200px;right:-200px;width:700px;height:700px;border-radius:50%;background:rgba(255,255,255,0.18);pointer-events:none;"></div>
+  <div style="position:absolute;bottom:-180px;left:-150px;width:550px;height:550px;border-radius:50%;background:rgba(221,140,0,0.20);pointer-events:none;"></div>
+
+  <!-- 中央カード -->
+  <div style="position:absolute;inset:60px;background:#FFFFFF;border-radius:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+    <div style="background:var(--color-primary);border-radius:14px;width:72px;height:72px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:var(--color-text);margin-bottom:28px;">01</div>
+    <h1 style="font-size:96px;font-weight:900;letter-spacing:-0.03em;line-height:1.04;color:var(--color-text);">Overview</h1>
+    <div style="font-size:28px;font-weight:700;color:var(--color-accent);margin-top:14px;">事業概要</div>
+  </div>
+
+  <!-- フッター（黄色背景上） -->
+  <div style="position:absolute;bottom:0;left:0;right:0;height:48px;display:flex;align-items:center;justify-content:center;z-index:10;">
+    <span style="font-size:14px;color:rgba(30,30,30,0.5);">Copyright © サンプル株式会社</span>
+  </div>
+</section>
+</div>
+</div>
+
+
+<!-- ======================== -->
+<!-- ページ4：箇条書き        -->
+<!-- ======================== -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide" id="page4">
+  <div class="deco-circle-left"></div>
+  <div class="deco-circle-right"></div>
+
+  <!-- ヘッダー -->
+  <div class="slide-header">
+    <span class="sec-num">01</span>
+    <span class="sec-name">Overview</span>
+    <div class="sep"></div>
+    <span class="sec-sub">成長を支える3つの柱</span>
+  </div>
+
+  <!-- ボディ -->
+  <div class="slide-body">
+    <div style="margin-bottom:36px;">
+      <h1 style="font-size:64px;font-weight:900;letter-spacing:-0.02em;color:var(--color-text);">成長を支える3つの柱</h1>
+      <div style="font-size:24px;font-weight:400;color:var(--color-text-muted);margin-top:8px;">持続的な価値創出のための重点領域</div>
+    </div>
+
+    <div style="display:flex;gap:28px;flex:1;min-height:0;">
+      <!-- カード1 -->
+      <div style="flex:1;background:var(--color-surface);border-radius:20px;padding:44px 36px;display:flex;flex-direction:column;">
+        <div style="background:var(--color-primary);border-radius:10px;width:64px;height:64px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:var(--color-text);margin-bottom:24px;">01</div>
+        <div style="font-size:32px;font-weight:900;color:var(--color-text);margin-bottom:16px;">顧客体験の向上</div>
+        <div style="font-size:21px;color:var(--color-text-muted);line-height:1.65;flex:1;">ユーザーインターフェースの改善と、問い合わせ対応プロセスの効率化により、顧客満足度のさらなる向上を目指します。</div>
+      </div>
+      <!-- カード2 -->
+      <div style="flex:1;background:var(--color-surface);border-radius:20px;padding:44px 36px;display:flex;flex-direction:column;">
+        <div style="background:var(--color-primary);border-radius:10px;width:64px;height:64px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:var(--color-text);margin-bottom:24px;">02</div>
+        <div style="font-size:32px;font-weight:900;color:var(--color-text);margin-bottom:16px;">業務効率化の推進</div>
+        <div style="font-size:21px;color:var(--color-text-muted);line-height:1.65;flex:1;">社内ワークフローのデジタル化を加速し、各部門の生産性を高めます。繰り返し業務の自動化で戦略業務への集中を実現します。</div>
+      </div>
+      <!-- カード3 -->
+      <div style="flex:1;background:var(--color-surface);border-radius:20px;padding:44px 36px;display:flex;flex-direction:column;">
+        <div style="background:var(--color-primary);border-radius:10px;width:64px;height:64px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:var(--color-text);margin-bottom:24px;">03</div>
+        <div style="font-size:32px;font-weight:900;color:var(--color-text);margin-bottom:16px;">新規事業の創出</div>
+        <div style="font-size:21px;color:var(--color-text-muted);line-height:1.65;flex:1;">市場ニーズの変化を先読みし、隣接領域への展開と新規パートナーシップを通じて、収益源の多様化を推進します。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- フッター -->
+  <div class="slide-footer">
+    <span class="footer-text">Copyright © サンプル株式会社</span>
+    <span class="page-num">| 04</span>
+  </div>
+</section>
+</div>
+</div>
+
+
+<!-- ======================== -->
+<!-- ページ5：グラフ          -->
+<!-- ======================== -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide" id="page5">
+  <div class="deco-circle-left"></div>
+  <div class="deco-circle-right"></div>
+
+  <!-- ヘッダー -->
+  <div class="slide-header">
+    <span class="sec-num">02</span>
+    <span class="sec-name">Performance</span>
+    <div class="sep"></div>
+    <span class="sec-sub">四半期業績の推移</span>
+  </div>
+
+  <div class="slide-body">
+    <div style="margin-bottom:32px;">
+      <h1 style="font-size:64px;font-weight:900;letter-spacing:-0.02em;color:var(--color-text);">四半期業績の推移</h1>
+      <div style="font-size:24px;font-weight:400;color:var(--color-text-muted);margin-top:8px;">2024年度 売上高・構成比レポート</div>
+    </div>
+
+    <div style="display:flex;gap:40px;flex:1;min-height:0;">
+
+      <!-- 棒グラフ -->
+      <div style="flex:1.3;background:var(--color-surface-soft);border-radius:20px;padding:36px;display:flex;flex-direction:column;">
+        <div style="font-size:20px;font-weight:700;margin-bottom:24px;color:var(--color-text);">売上高推移（百万円）</div>
+        <div style="display:flex;align-items:flex-end;gap:24px;flex:1;min-height:0;">
+          <!-- Q1 -->
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;">
+            <div style="font-size:18px;font-weight:700;color:var(--color-text-muted);">820</div>
+            <div style="width:100%;height:200px;background:rgba(255,202,40,0.35);border-radius:8px 8px 0 0;"></div>
+            <div style="font-size:17px;font-weight:500;color:var(--color-text-muted);">Q1</div>
+          </div>
+          <!-- Q2 -->
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;">
+            <div style="font-size:18px;font-weight:700;color:var(--color-text-muted);">940</div>
+            <div style="width:100%;height:260px;background:rgba(255,202,40,0.5);border-radius:8px 8px 0 0;"></div>
+            <div style="font-size:17px;font-weight:500;color:var(--color-text-muted);">Q2</div>
+          </div>
+          <!-- Q3 -->
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;">
+            <div style="font-size:18px;font-weight:700;color:var(--color-text-muted);">1,080</div>
+            <div style="width:100%;height:320px;background:rgba(255,202,40,0.65);border-radius:8px 8px 0 0;"></div>
+            <div style="font-size:17px;font-weight:500;color:var(--color-text-muted);">Q3</div>
+          </div>
+          <!-- Q4 強調 -->
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;">
+            <div style="font-size:18px;font-weight:900;color:var(--color-text);">1,320</div>
+            <div style="width:100%;height:400px;background:var(--color-primary);border-radius:8px 8px 0 0;box-shadow:0 4px 16px rgba(255,202,40,0.45);"></div>
+            <div style="font-size:17px;font-weight:700;color:var(--color-text);">Q4</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ドーナツグラフ -->
+      <div style="flex:1;background:var(--color-surface-soft);border-radius:20px;padding:36px;display:flex;flex-direction:column;">
+        <div style="font-size:20px;font-weight:700;margin-bottom:24px;color:var(--color-text);">売上構成比</div>
+        <div style="display:flex;align-items:center;gap:36px;flex:1;min-height:0;">
+          <!-- ドーナツ -->
+          <div style="position:relative;flex-shrink:0;">
+            <div style="width:240px;height:240px;border-radius:50%;background:conic-gradient(#FFCA28 0% 42%, #DD8C00 42% 66%, #FFF9C4 66% 83%, #666666 83% 100%);"></div>
+            <div style="position:absolute;inset:40px;background:var(--color-background);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+              <div style="font-size:36px;font-weight:900;color:var(--color-text);">42%</div>
+              <div style="font-size:15px;color:var(--color-text-muted);">主力製品</div>
+            </div>
+          </div>
+          <!-- 凡例 -->
+          <div style="display:flex;flex-direction:column;gap:16px;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:16px;height:16px;border-radius:4px;background:#FFCA28;flex-shrink:0;"></div>
+              <div><div style="font-size:17px;font-weight:700;">主力製品</div><div style="font-size:15px;color:var(--color-text-muted);">42%</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:16px;height:16px;border-radius:4px;background:#DD8C00;flex-shrink:0;"></div>
+              <div><div style="font-size:17px;font-weight:700;">サービス</div><div style="font-size:15px;color:var(--color-text-muted);">24%</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:16px;height:16px;border-radius:4px;background:#FFF9C4;border:1.5px solid #ccc;flex-shrink:0;"></div>
+              <div><div style="font-size:17px;font-weight:700;">ライセンス</div><div style="font-size:15px;color:var(--color-text-muted);">17%</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:16px;height:16px;border-radius:4px;background:#666666;flex-shrink:0;"></div>
+              <div><div style="font-size:17px;font-weight:700;">その他</div><div style="font-size:15px;color:var(--color-text-muted);">17%</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="slide-footer">
+    <span class="footer-text">Copyright © サンプル株式会社</span>
+    <span class="page-num">| 05</span>
+  </div>
+</section>
+</div>
+</div>
+
+
+<!-- ======================== -->
+<!-- ページ6：まとめ          -->
+<!-- ======================== -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide" id="page6">
+  <div class="deco-circle-left"></div>
+  <div class="deco-circle-right"></div>
+
+  <!-- ヘッダー -->
+  <div class="slide-header">
+    <span class="sec-num">05</span>
+    <span class="sec-name">Summary</span>
+    <div class="sep"></div>
+    <span class="sec-sub">今後の取り組み</span>
+  </div>
+
+  <div class="slide-body">
+    <div style="margin-bottom:32px;">
+      <h1 style="font-size:64px;font-weight:900;letter-spacing:-0.02em;color:var(--color-text);">今後の取り組み</h1>
+      <div style="font-size:24px;font-weight:400;color:var(--color-text-muted);margin-top:8px;">次のステージに向けた3つのアクション</div>
+    </div>
+
+    <div style="display:flex;gap:28px;flex:1;min-height:0;">
+      <!-- カード1 -->
+      <div style="flex:1;background:var(--color-surface);border-radius:20px;padding:48px 36px;display:flex;flex-direction:column;">
+        <div style="width:72px;height:72px;border-radius:18px;background:rgba(255,202,40,0.25);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:900;color:var(--color-accent);">強</div>
+        <div style="font-size:32px;font-weight:900;color:var(--color-text);margin-top:22px;margin-bottom:14px;letter-spacing:-0.01em;">強みの更なる強化</div>
+        <div style="font-size:21px;color:var(--color-text-muted);line-height:1.65;flex:1;">既存の強みをさらに磨き上げ、競合との差別化を明確にします。顧客ロイヤルティの向上につながる施策を最優先で推進します。</div>
+      </div>
+      <!-- カード2 -->
+      <div style="flex:1;background:var(--color-surface);border-radius:20px;padding:48px 36px;display:flex;flex-direction:column;">
+        <div style="width:72px;height:72px;border-radius:18px;background:rgba(221,140,0,0.15);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:900;color:var(--color-accent);">新</div>
+        <div style="font-size:32px;font-weight:900;color:var(--color-text);margin-top:22px;margin-bottom:14px;letter-spacing:-0.01em;">新市場への参入</div>
+        <div style="font-size:21px;color:var(--color-text-muted);line-height:1.65;flex:1;">隣接市場のリサーチを深め、戦略的パートナーとの連携で新たな収益領域を開拓します。小さく始めて素早く検証します。</div>
+      </div>
+      <!-- カード3 -->
+      <div style="flex:1;background:var(--color-surface);border-radius:20px;padding:48px 36px;display:flex;flex-direction:column;">
+        <div style="width:72px;height:72px;border-radius:18px;background:rgba(255,202,40,0.2);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:900;color:var(--color-accent);">基</div>
+        <div style="font-size:32px;font-weight:900;color:var(--color-text);margin-top:22px;margin-bottom:14px;letter-spacing:-0.01em;">組織基盤の整備</div>
+        <div style="font-size:21px;color:var(--color-text-muted);line-height:1.65;flex:1;">採用・育成・カルチャー醸成を通じて、持続的な成長を支える組織づくりを進めます。チームの多様性を活かします。</div>
+      </div>
+    </div>
+
+    <!-- CTAボタン -->
+    <div style="display:flex;justify-content:center;margin-top:40px;">
+      <div style="background:var(--color-primary);border-radius:999px;padding:20px 80px;font-size:28px;font-weight:900;color:var(--color-text);box-shadow:0 6px 20px rgba(221,140,0,0.30);">ともに、次のステージへ</div>
+    </div>
+  </div>
+
+  <div class="slide-footer">
+    <span class="footer-text">Copyright © サンプル株式会社</span>
+    <span class="page-num">| 06</span>
+  </div>
+</section>
+</div>
+</div>
+
+</body>
+</html>

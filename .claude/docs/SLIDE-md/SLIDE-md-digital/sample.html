@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SLIDE.md Sample — ネイビー行政スタイル</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --color-primary:    #0017b6;
+    --color-secondary:  #505cff;
+    --color-background: #ffffff;
+    --color-accent:     #9bb9f8;
+    --color-text:       #0017b6;
+    --color-text-sub:   #505cff;
+    --color-text-muted: #757575;
+    --color-surface:    #ffffff;
+    --color-bg-light:   #e0e9fc;
+    --color-bg-card:    #c5d6fa;
+    --font-display:     'Noto Sans JP', system-ui, sans-serif;
+    --slide-padding-v:  100px;
+    --slide-padding-h:  106px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #d0d4de;
+    padding: 40px 20px;
+    font-family: var(--font-display);
+  }
+
+  .slide-outer {
+    margin: 0 auto 32px;
+    width: 1440px;
+  }
+
+  .slide-wrapper {
+    width: 1920px;
+    transform-origin: top left;
+    transform: scale(0.75);
+    margin-bottom: -270px;
+  }
+
+  .slide {
+    width: 1920px;
+    height: 1080px;
+    background: var(--color-background);
+    font-family: var(--font-display);
+    color: var(--color-text);
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ========== PAGE 1: DESIGN SYSTEM ========== */
+  .ds-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 36px 56px 24px;
+    border-bottom: 2px solid #e0e9fc;
+  }
+  .ds-title-name {
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--color-primary);
+    letter-spacing: -0.01em;
+  }
+  .ds-title-meta {
+    font-size: 17px;
+    color: #9aa0a6;
+    font-weight: 400;
+  }
+
+  .ds-palette-section {
+    padding: 20px 56px 16px;
+  }
+  .ds-palette-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .ds-palette-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr) 24px repeat(3, 1fr);
+    gap: 0 10px;
+  }
+  .ds-color-card {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0,23,182,0.08), 0 2px 6px rgba(0,23,182,0.05);
+  }
+  .ds-swatch { height: 56px; }
+  .ds-color-info { padding: 6px 8px; background: #fff; }
+  .ds-color-name { font-size: 13px; font-weight: 700; color: var(--color-text); line-height: 1.2; }
+  .ds-color-hex { font-size: 11px; color: var(--color-text-muted); font-family: monospace; margin-top: 1px; }
+
+  .ds-columns {
+    display: flex;
+    gap: 16px;
+    padding: 0 56px 28px;
+    flex: 1;
+    min-height: 0;
+    margin-top: 16px;
+  }
+  .ds-col-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px 28px;
+    box-shadow: 0 1px 3px rgba(0,23,182,0.08), 0 4px 16px rgba(0,23,182,0.05);
+    display: flex;
+    flex-direction: column;
+  }
+  .ds-col-left { flex: 1.6; }
+  .ds-col-mid  { flex: 1.05; }
+  .ds-col-right{ flex: 1; }
+
+  .ds-col-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .ds-col-bar {
+    width: 5px;
+    height: 24px;
+    border-radius: 3px;
+    background: var(--color-primary);
+    flex-shrink: 0;
+  }
+  .ds-col-title-text {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--color-primary);
+  }
+
+  /* Parts grid */
+  .parts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 20px;
+    align-content: space-between;
+    flex: 1;
+  }
+  .part-item { display: flex; flex-direction: column; gap: 6px; }
+  .part-label { font-size: 11px; font-weight: 700; color: var(--color-text-muted); letter-spacing: 0.05em; text-transform: uppercase; }
+
+  .btn-primary {
+    display: inline-block;
+    padding: 10px 22px;
+    background: var(--color-primary);
+    color: #fff;
+    border-radius: 4px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .btn-secondary {
+    display: inline-block;
+    padding: 10px 22px;
+    background: transparent;
+    color: var(--color-primary);
+    border: 2px solid var(--color-primary);
+    border-radius: 4px;
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .title-bar-demo {
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--color-primary);
+  }
+  .title-bar-demo span { font-size: 18px; font-weight: 700; color: var(--color-primary); }
+  .chip-demo { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 2px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .chip-a { background: var(--color-primary); color: #fff; }
+  .chip-b { background: var(--color-bg-light); color: var(--color-primary); }
+  .chip-c { background: var(--color-bg-card); color: var(--color-primary); }
+  .numbered-list { display: flex; flex-direction: column; gap: 5px; }
+  .numbered-item { display: flex; align-items: flex-start; gap: 8px; }
+  .num-badge {
+    width: 22px; height: 22px; border-radius: 2px;
+    background: var(--color-primary); color: #fff;
+    font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .num-text { font-size: 14px; color: var(--color-text); line-height: 1.4; }
+  .data-bars { display: flex; align-items: flex-end; gap: 6px; height: 48px; }
+  .data-bar { border-radius: 2px 2px 0 0; }
+  .divider-demo { width: 100%; height: 2px; background: var(--color-primary); }
+  .pg-num-demo {
+    font-size: 18px; font-weight: 700; color: var(--color-primary); font-family: monospace;
+  }
+
+  /* Typography section */
+  .type-scale { display: flex; flex-direction: column; justify-content: space-between; flex: 1; gap: 4px; }
+  .type-row { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid #e0e9fc; padding-bottom: 6px; }
+  .type-sample { font-weight: 700; color: var(--color-primary); line-height: 1; }
+  .type-meta { font-size: 11px; color: var(--color-text-muted); text-align: right; }
+  .font-confirm {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: var(--color-bg-light);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+  }
+  .layout-info {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .layout-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    padding: 4px 0;
+    border-bottom: 1px dotted #c5d6fa;
+  }
+  .layout-key { color: var(--color-text-muted); }
+  .layout-val { font-weight: 700; color: var(--color-primary); font-family: monospace; }
+
+  /* Do/Don't */
+  .do-section {
+    flex: 1;
+    background: #e8f0fe;
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .dont-section {
+    flex: 1;
+    background: #fce8e6;
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .do-label { display: flex; align-items: center; gap: 8px; }
+  .do-icon {
+    width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 700; flex-shrink: 0;
+  }
+  .do-icon-ok { background: #1a73e8; color: #fff; }
+  .do-icon-ng { background: #d93025; color: #fff; }
+  .do-title { font-size: 18px; font-weight: 700; }
+  .do-title-ok { color: #1a73e8; }
+  .do-title-ng { color: #d93025; }
+  .do-items { display: flex; flex-direction: column; gap: 5px; }
+  .do-item { font-size: 14px; line-height: 1.5; color: #333; display: flex; gap: 6px; }
+  .do-item::before { content: "•"; flex-shrink: 0; }
+
+  /* ========== PAGES 2–6 COMMON ========== */
+  .slide-navy {
+    background: var(--color-primary);
+    color: #fff;
+  }
+
+  /* ========== PAGE 2: COVER ========== */
+  .cover-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    padding: 0 200px;
+  }
+  .cover-emblem {
+    width: 100px;
+    height: 100px;
+    border-radius: 8px;
+    background: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 40px;
+  }
+  .cover-emblem svg { width: 56px; height: 56px; }
+  .cover-eyebrow {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #9aa0a6;
+    margin-bottom: 20px;
+  }
+  .cover-title {
+    font-size: 96px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    color: var(--color-primary);
+  }
+  .cover-subtitle {
+    font-size: 30px;
+    font-weight: 400;
+    color: var(--color-text-muted);
+    margin-top: 28px;
+  }
+  .cover-divider {
+    width: 280px;
+    height: 3px;
+    background: var(--color-primary);
+    margin: 44px 0;
+    border-radius: 2px;
+  }
+  .cover-meta {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .cover-dot { color: #c5d6fa; }
+
+  /* ========== PAGE 3: SECTION ========== */
+  .section-inner {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+    padding: 0 140px;
+    position: relative;
+  }
+  .section-bg-num {
+    position: absolute;
+    right: 90px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 400px;
+    font-weight: 700;
+    line-height: 1;
+    opacity: 0.08;
+    color: #fff;
+    pointer-events: none;
+    user-select: none;
+    letter-spacing: -0.05em;
+  }
+  .section-content {
+    display: flex;
+    align-items: stretch;
+    gap: 32px;
+  }
+  .section-vbar {
+    width: 10px;
+    border-radius: 5px;
+    background: #fff;
+    opacity: 0.7;
+    flex-shrink: 0;
+  }
+  .section-texts { display: flex; flex-direction: column; gap: 16px; }
+  .section-num-label {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.24em;
+    color: rgba(255,255,255,0.65);
+    text-transform: uppercase;
+  }
+  .section-h1 {
+    font-size: 88px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.06;
+    color: #fff;
+  }
+  .section-desc {
+    font-size: 24px;
+    font-weight: 400;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.6;
+    max-width: 820px;
+  }
+
+  /* ========== PAGE 4: BULLETS ========== */
+  .content-inner {
+    display: flex;
+    flex-direction: column;
+    padding: var(--slide-padding-v) var(--slide-padding-h);
+    height: 100%;
+  }
+  .content-heading {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+  .content-underline {
+    height: 2px;
+    background: var(--color-primary);
+    margin-bottom: 8px;
+    margin-left: 0;
+    width: 100%;
+  }
+  .h-underline-bar {
+    height: 2px;
+    background: var(--color-primary);
+    width: 100%;
+    margin-bottom: 14px;
+  }
+  .content-h1 {
+    font-size: 52px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--color-primary);
+    line-height: 1.1;
+  }
+  .content-sub {
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--color-text-muted);
+    margin-bottom: 48px;
+  }
+  .list-area {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    flex: 1;
+    min-height: 0;
+  }
+  .list-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    background: var(--color-bg-light);
+    border-radius: 4px;
+    padding: 22px 28px;
+    flex: 1;
+  }
+  .list-num {
+    width: 48px; height: 48px;
+    border-radius: 4px;
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 22px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .list-text { flex: 1; }
+  .list-title { font-size: 26px; font-weight: 700; color: var(--color-primary); margin-bottom: 6px; }
+  .list-desc { font-size: 18px; color: var(--color-text-muted); line-height: 1.55; }
+
+  /* ========== PAGE 5: CHART ========== */
+  .chart-area {
+    display: flex;
+    gap: 36px;
+    flex: 1;
+    min-height: 0;
+    margin-top: 40px;
+  }
+  .chart-card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 36px;
+    box-shadow: 0 1px 3px rgba(0,23,182,0.08), 0 4px 16px rgba(0,23,182,0.05);
+    display: flex;
+    flex-direction: column;
+  }
+  .chart-title { font-size: 22px; font-weight: 700; color: var(--color-primary); margin-bottom: 24px; }
+  .bar-chart-area {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    gap: 20px;
+    padding-top: 16px;
+  }
+  .bar-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+  }
+  .bar-value { font-size: 15px; font-weight: 700; color: var(--color-primary); }
+  .bar-rect { width: 100%; border-radius: 3px 3px 0 0; }
+  .bar-label { font-size: 14px; color: var(--color-text-muted); }
+  .donut-area {
+    flex: 1;
+    display: flex;
+    gap: 36px;
+    align-items: center;
+    justify-content: center;
+  }
+  .donut-wrap { position: relative; width: 260px; height: 260px; }
+  .donut-svg { width: 100%; height: 100%; }
+  .donut-center {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+  .donut-big { font-size: 42px; font-weight: 700; color: var(--color-primary); line-height: 1; }
+  .donut-small { font-size: 16px; color: var(--color-text-muted); margin-top: 4px; }
+  .donut-legend { display: flex; flex-direction: column; gap: 14px; }
+  .legend-item { display: flex; align-items: center; gap: 12px; }
+  .legend-dot { width: 14px; height: 14px; border-radius: 2px; flex-shrink: 0; }
+  .legend-label { font-size: 16px; color: var(--color-text); }
+  .legend-val { font-size: 16px; font-weight: 700; color: var(--color-primary); margin-left: auto; }
+
+  /* ========== PAGE 6: SUMMARY ========== */
+  .cards-area {
+    display: flex;
+    gap: 32px;
+    flex: 1;
+    min-height: 0;
+    margin-top: 40px;
+  }
+  .summary-card {
+    flex: 1;
+    background: #fff;
+    border-radius: 8px;
+    padding: 40px 36px;
+    box-shadow: 0 1px 3px rgba(0,23,182,0.08), 0 4px 16px rgba(0,23,182,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .card-icon {
+    width: 64px; height: 64px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: 700;
+  }
+  .card-icon-a { background: #e0e9fc; color: var(--color-primary); }
+  .card-icon-b { background: #dde0ff; color: var(--color-secondary); }
+  .card-icon-c { background: #dce8fb; color: #2c5fcc; }
+  .card-h { font-size: 28px; font-weight: 700; color: var(--color-primary); letter-spacing: -0.01em; }
+  .card-p { font-size: 18px; color: var(--color-text-muted); line-height: 1.6; flex: 1; }
+  .cta-area { display: flex; justify-content: center; margin-top: 48px; }
+  .cta-btn {
+    padding: 16px 52px;
+    border-radius: 4px;
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    box-shadow: 0 4px 14px rgba(0,23,182,0.35);
+  }
+</style>
+</head>
+<body>
+
+<!-- ================================================
+     PAGE 1: DESIGN SYSTEM OVERVIEW
+     ================================================ -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide" style="display:flex;flex-direction:column;padding:0;background:#f8f9fc;">
+
+  <!-- Header -->
+  <div class="ds-header">
+    <div class="ds-title-name">Navy Formal — Design System</div>
+    <div class="ds-title-meta">Style Sheet / v1.0 · 16:9</div>
+  </div>
+
+  <!-- Color Palette -->
+  <div class="ds-palette-section">
+    <div class="ds-palette-label">Color Palette</div>
+    <div class="ds-palette-grid">
+      <!-- ブランドカラー 7色 -->
+      <div class="ds-color-card"><div class="ds-swatch" style="background:#0017b6;"></div><div class="ds-color-info"><div class="ds-color-name">Primary</div><div class="ds-color-hex">#0017b6</div></div></div>
+      <div class="ds-color-card"><div class="ds-swatch" style="background:#505cff;"></div><div class="ds-color-info"><div class="ds-color-name">Secondary</div><div class="ds-color-hex">#505cff</div></div></div>
+      <div class="ds-color-card"><div class="ds-swatch" style="background:#9bb9f8;"></div><div class="ds-color-info"><div class="ds-color-name">Accent</div><div class="ds-color-hex">#9bb9f8</div></div></div>
+      <div class="ds-color-card"><div class="ds-swatch" style="background:#e0e9fc;"></div><div class="ds-color-info"><div class="ds-color-name">BG Light</div><div class="ds-color-hex">#e0e9fc</div></div></div>
+      <div class="ds-color-card"><div class="ds-swatch" style="background:#c5d6fa;"></div><div class="ds-color-info"><div class="ds-color-name">BG Card</div><div class="ds-color-hex">#c5d6fa</div></div></div>
+      <div class="ds-color-card"><div class="ds-swatch" style="background:#ffffff;border:1px solid #e0e9fc;"></div><div class="ds-color-info"><div class="ds-color-name">Background</div><div class="ds-color-hex">#ffffff</div></div></div>
+      <div class="ds-color-card"><div class="ds-swatch" style="background:#757575;"></div><div class="ds-color-info"><div class="ds-color-name">Text Muted</div><div class="ds-color-hex">#757575</div></div></div>
+      <!-- spacer -->
+      <div></div>
+      <!-- ベース 3色 -->
+      <div class="ds-color-card"><div class="ds-swatch" style="background:#0017b6;"></div><div class="ds-color-info"><div class="ds-color-name">Text</div><div class="ds-color-hex">#0017b6</div></div></div>
+      <div class="ds-color-card"><div class="ds-swatch" style="background:#505cff;"></div><div class="ds-color-info"><div class="ds-color-name">Text Sub</div><div class="ds-color-hex">#505cff</div></div></div>
+      <div class="ds-color-card"><div class="ds-swatch" style="background:#000000;"></div><div class="ds-color-info"><div class="ds-color-name">Black</div><div class="ds-color-hex">#000000</div></div></div>
+    </div>
+  </div>
+
+  <!-- Bottom 3 columns -->
+  <div class="ds-columns" style="flex:1;min-height:0;">
+
+    <!-- Left: Parts -->
+    <div class="ds-col-card ds-col-left">
+      <div class="ds-col-title">
+        <div class="ds-col-bar"></div>
+        <div class="ds-col-title-text">スライドで使うパーツ</div>
+      </div>
+      <div class="parts-grid" style="flex:1;">
+        <!-- ボタン -->
+        <div class="part-item">
+          <div class="part-label">Button</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <div class="btn-primary">送信する</div>
+            <div class="btn-secondary">詳細へ</div>
+          </div>
+        </div>
+        <!-- タイトルバー -->
+        <div class="part-item">
+          <div class="part-label">Title Bar</div>
+          <div class="title-bar-demo"><span>重点施策の概要</span></div>
+        </div>
+        <!-- 番号付きリスト -->
+        <div class="part-item">
+          <div class="part-label">Numbered List</div>
+          <div class="numbered-list">
+            <div class="numbered-item"><div class="num-badge">1</div><div class="num-text">デジタル基盤の整備</div></div>
+            <div class="numbered-item"><div class="num-badge">2</div><div class="num-text">行政手続のオンライン化</div></div>
+          </div>
+        </div>
+        <!-- チップ/ラベル -->
+        <div class="part-item">
+          <div class="part-label">Chip / Label</div>
+          <div class="chip-demo">
+            <span class="chip chip-a">主要施策</span>
+            <span class="chip chip-b">進行中</span>
+            <span class="chip chip-c">完了</span>
+          </div>
+        </div>
+        <!-- データバー -->
+        <div class="part-item">
+          <div class="part-label">Data Bar</div>
+          <div class="data-bars">
+            <div class="data-bar" style="flex:1;height:28px;background:#9bb9f8;"></div>
+            <div class="data-bar" style="flex:1;height:38px;background:#505cff;"></div>
+            <div class="data-bar" style="flex:1;height:32px;background:#9bb9f8;"></div>
+            <div class="data-bar" style="flex:1;height:48px;background:#0017b6;"></div>
+            <div class="data-bar" style="flex:1;height:42px;background:#0017b6;"></div>
+          </div>
+        </div>
+        <!-- カード -->
+        <div class="part-item">
+          <div class="part-label">Card</div>
+          <div style="background:#e0e9fc;border-radius:4px;padding:10px 14px;">
+            <div style="font-size:13px;font-weight:700;color:#0017b6;">達成率</div>
+            <div style="font-size:22px;font-weight:700;color:#0017b6;">87.4%</div>
+          </div>
+        </div>
+        <!-- 仕切り線 -->
+        <div class="part-item">
+          <div class="part-label">Divider</div>
+          <div class="divider-demo"></div>
+          <div style="height:1px;background:#e0e9fc;margin-top:4px;"></div>
+        </div>
+        <!-- ページ番号 -->
+        <div class="part-item">
+          <div class="part-label">Page Number</div>
+          <div class="pg-num-demo">01</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mid: Typography -->
+    <div class="ds-col-card ds-col-mid" style="display:flex;flex-direction:column;">
+      <div class="ds-col-title">
+        <div class="ds-col-bar"></div>
+        <div class="ds-col-title-text">タイポグラフィ</div>
+      </div>
+      <div class="type-scale" style="flex:1;">
+        <div class="type-row">
+          <div class="type-sample" style="font-size:48px;line-height:1;">見出し</div>
+          <div class="type-meta">Noto Sans JP<br>48px · 700</div>
+        </div>
+        <div class="type-row">
+          <div class="type-sample" style="font-size:36px;line-height:1;">大見出し</div>
+          <div class="type-meta">36px · 700</div>
+        </div>
+        <div class="type-row">
+          <div class="type-sample" style="font-size:28px;line-height:1;">中見出し</div>
+          <div class="type-meta">28px · 700</div>
+        </div>
+        <div class="type-row">
+          <div class="type-sample" style="font-size:22px;line-height:1;">小見出し</div>
+          <div class="type-meta">22px · 700</div>
+        </div>
+        <div class="type-row">
+          <div class="type-sample" style="font-size:18px;font-weight:400;line-height:1.4;">本文テキスト（大）</div>
+          <div class="type-meta">18px · 400</div>
+        </div>
+        <div class="type-row">
+          <div class="type-sample" style="font-size:15px;font-weight:400;line-height:1.4;color:#505cff;">本文テキスト（小）</div>
+          <div class="type-meta">15px · 400</div>
+        </div>
+        <div class="type-row" style="border-bottom:none;">
+          <div class="type-sample" style="font-size:12px;font-weight:400;color:#757575;line-height:1;">キャプション・補足</div>
+          <div class="type-meta">12px · 400</div>
+        </div>
+      </div>
+      <div class="font-confirm">
+        フォント：<strong>Noto Sans JP</strong><br>
+        Weights: 400 / 700（Bold）
+      </div>
+      <div class="layout-info">
+        <div class="layout-row"><span class="layout-key">スライドサイズ</span><span class="layout-val">1920 × 1080 px</span></div>
+        <div class="layout-row"><span class="layout-key">アスペクト比</span><span class="layout-val">16:9</span></div>
+        <div class="layout-row"><span class="layout-key">余白（上下）</span><span class="layout-val">100px</span></div>
+        <div class="layout-row"><span class="layout-key">余白（左右）</span><span class="layout-val">106px</span></div>
+        <div class="layout-row" style="border-bottom:none;"><span class="layout-key">テキスト整列</span><span class="layout-val">左寄せ</span></div>
+      </div>
+    </div>
+
+    <!-- Right: Do/Don't -->
+    <div class="ds-col-card ds-col-right" style="display:flex;flex-direction:column;gap:12px;">
+      <div class="ds-col-title">
+        <div class="ds-col-bar"></div>
+        <div class="ds-col-title-text">Do &amp; Don't</div>
+      </div>
+      <div class="do-section" style="flex:1;">
+        <div class="do-label">
+          <div class="do-icon do-icon-ok">✓</div>
+          <div class="do-title do-title-ok">Do</div>
+        </div>
+        <div class="do-items">
+          <div class="do-item">ネイビーを基調に統一感を保つ</div>
+          <div class="do-item">数値は大きく（48px以上）強調する</div>
+          <div class="do-item">情報は左寄せ・フラットに整理する</div>
+          <div class="do-item">セクション区切りにネイビー背景を使う</div>
+        </div>
+      </div>
+      <div class="dont-section" style="flex:1;">
+        <div class="do-label">
+          <div class="do-icon do-icon-ng">✕</div>
+          <div class="do-title do-title-ng">Don't</div>
+        </div>
+        <div class="do-items">
+          <div class="do-item">グラデーションや派手な装飾色を使う</div>
+          <div class="do-item">影・3D効果などの装飾を加える</div>
+          <div class="do-item">コンテンツページでテキストを中央揃えにする</div>
+          <div class="do-item">フォントサイズを多種類使い過ぎる</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /ds-columns -->
+</section>
+</div>
+</div>
+
+<!-- ================================================
+     PAGE 2: COVER
+     ================================================ -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide">
+  <div class="cover-inner">
+    <div class="cover-emblem">
+      <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="8" y="8" width="16" height="16" rx="2" fill="#fff" opacity="0.9"/>
+        <rect x="32" y="8" width="16" height="16" rx="2" fill="#fff" opacity="0.9"/>
+        <rect x="8" y="32" width="16" height="16" rx="2" fill="#fff" opacity="0.9"/>
+        <rect x="32" y="32" width="16" height="16" rx="2" fill="#9bb9f8" opacity="0.9"/>
+      </svg>
+    </div>
+    <div class="cover-eyebrow">Annual Report 2024</div>
+    <div class="cover-title">年度事業計画</div>
+    <div class="cover-subtitle">サンプル株式会社の取り組みと今後の方針</div>
+    <div class="cover-divider"></div>
+    <div class="cover-meta">
+      <span>サンプル株式会社</span>
+      <span class="cover-dot">●</span>
+      <span>2024年4月</span>
+      <span class="cover-dot">●</span>
+      <span>経営企画部</span>
+    </div>
+  </div>
+</section>
+</div>
+</div>
+
+<!-- ================================================
+     PAGE 3: SECTION TITLE
+     ================================================ -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide slide-navy">
+  <div class="section-inner">
+    <div class="section-bg-num">01</div>
+    <div class="section-content">
+      <div class="section-vbar"></div>
+      <div class="section-texts">
+        <div class="section-num-label">Section 01</div>
+        <div class="section-h1">事業概要</div>
+        <div class="section-desc">サンプル株式会社のコア事業と、2024年度における主要施策の方向性について概説します。</div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+</div>
+
+<!-- ================================================
+     PAGE 4: BULLETS
+     ================================================ -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide">
+  <div class="content-inner">
+    <div class="content-heading">
+      <div class="content-h1">成長を支える4つの柱</div>
+    </div>
+    <div class="h-underline-bar"></div>
+    <div class="content-sub">2024年度に注力する重点施策の概要</div>
+    <div class="list-area">
+      <div class="list-item">
+        <div class="list-num">1</div>
+        <div class="list-text">
+          <div class="list-title">顧客体験の向上</div>
+          <div class="list-desc">顧客接点を刷新し、オンライン・オフラインを問わないシームレスなサービス提供体制を構築します。</div>
+        </div>
+      </div>
+      <div class="list-item">
+        <div class="list-num">2</div>
+        <div class="list-text">
+          <div class="list-title">業務プロセスの効率化</div>
+          <div class="list-desc">社内手続きのデジタル化と自動化推進により、従業員の生産性を30%向上させることを目標とします。</div>
+        </div>
+      </div>
+      <div class="list-item">
+        <div class="list-num">3</div>
+        <div class="list-text">
+          <div class="list-title">新規市場への参入</div>
+          <div class="list-desc">国内外の成長市場を対象に、パートナーシップ戦略と新製品展開を組み合わせた参入計画を推進します。</div>
+        </div>
+      </div>
+      <div class="list-item">
+        <div class="list-num">4</div>
+        <div class="list-text">
+          <div class="list-title">人材・組織基盤の強化</div>
+          <div class="list-desc">専門人材の採用と育成プログラムを拡充し、変化に対応できる組織能力の底上げを図ります。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+</div>
+
+<!-- ================================================
+     PAGE 5: DATA CHART
+     ================================================ -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide">
+  <div class="content-inner">
+    <div class="content-heading">
+      <div class="content-h1">四半期業績の推移</div>
+    </div>
+    <div class="h-underline-bar"></div>
+    <div class="content-sub">2024年度 売上高および構成比</div>
+    <div class="chart-area">
+
+      <!-- Bar Chart -->
+      <div class="chart-card" style="flex:1.3;">
+        <div class="chart-title">四半期別 売上高（億円）</div>
+        <div class="bar-chart-area">
+          <div class="bar-col">
+            <div class="bar-value">42</div>
+            <div class="bar-rect" style="height:240px;background:#c5d6fa;"></div>
+            <div class="bar-label">Q1</div>
+          </div>
+          <div class="bar-col">
+            <div class="bar-value">58</div>
+            <div class="bar-rect" style="height:330px;background:#9bb9f8;"></div>
+            <div class="bar-label">Q2</div>
+          </div>
+          <div class="bar-col">
+            <div class="bar-value">71</div>
+            <div class="bar-rect" style="height:404px;background:#505cff;"></div>
+            <div class="bar-label">Q3</div>
+          </div>
+          <div class="bar-col">
+            <div class="bar-value">89</div>
+            <div class="bar-rect" style="height:507px;background:#0017b6;box-shadow:0 4px 12px rgba(0,23,182,0.3);"></div>
+            <div class="bar-label">Q4</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Donut Chart -->
+      <div class="chart-card" style="flex:1;">
+        <div class="chart-title">事業別 売上構成比</div>
+        <div class="donut-area">
+          <div class="donut-wrap">
+            <svg class="donut-svg" viewBox="0 0 260 260">
+              <circle cx="130" cy="130" r="110" fill="none" stroke="#0017b6" stroke-width="42" stroke-dasharray="276 415" stroke-dashoffset="0"/>
+              <circle cx="130" cy="130" r="110" fill="none" stroke="#505cff" stroke-width="42" stroke-dasharray="173 518" stroke-dashoffset="-276"/>
+              <circle cx="130" cy="130" r="110" fill="none" stroke="#9bb9f8" stroke-width="42" stroke-dasharray="104 587" stroke-dashoffset="-449"/>
+              <circle cx="130" cy="130" r="110" fill="none" stroke="#c5d6fa" stroke-width="42" stroke-dasharray="138 553" stroke-dashoffset="-553"/>
+              <circle cx="130" cy="130" r="88" fill="white"/>
+            </svg>
+            <div class="donut-center">
+              <div class="donut-big">260</div>
+              <div class="donut-small">億円（合計）</div>
+            </div>
+          </div>
+          <div class="donut-legend">
+            <div class="legend-item">
+              <div class="legend-dot" style="background:#0017b6;"></div>
+              <div class="legend-label">基幹事業</div>
+              <div class="legend-val">40%</div>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:#505cff;"></div>
+              <div class="legend-label">サービス</div>
+              <div class="legend-val">25%</div>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:#9bb9f8;"></div>
+              <div class="legend-label">新規事業</div>
+              <div class="legend-val">15%</div>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:#c5d6fa;"></div>
+              <div class="legend-label">その他</div>
+              <div class="legend-val">20%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+</div>
+</div>
+
+<!-- ================================================
+     PAGE 6: SUMMARY
+     ================================================ -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide">
+  <div class="content-inner">
+    <div class="content-heading">
+      <div class="content-h1">今後の取り組み</div>
+    </div>
+    <div class="h-underline-bar"></div>
+    <div class="content-sub">次年度に向けた3つの注力領域</div>
+    <div class="cards-area">
+      <div class="summary-card">
+        <div class="card-icon card-icon-a">強</div>
+        <div class="card-h">強みの深化</div>
+        <div class="card-p">既存の中核事業をさらに磨き上げ、顧客満足度と収益性の両立を追求します。品質基準の見直しとプロセス改善を継続的に実施します。</div>
+      </div>
+      <div class="summary-card">
+        <div class="card-icon card-icon-b">新</div>
+        <div class="card-h">新市場の開拓</div>
+        <div class="card-p">国内外の成長市場へのリソース集中投資を実施し、将来の収益柱となる新事業ドメインを確立します。パートナー連携を積極的に活用します。</div>
+      </div>
+      <div class="summary-card">
+        <div class="card-icon card-icon-c">基</div>
+        <div class="card-h">基盤の整備</div>
+        <div class="card-p">デジタル基盤とデータ活用体制を整え、意思決定の質とスピードを向上させます。人材育成への継続投資も推進します。</div>
+      </div>
+    </div>
+    <div class="cta-area">
+      <div class="cta-btn">次年度計画の詳細を見る →</div>
+    </div>
+  </div>
+</section>
+</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SLIDE.md Sample — SLIDE-md-integrated260129</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --color-primary:      #3DAED8;
+  --color-secondary:    #2B8BBD;
+  --color-accent:       #3DAED8;
+  --color-background:   #FFFFFF;
+  --color-text:         #1A1A1A;
+  --color-text-sub:     #444444;
+  --color-text-muted:   #888888;
+  --color-surface:      #F5F8FA;
+  --color-surface-soft: #FAFCFD;
+  --color-border:       rgba(61,174,216,0.15);
+  --font-display:       'Noto Sans JP', sans-serif;
+  --font-body:          'Noto Sans JP', sans-serif;
+  --slide-padding-v:    72px;
+  --slide-padding-h:    100px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #D8DDE3;
+  padding: 40px 20px;
+  font-family: var(--font-display);
+}
+
+.slide-outer {
+  margin: 0 auto 32px;
+  width: 1440px;
+}
+
+.slide-wrapper {
+  width: 1920px;
+  transform-origin: top left;
+  transform: scale(0.75);
+  margin-bottom: -270px;
+}
+
+.slide {
+  width: 1920px;
+  height: 1080px;
+  background: var(--color-background);
+  font-family: var(--font-display);
+  color: var(--color-text);
+  position: relative;
+  overflow: hidden;
+}
+
+/* ===== 斜線ハッチング（コンテンツページ右上） ===== */
+.hatching-deco {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 320px;
+  height: 80px;
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgba(61,174,216,0.20) 0px,
+    rgba(61,174,216,0.20) 1.5px,
+    transparent 1.5px,
+    transparent 10px
+  );
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ===== セクションラベル（コンテンツページ左上） ===== */
+.section-label {
+  position: absolute;
+  top: 30px;
+  left: var(--slide-padding-h);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+  z-index: 5;
+}
+
+/* ===== フッター（コンテンツページ右下） ===== */
+.slide-footer {
+  position: absolute;
+  right: var(--slide-padding-h);
+  bottom: 26px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 5;
+}
+.slide-footer .footer-brand {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  letter-spacing: 0.05em;
+  font-weight: 400;
+}
+.slide-footer .footer-divider {
+  font-size: 12px;
+  color: #CCCCCC;
+}
+.slide-footer .footer-page {
+  font-size: 12px;
+  color: var(--color-primary);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* ===== テーブル共通 ===== */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 17px;
+}
+.data-table th {
+  background: #EAF5FB;
+  color: var(--color-text-sub);
+  font-weight: 700;
+  font-size: 15px;
+  padding: 14px 20px;
+  border: 1px solid rgba(61,174,216,0.2);
+  text-align: left;
+  letter-spacing: 0.02em;
+}
+.data-table td {
+  padding: 14px 20px;
+  border: 1px solid rgba(61,174,216,0.12);
+  color: var(--color-text);
+  vertical-align: top;
+  line-height: 1.6;
+}
+.data-table tr:nth-child(even) td {
+  background: rgba(61,174,216,0.03);
+}
+.data-table .num-cell {
+  color: var(--color-primary);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ===== 見出しバー（セクション見出し） ===== */
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.section-heading .bar {
+  width: 5px;
+  height: 36px;
+  border-radius: 3px;
+  background: var(--color-primary);
+  flex-shrink: 0;
+}
+.section-heading h2 {
+  font-size: 38px;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+/* ===== カードコンポーネント ===== */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 36px 40px;
+}
+
+/* ===== ボタン ===== */
+.btn-primary {
+  display: inline-block;
+  background: var(--color-primary);
+  color: #FFFFFF;
+  font-size: 17px;
+  font-weight: 700;
+  padding: 14px 40px;
+  border-radius: 2px;
+  letter-spacing: 0.04em;
+}
+.btn-outline {
+  display: inline-block;
+  border: 2px solid var(--color-primary);
+  color: var(--color-primary);
+  font-size: 17px;
+  font-weight: 700;
+  padding: 12px 38px;
+  border-radius: 2px;
+  letter-spacing: 0.04em;
+}
+
+</style>
+</head>
+<body>
+
+<!-- ======================================================== -->
+<!-- PAGE 1: デザインシステム概要                               -->
+<!-- ======================================================== -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide" style="padding: 48px 72px 40px; display:flex; flex-direction:column; gap:28px; background:#FFFFFF;">
+
+  <!-- ヘッダー -->
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-shrink:0;">
+    <div style="display:flex; align-items:center; gap:14px;">
+      <div style="width:36px; height:36px; border-radius:50%; background:var(--color-primary); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        <div style="width:14px; height:14px; border-radius:50%; background:#FFFFFF;"></div>
+      </div>
+      <span style="font-size:46px; font-weight:900; letter-spacing:-0.01em; color:var(--color-text);">DESIGN SYSTEM</span>
+    </div>
+    <div style="text-align:right; padding-top:6px;">
+      <div style="font-size:15px; color:var(--color-text-muted); letter-spacing:0.04em;">Style Sheet / v1.0 · 16:9</div>
+      <div style="font-size:13px; color:#BBBBBB; letter-spacing:0.03em; margin-top:3px;">SLIDE-md-integrated260129</div>
+    </div>
+  </div>
+
+  <!-- カラーパレット行 -->
+  <div style="display:flex; gap:0; align-items:stretch; border:1px solid rgba(61,174,216,0.18); border-radius:4px; overflow:hidden; flex-shrink:0; height:104px;">
+    <!-- Brand -->
+    <div style="display:flex; flex-direction:column; justify-content:center; padding:0 14px; background:#F8FAFB; border-right:1px solid rgba(61,174,216,0.18); min-width:80px;">
+      <span style="font-size:12px; font-weight:700; color:var(--color-text-muted); letter-spacing:0.05em; white-space:nowrap;">BRAND</span>
+    </div>
+    <div style="flex:1; display:flex; gap:0;">
+      <div style="flex:1; display:flex; flex-direction:column;">
+        <div style="flex:1; background:#3DAED8;"></div>
+        <div style="padding:6px 10px; background:#fff; border-top:1px solid rgba(0,0,0,0.06);">
+          <div style="font-size:13px; font-weight:700; color:var(--color-text);">Primary</div>
+          <div style="font-size:11px; font-family:monospace; color:var(--color-text-muted);">#3DAED8</div>
+        </div>
+      </div>
+      <div style="flex:1; display:flex; flex-direction:column; border-left:1px solid rgba(0,0,0,0.06);">
+        <div style="flex:1; background:#2B8BBD;"></div>
+        <div style="padding:6px 10px; background:#fff; border-top:1px solid rgba(0,0,0,0.06);">
+          <div style="font-size:13px; font-weight:700; color:var(--color-text);">Secondary</div>
+          <div style="font-size:11px; font-family:monospace; color:var(--color-text-muted);">#2B8BBD</div>
+        </div>
+      </div>
+      <div style="flex:1; display:flex; flex-direction:column; border-left:1px solid rgba(0,0,0,0.06);">
+        <div style="flex:1; background:#EAF5FB;"></div>
+        <div style="padding:6px 10px; background:#fff; border-top:1px solid rgba(0,0,0,0.06);">
+          <div style="font-size:13px; font-weight:700; color:var(--color-text);">BrandLight</div>
+          <div style="font-size:11px; font-family:monospace; color:var(--color-text-muted);">#EAF5FB</div>
+        </div>
+      </div>
+    </div>
+    <!-- Separator -->
+    <div style="width:1px; background:rgba(61,174,216,0.2);"></div>
+    <!-- Cover gradient -->
+    <div style="display:flex; flex-direction:column; justify-content:center; padding:0 14px; background:#F8FAFB; border-right:1px solid rgba(61,174,216,0.18); min-width:80px;">
+      <span style="font-size:12px; font-weight:700; color:var(--color-text-muted); letter-spacing:0.05em; white-space:nowrap;">COVER</span>
+    </div>
+    <div style="flex:1; display:flex; gap:0;">
+      <div style="flex:1; display:flex; flex-direction:column;">
+        <div style="flex:1; background:#DDD8F0;"></div>
+        <div style="padding:6px 10px; background:#fff; border-top:1px solid rgba(0,0,0,0.06);">
+          <div style="font-size:13px; font-weight:700; color:var(--color-text);">Lavender</div>
+          <div style="font-size:11px; font-family:monospace; color:var(--color-text-muted);">#DDD8F0</div>
+        </div>
+      </div>
+      <div style="flex:1; display:flex; flex-direction:column; border-left:1px solid rgba(0,0,0,0.06);">
+        <div style="flex:1; background:#C8E6F5;"></div>
+        <div style="padding:6px 10px; background:#fff; border-top:1px solid rgba(0,0,0,0.06);">
+          <div style="font-size:13px; font-weight:700; color:var(--color-text);">SkyBlue</div>
+          <div style="font-size:11px; font-family:monospace; color:var(--color-text-muted);">#C8E6F5</div>
+        </div>
+      </div>
+      <div style="flex:1; display:flex; flex-direction:column; border-left:1px solid rgba(0,0,0,0.06);">
+        <div style="flex:1; background:#F0D0D8;"></div>
+        <div style="padding:6px 10px; background:#fff; border-top:1px solid rgba(0,0,0,0.06);">
+          <div style="font-size:13px; font-weight:700; color:var(--color-text);">Rose</div>
+          <div style="font-size:11px; font-family:monospace; color:var(--color-text-muted);">#F0D0D8</div>
+        </div>
+      </div>
+    </div>
+    <!-- Separator -->
+    <div style="width:1px; background:rgba(61,174,216,0.2);"></div>
+    <!-- Text / Surface -->
+    <div style="display:flex; flex-direction:column; justify-content:center; padding:0 14px; background:#F8FAFB; border-right:1px solid rgba(61,174,216,0.18); min-width:80px;">
+      <span style="font-size:12px; font-weight:700; color:var(--color-text-muted); letter-spacing:0.05em; white-space:nowrap;">BASE</span>
+    </div>
+    <div style="flex:1; display:flex; gap:0;">
+      <div style="flex:1; display:flex; flex-direction:column;">
+        <div style="flex:1; background:#1A1A1A;"></div>
+        <div style="padding:6px 10px; background:#fff; border-top:1px solid rgba(0,0,0,0.06);">
+          <div style="font-size:13px; font-weight:700; color:var(--color-text);">Text</div>
+          <div style="font-size:11px; font-family:monospace; color:var(--color-text-muted);">#1A1A1A</div>
+        </div>
+      </div>
+      <div style="flex:1; display:flex; flex-direction:column; border-left:1px solid rgba(0,0,0,0.06);">
+        <div style="flex:1; background:#888888;"></div>
+        <div style="padding:6px 10px; background:#fff; border-top:1px solid rgba(0,0,0,0.06);">
+          <div style="font-size:13px; font-weight:700; color:var(--color-text);">Muted</div>
+          <div style="font-size:11px; font-family:monospace; color:var(--color-text-muted);">#888888</div>
+        </div>
+      </div>
+      <div style="flex:1; display:flex; flex-direction:column; border-left:1px solid rgba(0,0,0,0.06);">
+        <div style="flex:1; background:#F5F8FA;"></div>
+        <div style="padding:6px 10px; background:#fff; border-top:1px solid rgba(0,0,0,0.06);">
+          <div style="font-size:13px; font-weight:700; color:var(--color-text);">Surface</div>
+          <div style="font-size:11px; font-family:monospace; color:var(--color-text-muted);">#F5F8FA</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 下段 3カラム -->
+  <div style="flex:1; display:flex; gap:20px; min-height:0;">
+
+    <!-- 左：パーツ -->
+    <div class="card" style="flex:1.6; display:flex; flex-direction:column; gap:0; padding:28px 32px; min-height:0;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:22px; flex-shrink:0;">
+        <div style="width:5px; height:26px; border-radius:3px; background:var(--color-primary);"></div>
+        <span style="font-size:24px; font-weight:700; color:var(--color-text);">スライドで使うパーツ</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px 32px; align-content:space-between; flex:1;">
+        <!-- ボタン -->
+        <div>
+          <div style="font-size:13px; font-weight:700; color:var(--color-text-muted); margin-bottom:8px; letter-spacing:0.04em;">BUTTON</div>
+          <div style="display:flex; gap:12px; align-items:center;">
+            <div class="btn-primary" style="font-size:15px; padding:10px 28px;">実行する</div>
+            <div class="btn-outline" style="font-size:15px; padding:8px 26px;">詳細を見る</div>
+          </div>
+        </div>
+        <!-- セクションラベル -->
+        <div>
+          <div style="font-size:13px; font-weight:700; color:var(--color-text-muted); margin-bottom:8px; letter-spacing:0.04em;">SECTION LABEL</div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:4px; height:28px; border-radius:2px; background:var(--color-primary);"></div>
+            <span style="font-size:22px; font-weight:700; color:var(--color-text);">事業概要</span>
+          </div>
+        </div>
+        <!-- 番号付きリスト -->
+        <div>
+          <div style="font-size:13px; font-weight:700; color:var(--color-text-muted); margin-bottom:8px; letter-spacing:0.04em;">NUMBERED LIST</div>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; align-items:baseline; gap:10px;">
+              <span style="color:var(--color-primary); font-weight:700; font-size:17px; min-width:20px;">01</span>
+              <span style="font-size:16px; color:var(--color-text-sub);">コンテンツ制作の強化</span>
+            </div>
+            <div style="display:flex; align-items:baseline; gap:10px;">
+              <span style="color:var(--color-primary); font-weight:700; font-size:17px; min-width:20px;">02</span>
+              <span style="font-size:16px; color:var(--color-text-sub);">デジタル配信の拡大</span>
+            </div>
+          </div>
+        </div>
+        <!-- 箇条書き -->
+        <div>
+          <div style="font-size:13px; font-weight:700; color:var(--color-text-muted); margin-bottom:8px; letter-spacing:0.04em;">BULLET LIST</div>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; align-items:flex-start; gap:10px;">
+              <div style="width:8px; height:8px; border-radius:50%; background:var(--color-primary); flex-shrink:0; margin-top:6px;"></div>
+              <span style="font-size:16px; color:var(--color-text-sub);">コーポレートガバナンス強化</span>
+            </div>
+            <div style="display:flex; align-items:flex-start; gap:10px;">
+              <div style="width:8px; height:8px; border-radius:50%; background:var(--color-primary); flex-shrink:0; margin-top:6px;"></div>
+              <span style="font-size:16px; color:var(--color-text-sub);">サステナビリティ経営推進</span>
+            </div>
+          </div>
+        </div>
+        <!-- チップ -->
+        <div>
+          <div style="font-size:13px; font-weight:700; color:var(--color-text-muted); margin-bottom:8px; letter-spacing:0.04em;">CHIP / LABEL</div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <div style="background:#EAF5FB; color:var(--color-primary); font-size:14px; font-weight:700; padding:6px 14px; border-radius:2px; border:1px solid rgba(61,174,216,0.3);">メディア</div>
+            <div style="background:#F5F8FA; color:var(--color-text-sub); font-size:14px; font-weight:700; padding:6px 14px; border-radius:2px; border:1px solid rgba(61,174,216,0.15);">コンテンツ</div>
+            <div style="background:#F5F8FA; color:var(--color-text-sub); font-size:14px; font-weight:700; padding:6px 14px; border-radius:2px; border:1px solid rgba(61,174,216,0.15);">DX</div>
+          </div>
+        </div>
+        <!-- テーブルヘッダーサンプル -->
+        <div>
+          <div style="font-size:13px; font-weight:700; color:var(--color-text-muted); margin-bottom:8px; letter-spacing:0.04em;">TABLE HEADER</div>
+          <div style="border:1px solid rgba(61,174,216,0.2); border-radius:2px; overflow:hidden;">
+            <div style="background:#EAF5FB; padding:8px 14px; font-size:14px; font-weight:700; color:var(--color-text-sub);">項目名</div>
+            <div style="padding:8px 14px; font-size:14px; color:var(--color-text);">データ値</div>
+          </div>
+        </div>
+        <!-- ハッチング装飾 -->
+        <div>
+          <div style="font-size:13px; font-weight:700; color:var(--color-text-muted); margin-bottom:8px; letter-spacing:0.04em;">PAGE DECO（右上）</div>
+          <div style="width:120px; height:36px; background-image: repeating-linear-gradient(135deg,rgba(61,174,216,0.22) 0px,rgba(61,174,216,0.22) 1.5px,transparent 1.5px,transparent 9px); border-radius:2px;"></div>
+        </div>
+        <!-- ページ番号フッター -->
+        <div>
+          <div style="font-size:13px; font-weight:700; color:var(--color-text-muted); margin-bottom:8px; letter-spacing:0.04em;">PAGE FOOTER</div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:12px; color:var(--color-text-muted);">サンプル株式会社 ANNUAL REPORT 2025</span>
+            <span style="font-size:12px; color:#CCCCCC;">|</span>
+            <span style="font-size:12px; color:var(--color-primary); font-weight:700;">01</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 中：タイポグラフィ -->
+    <div class="card" style="flex:1.05; display:flex; flex-direction:column; padding:28px 32px; gap:0; min-height:0;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px; flex-shrink:0;">
+        <div style="width:5px; height:26px; border-radius:3px; background:var(--color-primary);"></div>
+        <span style="font-size:24px; font-weight:700; color:var(--color-text);">タイポグラフィ</span>
+      </div>
+      <div style="display:flex; flex-direction:column; justify-content:space-between; flex:1; min-height:0;">
+        <div style="display:flex; justify-content:space-between; align-items:baseline;">
+          <span style="font-size:40px; font-weight:900; color:var(--color-text); line-height:1;">表紙タイトル</span>
+          <span style="font-size:13px; font-family:monospace; color:var(--color-text-muted); white-space:nowrap; flex-shrink:0; margin-left:8px;">900 / 100px+</span>
+        </div>
+        <div style="height:1px; background:rgba(61,174,216,0.12);"></div>
+        <div style="display:flex; justify-content:space-between; align-items:baseline;">
+          <span style="font-size:34px; font-weight:700; color:var(--color-text); line-height:1;">大見出し H1</span>
+          <span style="font-size:13px; font-family:monospace; color:var(--color-text-muted); white-space:nowrap; flex-shrink:0; margin-left:8px;">700 / 72px</span>
+        </div>
+        <div style="height:1px; background:rgba(61,174,216,0.12);"></div>
+        <div style="display:flex; justify-content:space-between; align-items:baseline;">
+          <span style="font-size:26px; font-weight:700; color:var(--color-text); line-height:1;">中見出し H2</span>
+          <span style="font-size:13px; font-family:monospace; color:var(--color-text-muted); white-space:nowrap; flex-shrink:0; margin-left:8px;">700 / 36px</span>
+        </div>
+        <div style="height:1px; background:rgba(61,174,216,0.12);"></div>
+        <div style="display:flex; justify-content:space-between; align-items:baseline;">
+          <span style="font-size:21px; font-weight:700; color:var(--color-text); line-height:1;">小見出し H3</span>
+          <span style="font-size:13px; font-family:monospace; color:var(--color-text-muted); white-space:nowrap; flex-shrink:0; margin-left:8px;">700 / 24px</span>
+        </div>
+        <div style="height:1px; background:rgba(61,174,216,0.12);"></div>
+        <div style="display:flex; justify-content:space-between; align-items:baseline;">
+          <span style="font-size:18px; font-weight:400; color:var(--color-text); line-height:1;">本文テキスト Body</span>
+          <span style="font-size:13px; font-family:monospace; color:var(--color-text-muted); white-space:nowrap; flex-shrink:0; margin-left:8px;">400 / 18px</span>
+        </div>
+        <div style="height:1px; background:rgba(61,174,216,0.12);"></div>
+        <div style="display:flex; justify-content:space-between; align-items:baseline;">
+          <span style="font-size:14px; font-weight:400; color:var(--color-text-sub); line-height:1;">補足テキスト Small</span>
+          <span style="font-size:13px; font-family:monospace; color:var(--color-text-muted); white-space:nowrap; flex-shrink:0; margin-left:8px;">400 / 14px</span>
+        </div>
+        <div style="height:1px; background:rgba(61,174,216,0.12);"></div>
+        <div style="display:flex; justify-content:space-between; align-items:baseline;">
+          <span style="font-size:12px; font-weight:400; color:var(--color-text-muted); line-height:1;">キャプション Caption</span>
+          <span style="font-size:13px; font-family:monospace; color:var(--color-text-muted); white-space:nowrap; flex-shrink:0; margin-left:8px;">400 / 13px</span>
+        </div>
+        <div style="height:1px; background:rgba(61,174,216,0.12);"></div>
+        <!-- フォント情報 -->
+        <div style="background:#F5F8FA; border-radius:4px; padding:12px 16px;">
+          <div style="font-size:13px; color:var(--color-text-muted); margin-bottom:4px;">フォント</div>
+          <div style="font-size:16px; font-weight:700; color:var(--color-text);">Noto Sans JP</div>
+        </div>
+        <!-- レイアウト仕様 -->
+        <div>
+          <div style="font-size:13px; font-weight:700; color:var(--color-text-muted); margin-bottom:6px; letter-spacing:0.04em;">LAYOUT</div>
+          <div style="display:flex; justify-content:space-between; font-size:14px; padding:5px 0; border-bottom:1px dotted rgba(61,174,216,0.2);">
+            <span style="color:var(--color-text-sub);">スライドサイズ</span>
+            <span style="color:var(--color-text); font-weight:700;">1920 × 1080px</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:14px; padding:5px 0; border-bottom:1px dotted rgba(61,174,216,0.2);">
+            <span style="color:var(--color-text-sub);">余白（上下）</span>
+            <span style="color:var(--color-text); font-weight:700;">72px</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:14px; padding:5px 0;">
+            <span style="color:var(--color-text-sub);">余白（左右）</span>
+            <span style="color:var(--color-text); font-weight:700;">100px</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右：Do / Don't -->
+    <div style="flex:1; display:flex; flex-direction:column; gap:12px; min-height:0;">
+      <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
+        <div style="width:5px; height:26px; border-radius:3px; background:var(--color-primary);"></div>
+        <span style="font-size:24px; font-weight:700; color:var(--color-text);">Do & Don't</span>
+      </div>
+      <!-- Do -->
+      <div style="flex:1; background:#EAF5FB; border-radius:4px; padding:24px 28px; display:flex; flex-direction:column; gap:14px; min-height:0;">
+        <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
+          <div style="width:32px; height:32px; border-radius:50%; background:var(--color-primary); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <span style="color:#fff; font-size:18px; font-weight:700;">✓</span>
+          </div>
+          <span style="font-size:22px; font-weight:700; color:var(--color-primary);">Do</span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; align-items:flex-start; gap:10px; font-size:16px; line-height:1.55; color:var(--color-text-sub);">
+            <span style="color:var(--color-primary); flex-shrink:0; margin-top:2px;">→</span><span>スカイブルー1色のアクセントで清潔感を保つ</span>
+          </div>
+          <div style="display:flex; align-items:flex-start; gap:10px; font-size:16px; line-height:1.55; color:var(--color-text-sub);">
+            <span style="color:var(--color-primary); flex-shrink:0; margin-top:2px;">→</span><span>余白を十分取り、段組みで読みやすく整理する</span>
+          </div>
+          <div style="display:flex; align-items:flex-start; gap:10px; font-size:16px; line-height:1.55; color:var(--color-text-sub);">
+            <span style="color:var(--color-primary); flex-shrink:0; margin-top:2px;">→</span><span>数値・強調にPrimaryカラーを使い視線誘導を明確に</span>
+          </div>
+        </div>
+      </div>
+      <!-- Don't -->
+      <div style="flex:1; background:#FEF4F6; border-radius:4px; padding:24px 28px; display:flex; flex-direction:column; gap:14px; min-height:0;">
+        <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
+          <div style="width:32px; height:32px; border-radius:50%; background:#D94060; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <span style="color:#fff; font-size:18px; font-weight:700;">✕</span>
+          </div>
+          <span style="font-size:22px; font-weight:700; color:#D94060;">Don't</span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; align-items:flex-start; gap:10px; font-size:16px; line-height:1.55; color:var(--color-text-sub);">
+            <span style="color:#D94060; flex-shrink:0; margin-top:2px;">×</span><span>スカイブルー以外の目立つアクセントを追加しない</span>
+          </div>
+          <div style="display:flex; align-items:flex-start; gap:10px; font-size:16px; line-height:1.55; color:var(--color-text-sub);">
+            <span style="color:#D94060; flex-shrink:0; margin-top:2px;">×</span><span>コンテンツエリアに装飾グラフィックを多用しない</span>
+          </div>
+          <div style="display:flex; align-items:flex-start; gap:10px; font-size:16px; line-height:1.55; color:var(--color-text-sub);">
+            <span style="color:#D94060; flex-shrink:0; margin-top:2px;">×</span><span>フォントウェイトをBold/Regularの2段階に留める</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</div>
+</div>
+
+<!-- ======================================================== -->
+<!-- PAGE 2: 表紙                                             -->
+<!-- ======================================================== -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide">
+
+  <!-- 右端パステルグラデーション -->
+  <div style="position:absolute; top:0; right:0; width:680px; height:1080px; pointer-events:none; z-index:1;
+    background:
+      radial-gradient(ellipse 420px 440px at calc(100% + 80px) 160px, rgba(200,185,240,0.55) 0%, transparent 62%),
+      radial-gradient(ellipse 380px 420px at calc(100% + 60px) 540px, rgba(150,210,240,0.50) 0%, transparent 60%),
+      radial-gradient(ellipse 400px 450px at calc(100% + 70px) 920px, rgba(235,185,200,0.52) 0%, transparent 62%);
+  "></div>
+
+  <!-- コンテンツ -->
+  <div style="position:absolute; top:0; left:0; right:0; bottom:0; z-index:2; display:flex; flex-direction:column; justify-content:center; padding:0 var(--slide-padding-h);">
+
+    <!-- ロゴエリア -->
+    <div style="position:absolute; top:56px; left:var(--slide-padding-h); display:flex; align-items:center; gap:14px;">
+      <div style="width:44px; height:44px; border-radius:50%; border:2px solid #1A1A1A; display:flex; align-items:center; justify-content:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:#CC0000;"></div>
+      </div>
+      <span style="font-size:18px; font-weight:700; color:var(--color-text); letter-spacing:0.04em;">サンプル・ホールディングス</span>
+    </div>
+
+    <!-- メインコンテンツ -->
+    <div style="margin-top:40px;">
+      <div style="font-size:108px; font-weight:900; color:var(--color-text); letter-spacing:0.02em; line-height:1.05; text-transform:uppercase;">ANNUAL REPORT</div>
+      <div style="font-size:108px; font-weight:900; color:var(--color-primary); line-height:1.05; letter-spacing:0.01em; margin-top:-8px;">2025</div>
+      <div style="font-size:22px; font-weight:400; color:var(--color-text-sub); margin-top:20px; letter-spacing:0.3em;">統 合 報 告 書</div>
+    </div>
+  </div>
+
+</section>
+</div>
+</div>
+
+<!-- ======================================================== -->
+<!-- PAGE 3: セクションタイトル                                -->
+<!-- ======================================================== -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide">
+
+  <div class="hatching-deco"></div>
+  <div class="section-label">事業戦略</div>
+
+  <!-- フッター -->
+  <div class="slide-footer">
+    <span class="footer-brand">サンプル株式会社 ANNUAL REPORT 2025</span>
+    <span class="footer-divider">|</span>
+    <span class="footer-page">02</span>
+  </div>
+
+  <!-- セクションコンテンツ -->
+  <div style="display:flex; flex-direction:column; justify-content:center; height:100%; padding:80px var(--slide-padding-h) 80px;">
+
+    <div style="margin-bottom:32px;">
+      <div style="display:flex; align-items:center; gap:14px; margin-bottom:8px;">
+        <div style="width:56px; height:4px; background:var(--color-primary); border-radius:2px;"></div>
+        <span style="font-size:20px; font-weight:700; color:var(--color-primary); letter-spacing:0.08em;">SECTION 01</span>
+      </div>
+    </div>
+
+    <h1 style="font-size:88px; font-weight:900; color:var(--color-text); line-height:1.1; letter-spacing:-0.01em; margin-bottom:36px;">
+      事業改革と<br>持続的成長の実現
+    </h1>
+
+    <p style="font-size:22px; font-weight:400; color:var(--color-text-sub); line-height:1.8; max-width:800px;">
+      グループ全体でコンテンツ力の強化と事業構造の転換を推進し、<br>
+      中長期的な企業価値向上を目指します。
+    </p>
+
+  </div>
+
+</section>
+</div>
+</div>
+
+<!-- ======================================================== -->
+<!-- PAGE 4: 箇条書き（本文スライド）                          -->
+<!-- ======================================================== -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide">
+
+  <div class="hatching-deco"></div>
+  <div class="section-label">事業戦略</div>
+
+  <div class="slide-footer">
+    <span class="footer-brand">サンプル株式会社 ANNUAL REPORT 2025</span>
+    <span class="footer-divider">|</span>
+    <span class="footer-page">03</span>
+  </div>
+
+  <div style="display:flex; flex-direction:column; height:100%; padding:80px var(--slide-padding-h) 72px;">
+
+    <div class="section-heading" style="flex-shrink:0;">
+      <div class="bar"></div>
+      <h2>成長を支える4つの重点施策</h2>
+    </div>
+
+    <div style="flex:1; display:grid; grid-template-columns:1fr 1fr; gap:24px; min-height:0;">
+
+      <div class="card" style="display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <span style="font-size:36px; font-weight:900; color:var(--color-primary); line-height:1;">01</span>
+          <span style="font-size:24px; font-weight:700; color:var(--color-text);">コンテンツ制作力の強化</span>
+        </div>
+        <div style="width:40px; height:2px; background:var(--color-primary); border-radius:1px;"></div>
+        <p style="font-size:18px; color:var(--color-text-sub); line-height:1.75; flex:1;">
+          オリジナルIPの開発を加速し、放送・配信・イベントへと展開する多角的なコンテンツ戦略を推進します。AI技術の活用による制作効率の向上も図ります。
+        </p>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:8px; height:8px; border-radius:50%; background:var(--color-primary); flex-shrink:0;"></div>
+            <span style="font-size:16px; color:var(--color-text-sub);">IP開発・バリューチェーン全体での収益化</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:8px; height:8px; border-radius:50%; background:var(--color-primary); flex-shrink:0;"></div>
+            <span style="font-size:16px; color:var(--color-text-sub);">次世代映像制作技術の導入</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <span style="font-size:36px; font-weight:900; color:var(--color-primary); line-height:1;">02</span>
+          <span style="font-size:24px; font-weight:700; color:var(--color-text);">デジタル・DX推進</span>
+        </div>
+        <div style="width:40px; height:2px; background:var(--color-primary); border-radius:1px;"></div>
+        <p style="font-size:18px; color:var(--color-text-sub); line-height:1.75; flex:1;">
+          配信プラットフォームとの連携強化や業務効率化ツールの導入により、事業全体のデジタル変革を加速します。データ活用によるコンテンツ最適化も推進します。
+        </p>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:8px; height:8px; border-radius:50%; background:var(--color-primary); flex-shrink:0;"></div>
+            <span style="font-size:16px; color:var(--color-text-sub);">AI活用による制作プロセスの効率化</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:8px; height:8px; border-radius:50%; background:var(--color-primary); flex-shrink:0;"></div>
+            <span style="font-size:16px; color:var(--color-text-sub);">データドリブンなコンテンツ戦略</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <span style="font-size:36px; font-weight:900; color:var(--color-primary); line-height:1;">03</span>
+          <span style="font-size:24px; font-weight:700; color:var(--color-text);">ガバナンス・コンプライアンス強化</span>
+        </div>
+        <div style="width:40px; height:2px; background:var(--color-primary); border-radius:1px;"></div>
+        <p style="font-size:18px; color:var(--color-text-sub); line-height:1.75; flex:1;">
+          取締役会の多様性確保と独立社外取締役比率の向上により、透明性の高い経営体制を構築します。リスク管理体制のさらなる強化も図ります。
+        </p>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:8px; height:8px; border-radius:50%; background:var(--color-primary); flex-shrink:0;"></div>
+            <span style="font-size:16px; color:var(--color-text-sub);">社外取締役比率の拡大</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:8px; height:8px; border-radius:50%; background:var(--color-primary); flex-shrink:0;"></div>
+            <span style="font-size:16px; color:var(--color-text-sub);">リスクポリシー委員会の設置・運営</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <span style="font-size:36px; font-weight:900; color:var(--color-primary); line-height:1;">04</span>
+          <span style="font-size:24px; font-weight:700; color:var(--color-text);">資本効率の向上</span>
+        </div>
+        <div style="width:40px; height:2px; background:var(--color-primary); border-radius:1px;"></div>
+        <p style="font-size:18px; color:var(--color-text-sub); line-height:1.75; flex:1;">
+          ROEの継続的な向上を目標に、成長投資と株主還元のバランスを取りながら資本を最適化します。自己株式取得の計画的な実施も継続します。
+        </p>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:8px; height:8px; border-radius:50%; background:var(--color-primary); flex-shrink:0;"></div>
+            <span style="font-size:16px; color:var(--color-text-sub);">ROE 8%達成を中期目標に設定</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:8px; height:8px; border-radius:50%; background:var(--color-primary); flex-shrink:0;"></div>
+            <span style="font-size:16px; color:var(--color-text-sub);">計画的な自己株式取得の継続</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</section>
+</div>
+</div>
+
+<!-- ======================================================== -->
+<!-- PAGE 5: データチャート                                    -->
+<!-- ======================================================== -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide">
+
+  <div class="hatching-deco"></div>
+  <div class="section-label">業績・財務サマリー</div>
+
+  <div class="slide-footer">
+    <span class="footer-brand">サンプル株式会社 ANNUAL REPORT 2025</span>
+    <span class="footer-divider">|</span>
+    <span class="footer-page">04</span>
+  </div>
+
+  <div style="display:flex; flex-direction:column; height:100%; padding:80px var(--slide-padding-h) 72px;">
+
+    <div class="section-heading" style="flex-shrink:0;">
+      <div class="bar"></div>
+      <h2>四半期業績の推移と事業別収益構成</h2>
+    </div>
+
+    <div style="flex:1; display:flex; gap:32px; min-height:0;">
+
+      <!-- 左：棒グラフ -->
+      <div class="card" style="flex:1.3; display:flex; flex-direction:column; gap:20px;">
+        <div style="font-size:20px; font-weight:700; color:var(--color-text);">売上高推移（億円）</div>
+        <div style="flex:1; display:flex; align-items:flex-end; gap:20px; padding:0 8px; position:relative;">
+          <!-- 横線 -->
+          <div style="position:absolute; top:0; left:0; right:0; bottom:0; display:flex; flex-direction:column; justify-content:space-between; pointer-events:none;">
+            <div style="border-top:1px dashed rgba(61,174,216,0.2); display:flex; align-items:center;"><span style="font-size:13px; color:var(--color-text-muted); padding-right:8px;">400</span></div>
+            <div style="border-top:1px dashed rgba(61,174,216,0.2); display:flex; align-items:center;"><span style="font-size:13px; color:var(--color-text-muted); padding-right:8px;">300</span></div>
+            <div style="border-top:1px dashed rgba(61,174,216,0.2); display:flex; align-items:center;"><span style="font-size:13px; color:var(--color-text-muted); padding-right:8px;">200</span></div>
+            <div style="border-top:1px dashed rgba(61,174,216,0.2); display:flex; align-items:center;"><span style="font-size:13px; color:var(--color-text-muted); padding-right:8px;">100</span></div>
+            <div style="border-top:1px dashed rgba(61,174,216,0.2);"></div>
+          </div>
+          <!-- バー -->
+          <div style="flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:6px; z-index:1;">
+            <span style="font-size:16px; font-weight:700; color:var(--color-primary);">285</span>
+            <div style="width:80%; background:var(--color-primary); opacity:0.6; border-radius:2px 2px 0 0;" style="height:71%;"></div>
+            <div style="width:80%; height:71%; background:var(--color-primary); opacity:0.6; border-radius:2px 2px 0 0;"></div>
+            <span style="font-size:14px; color:var(--color-text-muted); margin-top:4px;">Q1</span>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:6px; z-index:1;">
+            <span style="font-size:16px; font-weight:700; color:var(--color-primary);">312</span>
+            <div style="width:80%; height:78%; background:var(--color-primary); opacity:0.7; border-radius:2px 2px 0 0;"></div>
+            <span style="font-size:14px; color:var(--color-text-muted); margin-top:4px;">Q2</span>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:6px; z-index:1;">
+            <span style="font-size:16px; font-weight:700; color:var(--color-primary);">298</span>
+            <div style="width:80%; height:74.5%; background:var(--color-primary); opacity:0.85; border-radius:2px 2px 0 0;"></div>
+            <span style="font-size:14px; color:var(--color-text-muted); margin-top:4px;">Q3</span>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:6px; z-index:1;">
+            <span style="font-size:16px; font-weight:700; color:var(--color-primary);">340</span>
+            <div style="width:80%; height:85%; background:var(--color-primary); border-radius:2px 2px 0 0;"></div>
+            <span style="font-size:14px; color:var(--color-text-muted); margin-top:4px;">Q4</span>
+          </div>
+        </div>
+        <!-- KPI行 -->
+        <div style="display:flex; gap:24px; padding-top:16px; border-top:1px solid rgba(61,174,216,0.15);">
+          <div>
+            <div style="font-size:13px; color:var(--color-text-muted); margin-bottom:4px;">通期売上高</div>
+            <div style="font-size:28px; font-weight:900; color:var(--color-primary);">1,235<span style="font-size:16px; font-weight:400; color:var(--color-text-muted); margin-left:4px;">億円</span></div>
+          </div>
+          <div>
+            <div style="font-size:13px; color:var(--color-text-muted); margin-bottom:4px;">前年比</div>
+            <div style="font-size:28px; font-weight:900; color:#3DAED8;">+8.2<span style="font-size:16px; font-weight:400; color:var(--color-text-muted); margin-left:2px;">%</span></div>
+          </div>
+          <div>
+            <div style="font-size:13px; color:var(--color-text-muted); margin-bottom:4px;">営業利益</div>
+            <div style="font-size:28px; font-weight:900; color:var(--color-text);">62<span style="font-size:16px; font-weight:400; color:var(--color-text-muted); margin-left:4px;">億円</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右：円グラフ -->
+      <div class="card" style="flex:1; display:flex; flex-direction:column; gap:20px;">
+        <div style="font-size:20px; font-weight:700; color:var(--color-text);">事業別収益構成</div>
+        <!-- 円グラフ（CSSのみ） -->
+        <div style="flex:1; display:flex; justify-content:center; align-items:center; position:relative;">
+          <div style="width:220px; height:220px; border-radius:50%; position:relative;
+            background: conic-gradient(
+              #3DAED8 0deg 180deg,
+              #2B8BBD 180deg 252deg,
+              #86CDE8 252deg 306deg,
+              #B8E2F2 306deg 342deg,
+              #D8EFF8 342deg 360deg
+            );
+          ">
+            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+              width:110px; height:110px; border-radius:50%; background:#F5F8FA;
+              display:flex; flex-direction:column; align-items:center; justify-content:center;">
+              <div style="font-size:13px; color:var(--color-text-muted);">合計</div>
+              <div style="font-size:22px; font-weight:900; color:var(--color-text);">1,235</div>
+              <div style="font-size:12px; color:var(--color-text-muted);">億円</div>
+            </div>
+          </div>
+        </div>
+        <!-- 凡例 -->
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:12px; height:12px; border-radius:50%; background:#3DAED8; flex-shrink:0;"></div>
+              <span style="font-size:16px; color:var(--color-text-sub);">メディア・コンテンツ事業</span>
+            </div>
+            <span style="font-size:16px; font-weight:700; color:var(--color-text);">50%</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:12px; height:12px; border-radius:50%; background:#2B8BBD; flex-shrink:0;"></div>
+              <span style="font-size:16px; color:var(--color-text-sub);">デジタル・配信事業</span>
+            </div>
+            <span style="font-size:16px; font-weight:700; color:var(--color-text);">20%</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:12px; height:12px; border-radius:50%; background:#86CDE8; flex-shrink:0;"></div>
+              <span style="font-size:16px; color:var(--color-text-sub);">都市開発・観光事業</span>
+            </div>
+            <span style="font-size:16px; font-weight:700; color:var(--color-text);">15%</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:12px; height:12px; border-radius:50%; background:#B8E2F2; flex-shrink:0;"></div>
+              <span style="font-size:16px; color:var(--color-text-sub);">IP・ライセンス事業</span>
+            </div>
+            <span style="font-size:16px; font-weight:700; color:var(--color-text);">10%</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:12px; height:12px; border-radius:50%; background:#D8EFF8; flex-shrink:0;"></div>
+              <span style="font-size:16px; color:var(--color-text-sub);">その他</span>
+            </div>
+            <span style="font-size:16px; font-weight:700; color:var(--color-text);">5%</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</section>
+</div>
+</div>
+
+<!-- ======================================================== -->
+<!-- PAGE 6: まとめ                                           -->
+<!-- ======================================================== -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide">
+
+  <div class="hatching-deco"></div>
+  <div class="section-label">今後の取り組み</div>
+
+  <div class="slide-footer">
+    <span class="footer-brand">サンプル株式会社 ANNUAL REPORT 2025</span>
+    <span class="footer-divider">|</span>
+    <span class="footer-page">05</span>
+  </div>
+
+  <div style="display:flex; flex-direction:column; height:100%; padding:80px var(--slide-padding-h) 72px;">
+
+    <div class="section-heading" style="flex-shrink:0;">
+      <div class="bar"></div>
+      <h2>次のステップ — 3つの価値創造軸</h2>
+    </div>
+
+    <!-- 3カラムカード -->
+    <div style="flex:1; display:flex; gap:28px; min-height:0;">
+
+      <div class="card" style="flex:1; display:flex; flex-direction:column; gap:20px; border-top:3px solid var(--color-primary);">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <div style="width:48px; height:48px; border-radius:50%; background:#EAF5FB; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <span style="font-size:22px; font-weight:900; color:var(--color-primary);">01</span>
+          </div>
+          <h3 style="font-size:24px; font-weight:700; color:var(--color-text); line-height:1.3;">コンテンツ力の<br>抜本的強化</h3>
+        </div>
+        <p style="font-size:17px; color:var(--color-text-sub); line-height:1.75; flex:1;">
+          オリジナルIPの発掘・開発を加速し、放送にとどまらず配信・イベント・グッズ展開まで一貫したバリューチェーンで収益化。外部パートナーとの共同制作体制を整備し、コンテンツの質と量を同時に向上させます。
+        </p>
+        <div style="border-top:1px solid rgba(61,174,216,0.15); padding-top:16px; display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="width:6px; height:6px; border-radius:50%; background:var(--color-primary);"></div>
+            <span style="font-size:15px; color:var(--color-text-sub);">年間IP開発本数の拡大</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="width:6px; height:6px; border-radius:50%; background:var(--color-primary);"></div>
+            <span style="font-size:15px; color:var(--color-text-sub);">グローバル共同制作の推進</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex:1; display:flex; flex-direction:column; gap:20px; border-top:3px solid var(--color-primary);">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <div style="width:48px; height:48px; border-radius:50%; background:#EAF5FB; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <span style="font-size:22px; font-weight:900; color:var(--color-primary);">02</span>
+          </div>
+          <h3 style="font-size:24px; font-weight:700; color:var(--color-text); line-height:1.3;">デジタル変革と<br>新規事業創出</h3>
+        </div>
+        <p style="font-size:17px; color:var(--color-text-sub); line-height:1.75; flex:1;">
+          AI・DXへの積極的な投資により制作・配信・営業プロセスを抜本的に刷新します。データを起点とした新規サービスの創出にも取り組み、既存事業の枠を超えた成長を目指します。
+        </p>
+        <div style="border-top:1px solid rgba(61,174,216,0.15); padding-top:16px; display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="width:6px; height:6px; border-radius:50%; background:var(--color-primary);"></div>
+            <span style="font-size:15px; color:var(--color-text-sub);">AI制作ツール全社展開</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="width:6px; height:6px; border-radius:50%; background:var(--color-primary);"></div>
+            <span style="font-size:15px; color:var(--color-text-sub);">データプラットフォームの構築</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="flex:1; display:flex; flex-direction:column; gap:20px; border-top:3px solid var(--color-primary);">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <div style="width:48px; height:48px; border-radius:50%; background:#EAF5FB; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <span style="font-size:22px; font-weight:900; color:var(--color-primary);">03</span>
+          </div>
+          <h3 style="font-size:24px; font-weight:700; color:var(--color-text); line-height:1.3;">人材投資と<br>信頼基盤の強化</h3>
+        </div>
+        <p style="font-size:17px; color:var(--color-text-sub); line-height:1.75; flex:1;">
+          従業員の心理的安全性と多様な人材が活躍できる環境を整備します。次世代リーダー育成プログラムの導入とともに、ステークホルダーからの信頼回復に向けた透明性ある経営を継続します。
+        </p>
+        <div style="border-top:1px solid rgba(61,174,216,0.15); padding-top:16px; display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="width:6px; height:6px; border-radius:50%; background:var(--color-primary);"></div>
+            <span style="font-size:15px; color:var(--color-text-sub);">次世代リーダー育成計画の策定</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="width:6px; height:6px; border-radius:50%; background:var(--color-primary);"></div>
+            <span style="font-size:15px; color:var(--color-text-sub);">人権・コンプライアンス体制の確立</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CTAバー -->
+    <div style="flex-shrink:0; margin-top:24px; background:#EAF5FB; border-radius:4px; padding:20px 36px; display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div style="font-size:14px; color:var(--color-text-muted); margin-bottom:4px; letter-spacing:0.04em;">VISION 2030</div>
+        <div style="font-size:22px; font-weight:700; color:var(--color-text);">豊かな社会づくりに貢献するコンテンツカンパニーへ</div>
+      </div>
+      <div class="btn-primary" style="white-space:nowrap;">詳細レポートを見る</div>
+    </div>
+
+  </div>
+
+</section>
+</div>
+</div>
+
+</body>
+</html>

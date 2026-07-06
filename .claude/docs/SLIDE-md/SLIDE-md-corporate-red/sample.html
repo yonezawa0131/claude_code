@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>SLIDE SAMPLE — Corporate Red × Monochrome</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --color-primary:    #CC0000;
+      --color-secondary:  #1A1A1A;
+      --color-background: #FFFFFF;
+      --color-accent:     #CC0000;
+      --color-text:       #1A1A1A;
+      --color-text-sub:   #555555;
+      --color-text-muted: #888888;
+      --color-surface:    #F5F5F5;
+      --color-surface-soft: #F9F9F9;
+      --color-border:     rgba(0,0,0,0.10);
+      --font-display:     'Noto Sans JP', system-ui, sans-serif;
+      --font-body:        'Noto Sans JP', system-ui, sans-serif;
+      --font-mono:        'DM Mono', monospace;
+      --gradient-main:    linear-gradient(90deg, #CC0000, #FF6060);
+      --gradient-vert:    linear-gradient(180deg, #CC0000, #FF6060);
+      --slide-padding-v:  64px;
+      --slide-padding-h:  88px;
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #BEBEBE;
+      padding: 40px 20px;
+      font-family: var(--font-display);
+    }
+
+    .slide-outer {
+      margin: 0 auto 32px;
+      width: 1440px;
+    }
+
+    .slide-wrapper {
+      width: 1920px;
+      transform-origin: top left;
+      transform: scale(0.75);
+      margin-bottom: -270px;
+    }
+
+    .slide {
+      width: 1920px;
+      height: 1080px;
+      background: var(--color-background);
+      font-family: var(--font-display);
+      color: var(--color-text);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 全スライド共通：左端レッドバー */
+    .left-bar {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 8px;
+      background: var(--color-primary);
+      z-index: 20;
+      flex-shrink: 0;
+    }
+
+    /* ページ番号（コンテンツページのみ） */
+    .page-num {
+      position: absolute;
+      right: 80px;
+      bottom: 24px;
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--color-text-muted);
+      z-index: 20;
+    }
+
+    /* セクションヘッダーバー */
+    .section-hdr {
+      position: absolute;
+      top: 0; left: 8px; right: 0;
+      height: 52px;
+      background: #F2F2F2;
+      display: flex;
+      align-items: center;
+      padding: 0 88px;
+      z-index: 10;
+    }
+
+    /* ロゴパーツ */
+    .aq-box {
+      width: 34px; height: 34px;
+      background: var(--color-primary);
+      border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .aq-box span { color: #fff; font-weight: 900; font-size: 14px; letter-spacing: -0.03em; }
+    .aq-logo-inline {
+      position: absolute; right: 88px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .aq-name { font-size: 16px; font-weight: 700; color: var(--color-text); }
+
+    /* カード */
+    .card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 14px;
+    }
+
+    /* ぼかしテクスチャ背景（表紙・区切り） */
+    .texture-bg {
+      background:
+        radial-gradient(ellipse 90% 70% at 88% 42%, rgba(193,198,213,0.68) 0%, rgba(208,213,225,0.28) 42%, transparent 64%),
+        radial-gradient(ellipse 55% 55% at 82% 72%, rgba(174,181,200,0.50) 0%, transparent 50%),
+        radial-gradient(ellipse 40% 35% at 68% 28%, rgba(204,209,220,0.36) 0%, transparent 46%),
+        #FFFFFF;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- PAGE 1: デザインシステム概要（仕様書ページ） -->
+<!-- ============================================================ -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide" style="background:var(--color-surface-soft); padding:40px 52px; display:flex; flex-direction:column; gap:0;">
+
+  <!-- ヘッダー -->
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+    <div style="display:flex; align-items:center; gap:16px;">
+      <div style="width:52px;height:52px;background:var(--color-primary);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <span style="color:#fff;font-weight:900;font-size:22px;letter-spacing:-0.03em;">AQ</span>
+      </div>
+      <div>
+        <div style="font-size:36px;font-weight:900;color:var(--color-primary);line-height:1;">CORPORATE RED</div>
+        <div style="font-size:14px;color:var(--color-text-muted);margin-top:3px;font-weight:500;">Design System — Style Sheet / v1.0 · 16:9</div>
+      </div>
+    </div>
+    <div style="font-size:14px;color:var(--color-text-muted);text-align:right;line-height:1.6;">
+      Primary: #CC0000 &nbsp;|&nbsp; Font: Noto Sans JP<br>
+      Padding: 64px × 88px &nbsp;|&nbsp; Size: 1920 × 1080
+    </div>
+  </div>
+
+  <!-- カラーパレット行 -->
+  <div style="display:flex;gap:0;background:#fff;border:1px solid var(--color-border);border-radius:10px;overflow:hidden;margin-bottom:16px;flex-shrink:0;">
+    <!-- Brand グループ -->
+    <div style="display:flex;gap:10px;padding:12px 18px;flex:1.1;">
+      <div style="flex:1;border-radius:8px;overflow:hidden;">
+        <div style="height:58px;background:#CC0000;"></div>
+        <div style="padding:6px 9px;background:#F9F9F9;">
+          <div style="font-size:14px;font-weight:700;">Primary</div>
+          <div style="font-size:11px;color:var(--color-text-muted);">#CC0000</div>
+        </div>
+      </div>
+      <div style="flex:1;border-radius:8px;overflow:hidden;">
+        <div style="height:58px;background:#FF6060;"></div>
+        <div style="padding:6px 9px;background:#F9F9F9;">
+          <div style="font-size:14px;font-weight:700;">Primary Lt</div>
+          <div style="font-size:11px;color:var(--color-text-muted);">#FF6060</div>
+        </div>
+      </div>
+      <div style="flex:1;border-radius:8px;overflow:hidden;">
+        <div style="height:58px;background:#FFCCCC;"></div>
+        <div style="padding:6px 9px;background:#F9F9F9;">
+          <div style="font-size:14px;font-weight:700;">Primary Soft</div>
+          <div style="font-size:11px;color:var(--color-text-muted);">#FFCCCC</div>
+        </div>
+      </div>
+    </div>
+    <div style="width:1px;background:var(--color-border);margin:10px 0;"></div>
+    <!-- Text グループ -->
+    <div style="display:flex;gap:10px;padding:12px 18px;flex:1;">
+      <div style="flex:1;border-radius:8px;overflow:hidden;">
+        <div style="height:58px;background:#1A1A1A;"></div>
+        <div style="padding:6px 9px;background:#F9F9F9;">
+          <div style="font-size:14px;font-weight:700;">Text</div>
+          <div style="font-size:11px;color:var(--color-text-muted);">#1A1A1A</div>
+        </div>
+      </div>
+      <div style="flex:1;border-radius:8px;overflow:hidden;">
+        <div style="height:58px;background:#555555;"></div>
+        <div style="padding:6px 9px;background:#F9F9F9;">
+          <div style="font-size:14px;font-weight:700;">Text Sub</div>
+          <div style="font-size:11px;color:var(--color-text-muted);">#555555</div>
+        </div>
+      </div>
+      <div style="flex:1;border-radius:8px;overflow:hidden;">
+        <div style="height:58px;background:#888888;"></div>
+        <div style="padding:6px 9px;background:#F9F9F9;">
+          <div style="font-size:14px;font-weight:700;">Muted</div>
+          <div style="font-size:11px;color:var(--color-text-muted);">#888888</div>
+        </div>
+      </div>
+    </div>
+    <div style="width:1px;background:var(--color-border);margin:10px 0;"></div>
+    <!-- Surface グループ -->
+    <div style="display:flex;gap:10px;padding:12px 18px;flex:1.2;">
+      <div style="flex:1;border-radius:8px;overflow:hidden;">
+        <div style="height:58px;background:#FFFFFF;border:1px solid #E0E0E0;"></div>
+        <div style="padding:6px 9px;background:#F9F9F9;">
+          <div style="font-size:14px;font-weight:700;">Background</div>
+          <div style="font-size:11px;color:var(--color-text-muted);">#FFFFFF</div>
+        </div>
+      </div>
+      <div style="flex:1;border-radius:8px;overflow:hidden;">
+        <div style="height:58px;background:#F5F5F5;"></div>
+        <div style="padding:6px 9px;background:#F9F9F9;">
+          <div style="font-size:14px;font-weight:700;">Surface</div>
+          <div style="font-size:11px;color:var(--color-text-muted);">#F5F5F5</div>
+        </div>
+      </div>
+      <div style="flex:1;border-radius:8px;overflow:hidden;">
+        <div style="height:58px;background:#F2F2F2;"></div>
+        <div style="padding:6px 9px;background:#F9F9F9;">
+          <div style="font-size:14px;font-weight:700;">Header BG</div>
+          <div style="font-size:11px;color:var(--color-text-muted);">#F2F2F2</div>
+        </div>
+      </div>
+      <div style="flex:1;border-radius:8px;overflow:hidden;">
+        <div style="height:58px;background:#E0E0E0;"></div>
+        <div style="padding:6px 9px;background:#F9F9F9;">
+          <div style="font-size:14px;font-weight:700;">Border</div>
+          <div style="font-size:11px;color:var(--color-text-muted);">#E0E0E0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 下段3カラム -->
+  <div style="display:flex;gap:14px;flex:1;min-height:0;">
+
+    <!-- 左：スライドで使うパーツ -->
+    <div style="flex:1.6;background:#fff;border:1px solid var(--color-border);border-radius:10px;padding:24px 28px;display:flex;flex-direction:column;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <div style="width:5px;height:22px;border-radius:3px;background:var(--color-primary);flex-shrink:0;"></div>
+        <div style="font-size:22px;font-weight:700;">スライドで使うパーツ</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 22px;align-content:space-between;flex:1;">
+        <!-- ボタン -->
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--color-text-muted);margin-bottom:6px;">ボタン</div>
+          <button style="background:var(--color-primary);color:#fff;border:none;padding:12px 26px;border-radius:6px;font-size:16px;font-weight:700;font-family:var(--font-display);cursor:default;">詳細を見る →</button>
+        </div>
+        <!-- ピル型ラベル -->
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--color-text-muted);margin-bottom:6px;">ピル型ラベル</div>
+          <div style="display:flex;gap:7px;flex-wrap:wrap;">
+            <span style="display:inline-flex;padding:5px 14px;border-radius:999px;background:var(--color-primary);color:#fff;font-size:14px;font-weight:700;">レッド</span>
+            <span style="display:inline-flex;padding:5px 14px;border-radius:999px;background:var(--color-secondary);color:#fff;font-size:14px;font-weight:700;">ダーク</span>
+            <span style="display:inline-flex;padding:5px 14px;border-radius:999px;background:#FFE8E8;color:var(--color-primary);font-size:14px;font-weight:700;">ライト</span>
+          </div>
+        </div>
+        <!-- カード -->
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--color-text-muted);margin-bottom:6px;">カード</div>
+          <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:12px 16px;">
+            <div style="font-size:15px;font-weight:700;">コンテンツカード</div>
+            <div style="font-size:13px;color:var(--color-text-muted);margin-top:4px;">説明テキスト</div>
+          </div>
+        </div>
+        <!-- セクションヘッダーバー -->
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--color-text-muted);margin-bottom:6px;">セクションヘッダーバー</div>
+          <div style="background:#F2F2F2;border-radius:6px;padding:10px 14px;display:flex;align-items:center;gap:0;">
+            <span style="font-size:14px;color:#888;font-weight:500;">会社概要</span>
+            <span style="margin:0 10px;color:#C8C8C8;font-size:14px;">|</span>
+            <span style="font-size:14px;color:#888;font-weight:500;">サービス</span>
+          </div>
+        </div>
+        <!-- 左端バー -->
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--color-text-muted);margin-bottom:6px;">左端バー（全スライド）</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:8px;height:52px;background:var(--color-primary);flex-shrink:0;"></div>
+            <div style="font-size:15px;font-weight:700;color:var(--color-text);">全高・Primary #CC0000・幅8px</div>
+          </div>
+        </div>
+        <!-- 番号スタイル -->
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--color-text-muted);margin-bottom:6px;">番号スタイル</div>
+          <div style="display:flex;gap:14px;align-items:center;">
+            <span style="font-size:30px;font-weight:900;color:var(--color-primary);">01</span>
+            <span style="font-size:30px;font-weight:900;color:var(--color-primary);">02</span>
+            <span style="font-size:30px;font-weight:900;color:var(--color-primary);">03</span>
+          </div>
+        </div>
+        <!-- ページ番号 -->
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--color-text-muted);margin-bottom:6px;">ページ番号</div>
+          <div style="font-size:24px;font-weight:500;color:var(--color-text-muted);">3</div>
+        </div>
+        <!-- 区切り線 -->
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--color-text-muted);margin-bottom:6px;">区切り線</div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <div style="height:2px;background:var(--color-primary);width:100%;border-radius:1px;"></div>
+            <div style="height:1px;background:#E0E0E0;width:100%;border-radius:1px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 中：タイポグラフィ -->
+    <div style="flex:1.05;background:#fff;border:1px solid var(--color-border);border-radius:10px;padding:24px 28px;display:flex;flex-direction:column;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <div style="width:5px;height:22px;border-radius:3px;background:var(--color-primary);flex-shrink:0;"></div>
+        <div style="font-size:22px;font-weight:700;">タイポグラフィ</div>
+      </div>
+      <div style="display:flex;flex-direction:column;justify-content:space-between;flex:1;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--color-border);padding-bottom:7px;">
+          <div style="font-size:42px;font-weight:900;line-height:1;color:var(--color-text);">表紙タイトル</div>
+          <div style="font-size:12px;color:var(--color-text-muted);white-space:nowrap;margin-left:8px;">900 / 96px</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--color-border);padding-bottom:7px;">
+          <div style="font-size:32px;font-weight:700;line-height:1;color:var(--color-text);">大見出し H1</div>
+          <div style="font-size:12px;color:var(--color-text-muted);white-space:nowrap;">700 / 64px</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--color-border);padding-bottom:7px;">
+          <div style="font-size:24px;font-weight:700;color:var(--color-text);">中見出し H2</div>
+          <div style="font-size:12px;color:var(--color-text-muted);white-space:nowrap;">700 / 40px</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--color-border);padding-bottom:7px;">
+          <div style="font-size:19px;font-weight:700;color:var(--color-text);">小見出し H3</div>
+          <div style="font-size:12px;color:var(--color-text-muted);white-space:nowrap;">700 / 28px</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--color-border);padding-bottom:7px;">
+          <div style="font-size:16px;font-weight:400;color:var(--color-text);">本文テキスト Body</div>
+          <div style="font-size:12px;color:var(--color-text-muted);white-space:nowrap;">400 / 20px</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--color-border);padding-bottom:7px;">
+          <div style="font-size:13px;font-weight:400;color:var(--color-text-sub);">補足テキスト Sub</div>
+          <div style="font-size:12px;color:var(--color-text-muted);white-space:nowrap;">400 / 16px</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;">
+          <div style="font-size:11px;font-weight:400;color:var(--color-text-muted);">キャプション Caption</div>
+          <div style="font-size:12px;color:var(--color-text-muted);white-space:nowrap;">400 / 13px</div>
+        </div>
+        <!-- フォント名 -->
+        <div style="margin-top:14px;padding:9px 12px;background:var(--color-surface);border-radius:8px;border:1px solid var(--color-border);">
+          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:2px;">使用フォント</div>
+          <div style="font-size:15px;font-weight:700;">Noto Sans JP</div>
+        </div>
+        <!-- レイアウト -->
+        <div style="margin-top:8px;padding:9px 12px;background:var(--color-surface);border-radius:8px;border:1px solid var(--color-border);">
+          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:4px;">レイアウト</div>
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--color-text-muted);">サイズ</span><span style="font-weight:700;">1920×1080px (16:9)</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--color-text-muted);">余白（上下）</span><span style="font-weight:700;">64px</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--color-text-muted);">余白（左右）</span><span style="font-weight:700;">88px</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--color-text-muted);">整列</span><span style="font-weight:700;">左寄せ</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右：Do / Don't -->
+    <div style="flex:1;display:flex;flex-direction:column;gap:10px;">
+      <!-- Do -->
+      <div style="flex:1;background:#FFF5F5;border:1px solid rgba(204,0,0,0.15);border-radius:10px;padding:20px 24px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--color-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <span style="color:#fff;font-size:16px;font-weight:700;">✓</span>
+          </div>
+          <div style="font-size:22px;font-weight:800;color:var(--color-primary);">Do</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px;">
+          <div style="font-size:16px;line-height:1.55;">レッド・ダーク・ホワイトの3色パレットを一貫して守る</div>
+          <div style="font-size:16px;line-height:1.55;">重要メッセージは大きく太く表示して視認性を最優先する</div>
+          <div style="font-size:16px;line-height:1.55;">左端の赤バーで全スライドの統一感と緊張感を作る</div>
+          <div style="font-size:16px;line-height:1.55;">ダイアグラム・図解で複雑な概念を視覚化する</div>
+        </div>
+      </div>
+      <!-- Don't -->
+      <div style="flex:1;background:#F5F5F5;border:1px solid rgba(0,0,0,0.08);border-radius:10px;padding:20px 24px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--color-secondary);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <span style="color:#fff;font-size:16px;font-weight:700;">✕</span>
+          </div>
+          <div style="font-size:22px;font-weight:800;color:var(--color-secondary);">Don't</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px;">
+          <div style="font-size:16px;line-height:1.55;">3色以外の明るい色（ブルー・グリーン等）を追加しない</div>
+          <div style="font-size:16px;line-height:1.55;">コンテンツページに背景テクスチャを使わない</div>
+          <div style="font-size:16px;line-height:1.55;">テキストだけのスライドにしない（視覚要素を必ず入れる）</div>
+          <div style="font-size:16px;line-height:1.55;">角丸を20px以上にしない（フォーマルさを保つ）</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /下段 -->
+</section>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PAGE 2: 表紙（Cover） -->
+<!-- ============================================================ -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide texture-bg" style="position:relative;">
+  <div class="left-bar"></div>
+
+  <!-- コンテンツ（左ハーフ） -->
+  <div style="position:absolute;top:0;left:8px;bottom:0;width:56%;display:flex;flex-direction:column;padding:60px 88px 60px;">
+
+    <!-- ロゴ（左上） -->
+    <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:auto;">
+      <div style="width:52px;height:52px;background:var(--color-primary);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
+        <span style="color:#fff;font-weight:900;font-size:22px;letter-spacing:-0.03em;">AQ</span>
+      </div>
+      <div>
+        <div style="font-size:24px;font-weight:900;color:var(--color-text);line-height:1;">サンプル<span style="color:var(--color-primary);">コーポレーション</span></div>
+        <div style="font-size:15px;color:var(--color-text-muted);margin-top:5px;">Empower to <span style="color:var(--color-primary);font-weight:700;">Change</span></div>
+      </div>
+    </div>
+
+    <!-- メインタイトル -->
+    <div style="margin-top:auto;">
+      <div style="font-size:68px;font-weight:900;color:var(--color-text);line-height:1.10;letter-spacing:-0.025em;margin-bottom:44px;">
+        2025年度<br>事業説明資料
+      </div>
+      <div style="height:1px;background:#D8D8D8;width:100%;margin-bottom:28px;"></div>
+      <div style="font-size:22px;font-weight:500;color:var(--color-text-sub);margin-bottom:10px;">サンプル株式会社</div>
+      <div style="font-size:17px;color:var(--color-text-muted);">2026年2月 &nbsp;証券コード：XXXX</div>
+    </div>
+  </div>
+
+</section>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PAGE 3: セクション区切り -->
+<!-- ============================================================ -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide texture-bg" style="position:relative;">
+  <div class="left-bar"></div>
+
+  <!-- セクションタイトル（下部左） -->
+  <div style="position:absolute;bottom:150px;left:88px;">
+    <div style="font-size:90px;font-weight:900;color:var(--color-primary);line-height:1;letter-spacing:-0.025em;">
+      01 &nbsp;<span style="font-size:60px;font-weight:400;color:var(--color-text-muted);">ー</span>&nbsp; 事業概要
+    </div>
+  </div>
+
+</section>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PAGE 4: 本文（箇条書き・カード） -->
+<!-- ============================================================ -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide" style="position:relative;">
+  <div class="left-bar"></div>
+
+  <!-- セクションヘッダーバー -->
+  <div class="section-hdr">
+    <span style="font-size:16px;color:#888;font-weight:500;">事業概要</span>
+    <span style="margin:0 14px;color:#CCC;">|</span>
+    <span style="font-size:16px;color:#888;font-weight:500;">3つのサービス領域</span>
+    <div class="aq-logo-inline">
+      <div class="aq-box"><span>AQ</span></div>
+      <span class="aq-name">サンプル株式会社</span>
+    </div>
+  </div>
+
+  <!-- コンテンツエリア -->
+  <div style="position:absolute;top:52px;left:8px;right:0;bottom:0;padding:50px 88px 60px;display:flex;flex-direction:column;">
+
+    <!-- 見出し -->
+    <div style="margin-bottom:10px;">
+      <div style="font-size:62px;font-weight:900;color:var(--color-text);letter-spacing:-0.025em;line-height:1.08;">DXビジネスを<span style="color:var(--color-primary);">加速する</span>3つの柱</div>
+    </div>
+    <div style="font-size:22px;color:var(--color-text-muted);margin-bottom:44px;">コンサルティング・モダナイゼーション・AIインテグレーションを統合提供</div>
+
+    <!-- カード -->
+    <div style="display:flex;gap:24px;flex:1;min-height:0;">
+
+      <!-- カード1 -->
+      <div style="flex:1;background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:36px 40px;display:flex;flex-direction:column;">
+        <span style="display:inline-flex;padding:7px 18px;border-radius:999px;background:var(--color-primary);color:#fff;font-size:16px;font-weight:700;margin-bottom:20px;align-self:flex-start;">コンサルティング</span>
+        <div style="font-size:32px;font-weight:900;color:var(--color-primary);margin-bottom:14px;">Consulting</div>
+        <div style="font-size:20px;color:var(--color-text-muted);line-height:1.7;flex:1;">ビジネス理解を強みとするコンサルタントが、経営戦略の立案からDX実装計画まで一気通貫でご支援。顧客起点の課題解決を実現します。</div>
+      </div>
+
+      <!-- カード2（強調） -->
+      <div style="flex:1;background:var(--color-primary);border-radius:14px;padding:36px 40px;display:flex;flex-direction:column;">
+        <span style="display:inline-flex;padding:7px 18px;border-radius:999px;background:rgba(255,255,255,0.22);color:#fff;font-size:16px;font-weight:700;margin-bottom:20px;align-self:flex-start;">モダナイゼーション</span>
+        <div style="font-size:32px;font-weight:900;color:#fff;margin-bottom:14px;">Modernization</div>
+        <div style="font-size:20px;color:rgba(255,255,255,0.85);line-height:1.7;flex:1;">クラウド・アプリ・データ基盤を刷新。AI/DXに必要なシステム基盤を構築・最適化し、ビジネスのデジタル変革を技術面から支えます。</div>
+      </div>
+
+      <!-- カード3 -->
+      <div style="flex:1;background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:36px 40px;display:flex;flex-direction:column;">
+        <span style="display:inline-flex;padding:7px 18px;border-radius:999px;background:var(--color-secondary);color:#fff;font-size:16px;font-weight:700;margin-bottom:20px;align-self:flex-start;">AIインテグレーション</span>
+        <div style="font-size:32px;font-weight:900;color:var(--color-primary);margin-bottom:14px;">AI Integration</div>
+        <div style="font-size:20px;color:var(--color-text-muted);line-height:1.7;flex:1;">AIソリューション提供からAIエージェントの開発・実装まで。AIネイティブなビジネス構築を強力にサポートします。</div>
+      </div>
+
+    </div><!-- /カード -->
+  </div><!-- /コンテンツ -->
+
+  <div class="page-num">3</div>
+</section>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PAGE 5: データチャート -->
+<!-- ============================================================ -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide" style="position:relative;">
+  <div class="left-bar"></div>
+
+  <!-- セクションヘッダーバー -->
+  <div class="section-hdr">
+    <span style="font-size:16px;color:#888;font-weight:500;">業績実績</span>
+    <span style="margin:0 14px;color:#CCC;">|</span>
+    <span style="font-size:16px;color:#888;font-weight:500;">四半期データ</span>
+    <div class="aq-logo-inline">
+      <div class="aq-box"><span>AQ</span></div>
+      <span class="aq-name">サンプル株式会社</span>
+    </div>
+  </div>
+
+  <!-- コンテンツエリア -->
+  <div style="position:absolute;top:52px;left:8px;right:0;bottom:0;padding:46px 88px 52px;display:flex;flex-direction:column;">
+
+    <!-- 見出し -->
+    <div style="margin-bottom:10px;">
+      <div style="font-size:62px;font-weight:900;color:var(--color-text);letter-spacing:-0.025em;line-height:1;">四半期業績の推移</div>
+    </div>
+    <div style="font-size:20px;color:var(--color-text-muted);margin-bottom:32px;">単位：百万円 ／ グラフはサンプルデータです</div>
+
+    <!-- チャートエリア -->
+    <div style="display:flex;gap:32px;flex:1;min-height:0;">
+
+      <!-- 棒グラフ -->
+      <div style="flex:1.4;background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:30px 34px;display:flex;flex-direction:column;">
+        <div style="font-size:20px;font-weight:700;margin-bottom:18px;">営業収益（四半期別）</div>
+        <!-- 凡例 -->
+        <div style="display:flex;gap:20px;margin-bottom:14px;">
+          <div style="display:flex;align-items:center;gap:7px;"><div style="width:14px;height:14px;border-radius:2px;background:var(--color-primary);"></div><span style="font-size:14px;color:var(--color-text-muted);">今期（FY2025）</span></div>
+          <div style="display:flex;align-items:center;gap:7px;"><div style="width:14px;height:14px;border-radius:2px;background:#DADADA;"></div><span style="font-size:14px;color:var(--color-text-muted);">前期（FY2024）</span></div>
+        </div>
+        <!-- バー -->
+        <div style="flex:1;display:flex;align-items:flex-end;gap:22px;min-height:0;">
+          <!-- Q1 -->
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;">
+            <div style="font-size:16px;font-weight:700;color:var(--color-text-muted);">285</div>
+            <div style="flex:1;width:100%;display:flex;align-items:flex-end;gap:5px;">
+              <div style="flex:1;height:54%;background:#DADADA;border-radius:3px 3px 0 0;"></div>
+              <div style="flex:1;height:63%;background:rgba(204,0,0,0.38);border-radius:3px 3px 0 0;"></div>
+            </div>
+            <div style="font-size:15px;color:var(--color-text-muted);">Q1</div>
+          </div>
+          <!-- Q2 -->
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;">
+            <div style="font-size:16px;font-weight:700;color:var(--color-text-muted);">348</div>
+            <div style="flex:1;width:100%;display:flex;align-items:flex-end;gap:5px;">
+              <div style="flex:1;height:62%;background:#DADADA;border-radius:3px 3px 0 0;"></div>
+              <div style="flex:1;height:74%;background:rgba(204,0,0,0.48);border-radius:3px 3px 0 0;"></div>
+            </div>
+            <div style="font-size:15px;color:var(--color-text-muted);">Q2</div>
+          </div>
+          <!-- Q3 -->
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;">
+            <div style="font-size:16px;font-weight:700;color:var(--color-text-muted);">372</div>
+            <div style="flex:1;width:100%;display:flex;align-items:flex-end;gap:5px;">
+              <div style="flex:1;height:67%;background:#DADADA;border-radius:3px 3px 0 0;"></div>
+              <div style="flex:1;height:79%;background:rgba(204,0,0,0.58);border-radius:3px 3px 0 0;"></div>
+            </div>
+            <div style="font-size:15px;color:var(--color-text-muted);">Q3</div>
+          </div>
+          <!-- Q4（強調） -->
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;">
+            <div style="font-size:16px;font-weight:700;color:var(--color-primary);">452</div>
+            <div style="flex:1;width:100%;display:flex;align-items:flex-end;gap:5px;">
+              <div style="flex:1;height:74%;background:#DADADA;border-radius:3px 3px 0 0;"></div>
+              <div style="flex:1;height:95%;background:var(--color-primary);border-radius:3px 3px 0 0;box-shadow:0 4px 14px rgba(204,0,0,0.32);"></div>
+            </div>
+            <div style="font-size:15px;color:var(--color-primary);font-weight:700;">Q4</div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:10px;font-size:15px;color:var(--color-text-muted);">FY2025</div>
+      </div>
+
+      <!-- ドーナツグラフ -->
+      <div style="flex:1;background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:30px 34px;display:flex;flex-direction:column;align-items:center;">
+        <div style="font-size:20px;font-weight:700;margin-bottom:18px;width:100%;">サービス別売上構成比</div>
+        <!-- グラフ本体 -->
+        <div style="position:relative;width:240px;height:240px;flex-shrink:0;">
+          <div style="width:240px;height:240px;border-radius:50%;background:conic-gradient(#CC0000 0% 55%, #FF8080 55% 78%, #DDDDDD 78% 100%);"></div>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:144px;height:144px;background:var(--color-surface);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+            <div style="font-size:30px;font-weight:900;color:var(--color-primary);line-height:1;">55%</div>
+            <div style="font-size:13px;color:var(--color-text-muted);margin-top:3px;">AI統合</div>
+          </div>
+        </div>
+        <!-- 凡例 -->
+        <div style="display:flex;flex-direction:column;gap:11px;margin-top:18px;width:100%;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:14px;height:14px;border-radius:3px;background:#CC0000;flex-shrink:0;"></div>
+            <div style="font-size:16px;flex:1;">AIインテグレーション</div>
+            <div style="font-size:18px;font-weight:700;color:var(--color-primary);">55%</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:14px;height:14px;border-radius:3px;background:#FF8080;flex-shrink:0;"></div>
+            <div style="font-size:16px;flex:1;">コンサルティング</div>
+            <div style="font-size:18px;font-weight:700;">23%</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:14px;height:14px;border-radius:3px;background:#DDDDDD;flex-shrink:0;"></div>
+            <div style="font-size:16px;flex:1;">モダナイゼーション</div>
+            <div style="font-size:18px;font-weight:700;">22%</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /チャート -->
+  </div><!-- /コンテンツ -->
+
+  <div class="page-num">4</div>
+</section>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PAGE 6: まとめ -->
+<!-- ============================================================ -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide" style="position:relative;">
+  <div class="left-bar"></div>
+
+  <!-- セクションヘッダーバー -->
+  <div class="section-hdr">
+    <span style="font-size:16px;color:#888;font-weight:500;">成長戦略</span>
+    <span style="margin:0 14px;color:#CCC;">|</span>
+    <span style="font-size:16px;color:#888;font-weight:500;">今後の優先事項</span>
+    <div class="aq-logo-inline">
+      <div class="aq-box"><span>AQ</span></div>
+      <span class="aq-name">サンプル株式会社</span>
+    </div>
+  </div>
+
+  <!-- コンテンツエリア -->
+  <div style="position:absolute;top:52px;left:8px;right:0;bottom:0;padding:46px 88px 44px;display:flex;flex-direction:column;">
+
+    <!-- 見出し -->
+    <div style="font-size:62px;font-weight:900;color:var(--color-text);letter-spacing:-0.025em;line-height:1;margin-bottom:10px;">今後の取り組み</div>
+    <div style="font-size:20px;color:var(--color-text-muted);margin-bottom:36px;">FY2026に向けた3つの優先事項</div>
+
+    <!-- カード -->
+    <div style="display:flex;gap:24px;flex:1;min-height:0;">
+
+      <div style="flex:1;background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:38px 40px;display:flex;flex-direction:column;">
+        <div style="width:64px;height:64px;border-radius:12px;background:var(--color-primary);display:flex;align-items:center;justify-content:center;margin-bottom:20px;flex-shrink:0;">
+          <span style="font-size:28px;font-weight:900;color:#fff;">強</span>
+        </div>
+        <div style="font-size:28px;font-weight:700;color:var(--color-text);margin-bottom:12px;letter-spacing:-0.01em;">強みのさらなる強化</div>
+        <div style="font-size:20px;color:var(--color-text-muted);line-height:1.68;flex:1;">AIインテグレーションにおける独自技術を深化させ、大手クライアントとの長期的なパートナーシップを拡充する。</div>
+      </div>
+
+      <div style="flex:1;background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:38px 40px;display:flex;flex-direction:column;">
+        <div style="width:64px;height:64px;border-radius:12px;background:var(--color-secondary);display:flex;align-items:center;justify-content:center;margin-bottom:20px;flex-shrink:0;">
+          <span style="font-size:28px;font-weight:900;color:#fff;">拡</span>
+        </div>
+        <div style="font-size:28px;font-weight:700;color:var(--color-text);margin-bottom:12px;letter-spacing:-0.01em;">新市場への展開</div>
+        <div style="font-size:20px;color:var(--color-text-muted);line-height:1.68;flex:1;">製造・建設・物流など多様な業界へのAI導入支援を加速し、各業界に特化したソリューション提供領域を広げる。</div>
+      </div>
+
+      <div style="flex:1;background:var(--color-surface);border:1px solid var(--color-border);border-radius:14px;padding:38px 40px;display:flex;flex-direction:column;">
+        <div style="width:64px;height:64px;border-radius:12px;background:rgba(204,0,0,0.12);display:flex;align-items:center;justify-content:center;margin-bottom:20px;flex-shrink:0;">
+          <span style="font-size:28px;font-weight:900;color:var(--color-primary);">基</span>
+        </div>
+        <div style="font-size:28px;font-weight:700;color:var(--color-text);margin-bottom:12px;letter-spacing:-0.01em;">経営基盤の整備</div>
+        <div style="font-size:20px;color:var(--color-text-muted);line-height:1.68;flex:1;">ガバナンス体制の高度化と人材育成・採用強化により、持続的な成長を支える組織基盤をさらに強固にする。</div>
+      </div>
+
+    </div><!-- /カード -->
+
+    <!-- CTA -->
+    <div style="display:flex;justify-content:center;margin-top:28px;">
+      <div style="padding:18px 60px;border-radius:8px;background:var(--color-primary);color:#fff;font-size:24px;font-weight:700;">引き続き、ご支援のほどよろしくお願いいたします</div>
+    </div>
+
+  </div><!-- /コンテンツ -->
+
+  <div class="page-num">5</div>
+</section>
+</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SLIDE-md-blue-simple-diagram — Sample</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --color-primary:    #29ABE2;
+  --color-secondary:  #A8DCF0;
+  --color-accent:     #111111;
+  --color-background: #FFFFFF;
+  --color-text:       #1A1A1A;
+  --color-text-sub:   #2D2D2D;
+  --color-text-muted: #6B6B6B;
+  --color-border:     #CDD8E3;
+  --font-display:     'Noto Sans JP', sans-serif;
+  --gradient-main:    linear-gradient(90deg, #29ABE2, #A8DCF0);
+  --gradient-vert:    linear-gradient(180deg, #29ABE2, #A8DCF0);
+  --slide-padding-v:  80px;
+  --slide-padding-h:  100px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #E0EEF6;
+  padding: 40px 20px;
+  font-family: var(--font-display);
+}
+
+.slide-outer {
+  margin: 0 auto 32px;
+  width: 1440px;
+}
+
+.slide-wrapper {
+  width: 1920px;
+  transform-origin: top left;
+  transform: scale(0.75);
+  margin-bottom: -270px;
+}
+
+.slide {
+  width: 1920px;
+  height: 1080px;
+  background: #FFFFFF;
+  font-family: var(--font-display);
+  color: var(--color-text);
+  position: relative;
+  overflow: hidden;
+}
+
+/* ブロブ装飾 */
+.blob-top-left {
+  position: absolute;
+  top: -120px; left: -100px;
+  width: 500px; height: 500px;
+  border-radius: 43% 57% 70% 30% / 45% 35% 65% 55%;
+  background: linear-gradient(135deg, rgba(41,171,226,0.25), rgba(168,220,240,0.20));
+  pointer-events: none;
+  z-index: 0;
+}
+.blob-right-large {
+  position: absolute;
+  top: 80px; right: -150px;
+  width: 600px; height: 650px;
+  border-radius: 63% 37% 54% 46% / 55% 48% 52% 45%;
+  background: linear-gradient(225deg, rgba(168,220,240,0.22), rgba(41,171,226,0.12));
+  pointer-events: none;
+  z-index: 0;
+}
+.blob-right-small {
+  position: absolute;
+  bottom: -100px; right: 200px;
+  width: 300px; height: 300px;
+  border-radius: 38% 62% 45% 55% / 60% 42% 58% 40%;
+  background: linear-gradient(45deg, rgba(41,171,226,0.10), rgba(168,220,240,0.15));
+  pointer-events: none;
+  z-index: 0;
+}
+
+.slide-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* =========================================
+   ページ1：仕様書
+   ========================================= */
+.page1 {
+  display: flex;
+  flex-direction: column;
+  padding: 44px 56px;
+  gap: 18px;
+  background: #F8FBFD;
+}
+.p1-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.p1-title-grad {
+  font-size: 48px;
+  font-weight: 700;
+  background: var(--gradient-main);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1;
+}
+.p1-meta { font-size: 17px; color: #9AA0A6; }
+
+.p1-palette-section {
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 3px rgba(60,64,67,0.06), 0 2px 8px rgba(60,64,67,0.04);
+}
+.p1-palette-top-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #9AA0A6;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.p1-palette-groups {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+.p1-group-label {
+  font-size: 11px;
+  color: #B0BAC4;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.p1-palette-cards { display: flex; gap: 8px; }
+.p1-color-card {
+  border-radius: 11px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(60,64,67,0.06), 0 2px 7px rgba(60,64,67,0.04);
+  width: 108px;
+}
+.p1-swatch { height: 68px; }
+.p1-color-info { padding: 8px 10px; background: #fff; }
+.p1-color-name { font-size: 13px; font-weight: 700; line-height: 1.2; }
+.p1-color-hex  { font-size: 11px; color: #6B6B6B; margin-top: 2px; font-family: monospace; }
+.p1-divider { width: 1px; background: #E8EFF5; align-self: stretch; }
+
+.p1-bottom { display: flex; gap: 16px; flex: 1; min-height: 0; }
+.p1-col {
+  background: #fff;
+  border-radius: 20px;
+  padding: 22px 24px;
+  box-shadow: 0 1px 3px rgba(60,64,67,0.08), 0 4px 16px rgba(60,64,67,0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.p1-col-left  { flex: 1.6; }
+.p1-col-mid   { flex: 1.05; }
+.p1-col-right { flex: 1; }
+
+.p1-col-header { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.p1-col-bar { width: 6px; height: 28px; border-radius: 3px; background: var(--gradient-vert); flex-shrink: 0; }
+.p1-col-title { font-size: 20px; font-weight: 700; }
+
+.parts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 20px;
+  align-content: space-between;
+  flex: 1;
+}
+.part-item { display: flex; flex-direction: column; gap: 5px; }
+.part-label { font-size: 10px; color: #9AA0A6; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+
+.type-scale { display: flex; flex-direction: column; justify-content: space-between; flex: 1; }
+.type-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 1px solid #F0F4F8;
+  padding-bottom: 4px;
+}
+.type-sample { color: #1A1A1A; line-height: 1.1; }
+.type-info   { font-size: 11px; color: #9AA0A6; text-align: right; white-space: nowrap; }
+.p1-font-block {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #F0F4F8;
+  font-size: 12px;
+  color: #6B6B6B;
+  line-height: 1.6;
+}
+
+.do-dont { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.do-block, .dont-block { border-radius: 12px; padding: 14px 16px; flex: 1; }
+.do-block   { background: #E6F4EA; }
+.dont-block { background: #FCE8E6; }
+.do-dont-label { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.do-icon, .dont-icon {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.do-icon   { background: #34A853; color: #fff; }
+.dont-icon { background: #EA4335; color: #fff; }
+.do-dont-title { font-size: 16px; font-weight: 700; }
+.do-block .do-dont-title   { color: #1E7E34; }
+.dont-block .do-dont-title { color: #C62828; }
+.do-dont-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.do-dont-list li { font-size: 13px; line-height: 1.45; padding-left: 14px; position: relative; }
+.do-block .do-dont-list li   { color: #1E5631; }
+.dont-block .do-dont-list li { color: #7F1D1D; }
+.do-dont-list li::before { content: '·'; position: absolute; left: 4px; font-weight: 700; }
+
+/* =========================================
+   ページ2：表紙
+   ========================================= */
+.page2-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  height: 100%;
+  padding: 0 160px;
+}
+.p2-symbol {
+  width: 96px; height: 96px;
+  border-radius: 50%;
+  background: var(--gradient-main);
+  margin-bottom: 36px;
+  box-shadow: 0 8px 32px rgba(41,171,226,0.3);
+}
+.p2-eyecatch { font-size: 16px; font-weight: 700; letter-spacing: 0.32em; color: #9AA0A6; text-transform: uppercase; margin-bottom: 16px; }
+.p2-main-title {
+  font-size: 118px; font-weight: 700; line-height: 1;
+  background: var(--gradient-main);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  letter-spacing: -0.03em;
+}
+.p2-sub   { font-size: 30px; font-weight: 500; color: #2D2D2D; margin-top: 30px; }
+.p2-line  { width: 340px; height: 10px; border-radius: 999px; background: var(--gradient-main); margin: 46px 0; }
+.p2-date  { font-size: 18px; color: #6B6B6B; }
+
+/* =========================================
+   ページ3：セクションタイトル
+   ========================================= */
+.page3-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 140px;
+  height: 100%;
+}
+.p3-bg-num {
+  position: absolute;
+  right: 90px; top: 50%; transform: translateY(-50%);
+  font-size: 480px; font-weight: 700;
+  opacity: 0.08;
+  background: var(--gradient-vert);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  line-height: 1; z-index: 0; pointer-events: none;
+}
+.p3-inner { display: flex; align-items: stretch; gap: 36px; position: relative; z-index: 1; }
+.p3-bar   { width: 10px; border-radius: 5px; background: var(--gradient-vert); flex-shrink: 0; }
+.p3-text  { display: flex; flex-direction: column; gap: 16px; }
+.p3-section-num { font-size: 18px; font-weight: 700; letter-spacing: 0.28em; color: #9AA0A6; text-transform: uppercase; }
+.p3-heading { font-size: 96px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.04; }
+.p3-desc    { font-size: 24px; color: #2D2D2D; line-height: 1.6; max-width: 920px; }
+
+/* =========================================
+   ページ4：箇条書き
+   ========================================= */
+.page4-content {
+  display: flex;
+  flex-direction: column;
+  padding: 56px 80px 64px;
+  height: 100%;
+}
+.dotted-title {
+  text-align: center;
+  color: var(--color-primary);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: 20px;
+}
+.inner-panel {
+  background: #FFFFFF;
+  border: 1.5px solid var(--color-border);
+  border-radius: 3px;
+  flex: 1;
+  min-height: 0;
+}
+.p4-panel {
+  padding: 48px 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  height: 100%;
+}
+.p4-item { display: flex; align-items: flex-start; gap: 28px; flex: 1; }
+.p4-badge {
+  width: 54px; height: 54px; border-radius: 50%; background: #111111; color: #fff;
+  font-size: 24px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 4px;
+}
+.p4-item-text { flex: 1; }
+.p4-item-title { font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+.p4-item-desc  { font-size: 19px; color: #6B6B6B; line-height: 1.55; }
+
+/* =========================================
+   ページ5：グラフ
+   ========================================= */
+.page5-content {
+  display: flex;
+  flex-direction: column;
+  padding: 56px 80px 64px;
+  height: 100%;
+}
+.p5-panel {
+  border: 1.5px solid var(--color-border);
+  border-radius: 3px;
+  padding: 36px 48px;
+  display: flex;
+  gap: 48px;
+  flex: 1;
+  min-height: 0;
+}
+
+.bar-chart-wrap { flex: 1.3; display: flex; flex-direction: column; }
+.chart-title    { font-size: 22px; font-weight: 700; margin-bottom: 20px; }
+.bar-chart {
+  flex: 1; display: flex; align-items: flex-end; gap: 8px;
+  border-bottom: 2px solid #E8EFF5; border-left: 2px solid #E8EFF5;
+  padding: 0 8px 0 4px; min-height: 0; position: relative;
+}
+.bar-group {
+  display: flex; align-items: flex-end; gap: 5px; flex: 1; position: relative;
+  padding-bottom: 50px;
+}
+.bar-group-label {
+  position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+  font-size: 13px; color: #9AA0A6; font-weight: 700; white-space: nowrap;
+}
+.bar {
+  flex: 1; border-radius: 3px 3px 0 0; position: relative; min-width: 24px; align-self: flex-end;
+}
+.bar-val {
+  position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
+  font-size: 12px; font-weight: 700; color: #2D2D2D; white-space: nowrap;
+}
+.bar-month {
+  position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%);
+  font-size: 11px; color: #B0BAC4; white-space: nowrap;
+}
+
+.donut-wrap  { flex: 1; display: flex; flex-direction: column; }
+.donut-area  { flex: 1; display: flex; align-items: center; gap: 36px; min-height: 0; }
+.donut-chart-container { position: relative; width: 280px; height: 280px; flex-shrink: 0; }
+.donut-chart {
+  width: 280px; height: 280px; border-radius: 50%;
+  background: conic-gradient(#29ABE2 0% 47%, #A8DCF0 47% 79%, #6B6B6B 79% 100%);
+}
+.donut-hole {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 154px; height: 154px; border-radius: 50%; background: #fff;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.donut-val { font-size: 44px; font-weight: 700; color: var(--color-primary); line-height: 1; }
+.donut-sub { font-size: 14px; color: #9AA0A6; }
+.donut-legend { display: flex; flex-direction: column; gap: 16px; }
+.legend-item { display: flex; align-items: center; gap: 10px; font-size: 17px; }
+.legend-dot  { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+.legend-pct  { font-size: 15px; color: #9AA0A6; margin-left: 4px; }
+
+/* =========================================
+   ページ6：まとめ
+   ========================================= */
+.page6-content {
+  display: flex;
+  flex-direction: column;
+  padding: 56px 80px 56px;
+  height: 100%;
+}
+.p6-panel {
+  border: 1.5px solid var(--color-border);
+  border-radius: 3px;
+  padding: 48px 60px 36px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.p6-sub { font-size: 22px; color: #6B6B6B; margin-bottom: 32px; }
+.p6-cards { display: flex; gap: 32px; flex: 1; min-height: 0; }
+.p6-card {
+  flex: 1;
+  background: #fff;
+  border: 1.5px solid var(--color-border);
+  border-radius: 3px;
+  padding: 40px 36px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.p6-icon {
+  width: 64px; height: 64px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 700;
+}
+.p6-card-title { font-size: 30px; font-weight: 700; }
+.p6-card-desc  { font-size: 20px; color: #6B6B6B; line-height: 1.6; flex: 1; }
+.p6-cta { display: flex; justify-content: center; margin-top: 28px; }
+.p6-btn {
+  padding: 16px 36px; border-radius: 999px;
+  background: var(--gradient-main); color: #fff;
+  font-size: 24px; font-weight: 700;
+  box-shadow: 0 6px 20px rgba(41,171,226,0.35);
+  font-family: var(--font-display);
+}
+</style>
+</head>
+<body>
+
+<!-- PAGE 1: デザインシステム概要 -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide page1">
+
+  <div class="p1-header">
+    <div class="p1-title-grad">Blue Simple Diagram</div>
+    <div class="p1-meta">Style Sheet / v1.1 · 16:9</div>
+  </div>
+
+  <div class="p1-palette-section">
+    <div class="p1-palette-top-label">Color Palette</div>
+    <div class="p1-palette-groups">
+      <div>
+        <div class="p1-group-label">ブランドカラー</div>
+        <div class="p1-palette-cards">
+          <div class="p1-color-card">
+            <div class="p1-swatch" style="background:#29ABE2;"></div>
+            <div class="p1-color-info"><div class="p1-color-name">Primary</div><div class="p1-color-hex">#29ABE2</div></div>
+          </div>
+          <div class="p1-color-card">
+            <div class="p1-swatch" style="background:#A8DCF0;"></div>
+            <div class="p1-color-info"><div class="p1-color-name">Secondary</div><div class="p1-color-hex">#A8DCF0</div></div>
+          </div>
+          <div class="p1-color-card">
+            <div class="p1-swatch" style="background:#111111;"></div>
+            <div class="p1-color-info"><div class="p1-color-name">Accent</div><div class="p1-color-hex">#111111</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="p1-divider"></div>
+      <div>
+        <div class="p1-group-label">ベースカラー</div>
+        <div class="p1-palette-cards">
+          <div class="p1-color-card">
+            <div class="p1-swatch" style="background:#FFFFFF;border:1px solid #E8EFF5;"></div>
+            <div class="p1-color-info"><div class="p1-color-name">Background</div><div class="p1-color-hex">#FFFFFF</div></div>
+          </div>
+          <div class="p1-color-card">
+            <div class="p1-swatch" style="background:#1A1A1A;"></div>
+            <div class="p1-color-info"><div class="p1-color-name">Text</div><div class="p1-color-hex">#1A1A1A</div></div>
+          </div>
+          <div class="p1-color-card">
+            <div class="p1-swatch" style="background:#2D2D2D;"></div>
+            <div class="p1-color-info"><div class="p1-color-name">Text Sub</div><div class="p1-color-hex">#2D2D2D</div></div>
+          </div>
+          <div class="p1-color-card">
+            <div class="p1-swatch" style="background:#6B6B6B;"></div>
+            <div class="p1-color-info"><div class="p1-color-name">Text Muted</div><div class="p1-color-hex">#6B6B6B</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="p1-divider"></div>
+      <div>
+        <div class="p1-group-label">ボーダー</div>
+        <div class="p1-palette-cards">
+          <div class="p1-color-card">
+            <div class="p1-swatch" style="background:#CDD8E3;"></div>
+            <div class="p1-color-info"><div class="p1-color-name">Panel Border</div><div class="p1-color-hex">#CDD8E3</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="p1-bottom">
+    <!-- 左：パーツ -->
+    <div class="p1-col p1-col-left">
+      <div class="p1-col-header">
+        <div class="p1-col-bar"></div>
+        <div class="p1-col-title">スライドで使うパーツ</div>
+      </div>
+      <div class="parts-grid">
+        <div class="part-item">
+          <div class="part-label">Button</div>
+          <div style="display:inline-flex;align-items:center;justify-content:center;background:var(--gradient-main);color:#fff;font-size:15px;font-weight:700;padding:10px 22px;border-radius:3px;">送信する</div>
+        </div>
+        <div class="part-item">
+          <div class="part-label">Title Bar</div>
+          <div style="font-size:15px;font-weight:700;color:#29ABE2;letter-spacing:0.04em;">·· [ セクション名 ] ··</div>
+        </div>
+        <div class="part-item">
+          <div class="part-label">Numbered List</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:30px;height:30px;border-radius:50%;background:#111;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div>
+            <span style="font-size:14px;">リストアイテム</span>
+          </div>
+        </div>
+        <div class="part-item">
+          <div class="part-label">Bullet List</div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <div style="display:flex;align-items:center;gap:8px;"><div style="width:8px;height:8px;border-radius:50%;background:#29ABE2;flex-shrink:0;"></div><span style="font-size:13px;">ポイント A</span></div>
+            <div style="display:flex;align-items:center;gap:8px;"><div style="width:8px;height:8px;border-radius:50%;background:#29ABE2;flex-shrink:0;"></div><span style="font-size:13px;">ポイント B</span></div>
+          </div>
+        </div>
+        <div class="part-item">
+          <div class="part-label">Inner Card</div>
+          <div style="border:1.5px solid #CDD8E3;border-radius:3px;padding:8px 12px;font-size:13px;color:#6B6B6B;">コンテンツエリア</div>
+        </div>
+        <div class="part-item">
+          <div class="part-label">Chip / Label</div>
+          <div style="display:flex;gap:6px;">
+            <div style="background:rgba(41,171,226,0.12);color:#29ABE2;font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;">タグ A</div>
+            <div style="background:rgba(168,220,240,0.35);color:#1A7FAA;font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;">タグ B</div>
+          </div>
+        </div>
+        <div class="part-item">
+          <div class="part-label">Divider</div>
+          <div style="height:2px;background:var(--gradient-main);border-radius:999px;"></div>
+        </div>
+        <div class="part-item">
+          <div class="part-label">Blob Decoration</div>
+          <div style="width:60px;height:40px;border-radius:43% 57% 70% 30% / 45% 35% 65% 55%;background:linear-gradient(135deg,rgba(41,171,226,0.45),rgba(168,220,240,0.40));"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 中：タイポグラフィ -->
+    <div class="p1-col p1-col-mid">
+      <div class="p1-col-header">
+        <div class="p1-col-bar"></div>
+        <div class="p1-col-title">タイポグラフィ</div>
+      </div>
+      <div class="type-scale">
+        <div class="type-row">
+          <div class="type-sample" style="font-size:38px;font-weight:700;">表紙見出し</div>
+          <div class="type-info">118px / 700<br>Display</div>
+        </div>
+        <div class="type-row">
+          <div class="type-sample" style="font-size:28px;font-weight:700;">大見出し</div>
+          <div class="type-info">80px / 700<br>H1</div>
+        </div>
+        <div class="type-row">
+          <div class="type-sample" style="font-size:20px;font-weight:700;">中見出し</div>
+          <div class="type-info">42px / 700<br>H2</div>
+        </div>
+        <div class="type-row">
+          <div class="type-sample" style="font-size:16px;font-weight:700;">小見出し</div>
+          <div class="type-info">28px / 700</div>
+        </div>
+        <div class="type-row">
+          <div class="type-sample" style="font-size:13px;font-weight:400;">本文テキスト（大）</div>
+          <div class="type-info">18px / 400<br>Body</div>
+        </div>
+        <div class="type-row">
+          <div class="type-sample" style="font-size:12px;font-weight:400;">本文テキスト（小）</div>
+          <div class="type-info">16px / 400</div>
+        </div>
+        <div class="type-row">
+          <div class="type-sample" style="font-size:11px;color:#9AA0A6;">キャプション</div>
+          <div class="type-info">13px / 400</div>
+        </div>
+      </div>
+      <div class="p1-font-block">
+        <div><strong>フォント：</strong>Noto Sans JP（Google Fonts）</div>
+        <div style="margin-top:6px;padding-top:6px;border-top:1px solid #F0F4F8;">
+          <strong>レイアウト：</strong>1920×1080px · 余白 80px / 100px · 中央/左寄せ
+        </div>
+      </div>
+    </div>
+
+    <!-- 右：Do & Don't -->
+    <div class="p1-col p1-col-right">
+      <div class="p1-col-header">
+        <div class="p1-col-bar"></div>
+        <div class="p1-col-title">Do &amp; Don't</div>
+      </div>
+      <div class="do-dont">
+        <div class="do-block">
+          <div class="do-dont-label">
+            <div class="do-icon">✓</div>
+            <div class="do-dont-title">Do</div>
+          </div>
+          <ul class="do-dont-list">
+            <li>ブロブ装飾を左上・右サイドに配置する</li>
+            <li>タイトルは点線ブラケット形式で中央に</li>
+            <li>コンテンツは白インナーパネルに入れる</li>
+            <li>グラフ・アイコンなど視覚要素を積極活用</li>
+          </ul>
+        </div>
+        <div class="dont-block">
+          <div class="do-dont-label">
+            <div class="dont-icon">✕</div>
+            <div class="do-dont-title">Don't</div>
+          </div>
+          <ul class="do-dont-list">
+            <li>テキストのみのスライドにしない</li>
+            <li>ブロブ以外の過剰な装飾を追加しない</li>
+            <li>原色でブルー系の統一感を崩さない</li>
+            <li>フォント種類を増やさない</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+</div>
+</div>
+
+<!-- PAGE 2: 表紙 -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide">
+  <div class="blob-top-left"></div>
+  <div class="blob-right-large"></div>
+  <div class="blob-right-small"></div>
+  <div class="slide-content">
+    <div class="page2-content">
+      <div class="p2-symbol"></div>
+      <div class="p2-eyecatch">Business Presentation · 2026</div>
+      <div class="p2-main-title">年度事業計画</div>
+      <div class="p2-sub">データと図解で伝える成長戦略</div>
+      <div class="p2-line"></div>
+      <div class="p2-date">2026年7月 &nbsp;●&nbsp; サンプル株式会社</div>
+    </div>
+  </div>
+</section>
+</div>
+</div>
+
+<!-- PAGE 3: セクションタイトル -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide">
+  <div class="blob-top-left"></div>
+  <div class="blob-right-large"></div>
+  <div class="blob-right-small"></div>
+  <div class="p3-bg-num">01</div>
+  <div class="slide-content">
+    <div class="page3-content">
+      <div class="p3-inner">
+        <div class="p3-bar"></div>
+        <div class="p3-text">
+          <div class="p3-section-num">Section 01</div>
+          <div class="p3-heading">事業の現状と課題</div>
+          <div class="p3-desc">現在の市場環境と当社のポジションを整理し、次の一手を導き出します。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+</div>
+
+<!-- PAGE 4: 箇条書き -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide">
+  <div class="blob-top-left"></div>
+  <div class="blob-right-large"></div>
+  <div class="blob-right-small"></div>
+  <div class="slide-content">
+    <div class="page4-content">
+      <div class="dotted-title">·· [ 成長を支える4つの柱 ] ··</div>
+      <div class="inner-panel p4-panel">
+        <div class="p4-item">
+          <div class="p4-badge">1</div>
+          <div class="p4-item-text">
+            <div class="p4-item-title">顧客体験の革新</div>
+            <div class="p4-item-desc">ユーザーインタビューを通じてペインポイントを特定し、UX改善を継続的に推進します。</div>
+          </div>
+        </div>
+        <div class="p4-item">
+          <div class="p4-badge">2</div>
+          <div class="p4-item-text">
+            <div class="p4-item-title">業務プロセスの自動化</div>
+            <div class="p4-item-desc">繰り返し業務をAI・RPAで自動化し、チーム全体の生産性を30%向上させます。</div>
+          </div>
+        </div>
+        <div class="p4-item">
+          <div class="p4-badge">3</div>
+          <div class="p4-item-text">
+            <div class="p4-item-title">新規事業領域の開拓</div>
+            <div class="p4-item-desc">隣接市場へのピボットと新製品ラインの立ち上げを並行して進めます。</div>
+          </div>
+        </div>
+        <div class="p4-item">
+          <div class="p4-badge">4</div>
+          <div class="p4-item-text">
+            <div class="p4-item-title">組織力の強化</div>
+            <div class="p4-item-desc">採用・研修・評価制度を一体的に見直し、チームの底上げを図ります。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+</div>
+
+<!-- PAGE 5: グラフ -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide">
+  <div class="blob-top-left"></div>
+  <div class="blob-right-large"></div>
+  <div class="blob-right-small"></div>
+  <div class="slide-content">
+    <div class="page5-content">
+      <div class="dotted-title">·· [ 四半期業績の推移 ] ··</div>
+      <div class="p5-panel">
+
+        <!-- 棒グラフ -->
+        <div class="bar-chart-wrap">
+          <div class="chart-title">月次売上推移（百万円）</div>
+          <div class="bar-chart">
+            <div class="bar-group">
+              <div class="bar" style="height:52%;background:rgba(41,171,226,0.38);"><div class="bar-val">52</div><div class="bar-month">Jan</div></div>
+              <div class="bar" style="height:60%;background:rgba(41,171,226,0.52);"><div class="bar-val">60</div><div class="bar-month">Feb</div></div>
+              <div class="bar" style="height:68%;background:rgba(41,171,226,0.68);"><div class="bar-val">68</div><div class="bar-month">Mar</div></div>
+              <div class="bar-group-label">Q1</div>
+            </div>
+            <div class="bar-group">
+              <div class="bar" style="height:63%;background:rgba(41,171,226,0.42);"><div class="bar-val">63</div><div class="bar-month">Apr</div></div>
+              <div class="bar" style="height:70%;background:rgba(41,171,226,0.56);"><div class="bar-val">70</div><div class="bar-month">May</div></div>
+              <div class="bar" style="height:75%;background:rgba(41,171,226,0.70);"><div class="bar-val">75</div><div class="bar-month">Jun</div></div>
+              <div class="bar-group-label">Q2</div>
+            </div>
+            <div class="bar-group">
+              <div class="bar" style="height:71%;background:rgba(41,171,226,0.44);"><div class="bar-val">71</div><div class="bar-month">Jul</div></div>
+              <div class="bar" style="height:78%;background:rgba(41,171,226,0.58);"><div class="bar-val">78</div><div class="bar-month">Aug</div></div>
+              <div class="bar" style="height:82%;background:rgba(41,171,226,0.72);"><div class="bar-val">82</div><div class="bar-month">Sep</div></div>
+              <div class="bar-group-label">Q3</div>
+            </div>
+            <div class="bar-group">
+              <div class="bar" style="height:80%;background:var(--gradient-vert);box-shadow:0 4px 12px rgba(41,171,226,0.3);"><div class="bar-val">80</div><div class="bar-month">Oct</div></div>
+              <div class="bar" style="height:90%;background:var(--gradient-vert);box-shadow:0 4px 12px rgba(41,171,226,0.3);"><div class="bar-val">90</div><div class="bar-month">Nov</div></div>
+              <div class="bar" style="height:98%;background:var(--gradient-vert);box-shadow:0 4px 12px rgba(41,171,226,0.3);"><div class="bar-val">98</div><div class="bar-month">Dec</div></div>
+              <div class="bar-group-label">Q4</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ドーナツグラフ -->
+        <div class="donut-wrap">
+          <div class="chart-title">売上構成比</div>
+          <div class="donut-area">
+            <div class="donut-chart-container">
+              <div class="donut-chart"></div>
+              <div class="donut-hole">
+                <div class="donut-val">79%</div>
+                <div class="donut-sub">達成率</div>
+              </div>
+            </div>
+            <div class="donut-legend">
+              <div class="legend-item"><div class="legend-dot" style="background:#29ABE2;"></div>製品売上<span class="legend-pct">47%</span></div>
+              <div class="legend-item"><div class="legend-dot" style="background:#A8DCF0;"></div>サービス<span class="legend-pct">32%</span></div>
+              <div class="legend-item"><div class="legend-dot" style="background:#6B6B6B;"></div>その他<span class="legend-pct">21%</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+</div>
+
+<!-- PAGE 6: まとめ -->
+<div class="slide-outer">
+<div class="slide-wrapper">
+<section class="slide">
+  <div class="blob-top-left"></div>
+  <div class="blob-right-large"></div>
+  <div class="blob-right-small"></div>
+  <div class="slide-content">
+    <div class="page6-content">
+      <div class="dotted-title">·· [ 次のステップ ] ··</div>
+      <div class="p6-panel">
+        <div class="p6-sub">継続的な成長のために、3つの優先領域に集中します。</div>
+        <div class="p6-cards">
+          <div class="p6-card">
+            <div class="p6-icon" style="background:rgba(41,171,226,0.12);color:#29ABE2;">強</div>
+            <div class="p6-card-title">強み強化</div>
+            <div class="p6-card-desc">既存サービスの品質向上と差別化を徹底し、競争優位性を高めます。</div>
+          </div>
+          <div class="p6-card">
+            <div class="p6-icon" style="background:rgba(168,220,240,0.35);color:#1A7FAA;">新</div>
+            <div class="p6-card-title">新市場開拓</div>
+            <div class="p6-card-desc">海外展開と新セグメントへのアプローチで成長余地を広げます。</div>
+          </div>
+          <div class="p6-card">
+            <div class="p6-icon" style="background:rgba(41,171,226,0.08);color:#29ABE2;">基</div>
+            <div class="p6-card-title">基盤整備</div>
+            <div class="p6-card-desc">技術インフラとデータ基盤を刷新し、次のフェーズへ備えます。</div>
+          </div>
+        </div>
+        <div class="p6-cta">
+          <div class="p6-btn">お問い合わせはこちら</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+</div>
+
+</body>
+</html>

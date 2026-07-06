@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>SLIDE-PATTERN-six-card-2x3-grid</title>
+<style>
+  body { background: #E8E8E8; padding: 40px 20px; font-family: sans-serif; margin: 0; }
+  .slide-label { font-size: 16px; line-height: 1; color: #666; text-align: center; margin: 0 0 12px; }
+  .slide-outer { margin: 0 auto 32px; width: 1440px; /* 1920 × 0.75 */ }
+  .slide-wrapper { width: 1920px; transform-origin: top left; transform: scale(0.75); margin-bottom: -270px; /* 1080 × (1 - 0.75) */ }
+  .slide { width: 1920px; height: 1080px; background: #FFFFFF; border: 1px solid #CCCCCC; box-sizing: border-box; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+  .area-label { font-size: 20px; color: #999999; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+  .placeholder-box { background: #F0F0F0; border: 2px dashed #CCCCCC; display: flex; align-items: center; justify-content: center; color: #AAAAAA; font-size: 24px; }
+
+  /* コンテンツエリア全体 */
+  .content-area { display: flex; flex: 1; padding: 24px 32px; gap: 32px; overflow: hidden; }
+
+  /* 左サイドバー */
+  .sidebar { width: 80px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .sidebar-label { font-size: 22px; color: #888; writing-mode: vertical-rl; text-orientation: mixed; letter-spacing: 0.1em; }
+
+  /* 右グリッドエリア */
+  .card-grid { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 24px; height: 100%; }
+
+  /* 各カード */
+  .card { border: 1px solid #EEEEEE; padding: 24px 32px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* アイコン円（プレースホルダー） */
+  .icon-circle { width: 88px; height: 88px; border-radius: 50%; border: 2px dashed #CCCCCC; background: #F0F0F0; display: flex; align-items: center; justify-content: center; color: #AAAAAA; font-size: 14px; text-align: center; flex-shrink: 0; }
+
+  /* カード見出し */
+  .card-heading { font-size: 26px; font-weight: bold; color: #333; margin: 0; }
+
+  /* カード説明テキスト */
+  .card-desc { font-size: 22px; color: #666; line-height: 1.6; margin: 0; }
+</style>
+</head>
+<body>
+<p class="slide-label">[six-card-2x3-grid]</p>
+<div class="slide-outer">
+  <div class="slide-wrapper">
+    <div class="slide">
+
+      <!-- タイトルエリア（SLIDE.mdの Slide Frame で定義） -->
+      <div style="padding:28px 80px 24px; border-bottom:1px dashed #CCCCCC; flex-shrink:0; background:#FAFAFA;">
+        <div class="area-label">Title Area — SLIDE.md 参照</div>
+        <div style="font-size:32px; color:#CCCCCC; margin-top:8px;">スライドタイトルが入ります</div>
+      </div>
+
+      <!-- コンテンツエリア -->
+      <div class="content-area">
+
+        <!-- 左サイドバー -->
+        <div class="sidebar">
+          <span class="sidebar-label">サービスカテゴリ</span>
+        </div>
+
+        <!-- 右グリッドエリア（2行×3列） -->
+        <div class="card-grid">
+
+          <!-- カード① -->
+          <div class="card">
+            <div class="icon-circle">アイコン<br>(SVG生成)</div>
+            <p class="card-heading">経営戦略コンサルティング</p>
+            <p class="card-desc">
+              経営課題の整理から中期計画の策定まで、<br>専門家チームが伴走します。
+            </p>
+          </div>
+
+          <!-- カード② -->
+          <div class="card">
+            <div class="icon-circle">アイコン<br>(SVG生成)</div>
+            <p class="card-heading">ITシステム導入支援</p>
+            <p class="card-desc">
+              要件定義・設計・運用までを一貫して<br>サポートするワンストップ対応。
+            </p>
+          </div>
+
+          <!-- カード③ -->
+          <div class="card">
+            <div class="icon-circle">アイコン<br>(SVG生成)</div>
+            <p class="card-heading">人材育成・研修プログラム</p>
+            <p class="card-desc">
+              階層別・テーマ別に設計されたカリキュラムで<br>組織全体のスキルを底上げ。
+            </p>
+          </div>
+
+          <!-- カード④ -->
+          <div class="card">
+            <div class="icon-circle">アイコン<br>(SVG生成)</div>
+            <p class="card-heading">データ分析・BI構築</p>
+            <p class="card-desc">
+              散在するデータを統合し、意思決定を<br>加速するダッシュボードを構築。
+            </p>
+          </div>
+
+          <!-- カード⑤ -->
+          <div class="card">
+            <div class="icon-circle">アイコン<br>(SVG生成)</div>
+            <p class="card-heading">グローバル展開サポート</p>
+            <p class="card-desc">
+              海外市場への参入戦略立案から<br>現地パートナーの調達まで支援。
+            </p>
+          </div>
+
+          <!-- カード⑥ -->
+          <div class="card">
+            <div class="icon-circle">アイコン<br>(SVG生成)</div>
+            <p class="card-heading">セキュリティ診断・対策</p>
+            <p class="card-desc">
+              脆弱性診断からインシデント対応計画まで、<br>包括的なセキュリティ体制を構築。
+            </p>
+          </div>
+
+        </div><!-- /.card-grid -->
+
+      </div><!-- /.content-area -->
+
+      <!-- フッターエリア（SLIDE.mdの Slide Frame で定義） -->
+      <div style="padding:16px 80px 20px; border-top:1px dashed #CCCCCC; flex-shrink:0; background:#FAFAFA; display:flex; justify-content:space-between; align-items:flex-end;">
+        <div>
+          <div class="area-label" style="margin-bottom:4px;">Footer Area — SLIDE.md 参照</div>
+          <div style="font-size:18px; color:#CCCCCC;">ブランドフッター</div>
+        </div>
+        <div style="font-size:18px; color:#CCCCCC;">ページ番号</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>

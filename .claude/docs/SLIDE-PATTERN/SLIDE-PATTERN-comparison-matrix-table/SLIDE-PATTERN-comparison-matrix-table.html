@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>SLIDE-PATTERN-comparison-matrix-table</title>
+<style>
+  body { background: #E8E8E8; padding: 40px 20px; font-family: sans-serif; margin: 0; }
+  .slide-label { font-size: 16px; line-height: 1; color: #666; text-align: center; margin: 0 0 12px; }
+  .slide-outer { margin: 0 auto 32px; width: 1440px; /* 1920 × 0.75 */ }
+  .slide-wrapper { width: 1920px; transform-origin: top left; transform: scale(0.75); margin-bottom: -270px; /* 1080 × (1 - 0.75) */ }
+  .slide { width: 1920px; height: 1080px; background: #FFFFFF; border: 1px solid #CCCCCC; box-sizing: border-box; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+  .area-label { font-size: 20px; color: #999999; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+  table { width: 100%; border-collapse: collapse; flex: 1; }
+  th { font-size: 24px; font-weight: bold; padding: 16px 24px; border: 1px solid #E0E0E0; text-align: center; background: #F0F0F0; color: #444; }
+  th.highlight { background: #D8D8D8; color: #222; }
+  td { font-size: 24px; padding: 16px 24px; border: 1px solid #E8E8E8; vertical-align: top; color: #555; text-align: center; }
+  td.row-label { text-align: left; font-weight: bold; color: #333; background: #FAFAFA; }
+  td.highlight { background: #F5F5F5; color: #222; font-weight: 500; }
+</style>
+</head>
+<body>
+<p class="slide-label">[comparison-matrix-table]</p>
+<div class="slide-outer">
+  <div class="slide-wrapper">
+    <div class="slide">
+
+      <!-- タイトルエリア（SLIDE.mdの Slide Frame で定義） -->
+      <div style="padding:28px 80px 24px; border-bottom:1px dashed #CCCCCC; flex-shrink:0; background:#FAFAFA;">
+        <div class="area-label">Title Area — SLIDE.md 参照</div>
+        <div style="font-size:32px; color:#CCCCCC; margin-top:8px;">スライドタイトルが入ります</div>
+      </div>
+
+      <!-- コンテンツエリア -->
+      <div style="display:flex; flex-direction:column; flex:1; overflow:hidden; padding:24px 60px;">
+        <div class="area-label">比較マトリクステーブル</div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:280px;"></th>
+              <th>対象A</th>
+              <th>対象B</th>
+              <th class="highlight">対象C（強調）</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="row-label">比較軸1</td>
+              <td>内容テキスト</td>
+              <td>内容テキスト</td>
+              <td class="highlight">強調内容テキスト</td>
+            </tr>
+            <tr>
+              <td class="row-label">比較軸2</td>
+              <td>内容テキスト</td>
+              <td>内容テキスト</td>
+              <td class="highlight">強調内容テキスト</td>
+            </tr>
+            <tr>
+              <td class="row-label">比較軸3</td>
+              <td>内容テキスト</td>
+              <td>内容テキスト</td>
+              <td class="highlight">強調内容テキスト</td>
+            </tr>
+            <tr>
+              <td class="row-label">比較軸4</td>
+              <td>内容テキスト</td>
+              <td>内容テキスト</td>
+              <td class="highlight">強調内容テキスト</td>
+            </tr>
+            <tr>
+              <td class="row-label">比較軸5</td>
+              <td>内容テキスト</td>
+              <td>内容テキスト</td>
+              <td class="highlight">強調内容テキスト</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- フッターエリア（SLIDE.mdの Slide Frame で定義） -->
+      <div style="padding:16px 80px 20px; border-top:1px dashed #CCCCCC; flex-shrink:0; background:#FAFAFA; display:flex; justify-content:space-between; align-items:flex-end;">
+        <div>
+          <div class="area-label" style="margin-bottom:4px;">Footer Area — SLIDE.md 参照</div>
+          <div style="font-size:18px; color:#CCCCCC;">ブランドフッター</div>
+        </div>
+        <div style="font-size:18px; color:#CCCCCC;">ページ番号</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>

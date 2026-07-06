@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>SLIDE-PATTERN-polygon-hub-spoke</title>
+<style>
+  body { background: #E8E8E8; padding: 40px 20px; font-family: sans-serif; margin: 0; }
+  .slide-label { font-size: 16px; line-height: 1; color: #666; text-align: center; margin: 0 0 12px; }
+  .slide-outer { margin: 0 auto 32px; width: 1440px; /* 1920 × 0.75 */ }
+  .slide-wrapper { width: 1920px; transform-origin: top left; transform: scale(0.75); margin-bottom: -270px; /* 1080 × (1 - 0.75) */ }
+  .slide { width: 1920px; height: 1080px; background: #FFFFFF; border: 1px solid #CCCCCC; box-sizing: border-box; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+  .area-label { font-size: 20px; color: #999999; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+  .placeholder-box { background: #F0F0F0; border: 2px dashed #CCCCCC; display: flex; align-items: center; justify-content: center; color: #AAAAAA; font-size: 24px; }
+
+  /* コンテンツエリア（polygon-hub-spoke パターン） */
+  .content-area { flex: 1; position: relative; overflow: hidden; padding: 24px 60px; box-sizing: border-box; }
+  .content-area-label { position: absolute; top: 24px; left: 60px; z-index: 10; }
+
+  /* 番号バッジ（円） */
+  .badge-circle {
+    position: absolute;
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: #F0F0F0;
+    border: 3px solid #BBBBBB;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: bold;
+    color: #444444;
+    z-index: 5;
+  }
+
+  /* テキストブロック */
+  .text-block { position: absolute; display: flex; flex-direction: column; gap: 4px; }
+  .text-block-label { font-size: 18px; color: #AAAAAA; text-transform: uppercase; }
+  .text-block-heading { font-size: 22px; font-weight: bold; color: #444444; margin-top: 4px; }
+  .text-block-body { font-size: 20px; color: #666666; line-height: 1.5; margin-top: 4px; max-width: 320px; }
+</style>
+</head>
+<body>
+<p class="slide-label">[polygon-hub-spoke]</p>
+<div class="slide-outer">
+  <div class="slide-wrapper">
+    <div class="slide">
+
+      <!-- タイトルエリア（SLIDE.mdの Slide Frame で定義） -->
+      <div style="padding:28px 80px 24px; border-bottom:1px dashed #CCCCCC; flex-shrink:0; background:#FAFAFA;">
+        <div class="area-label">Title Area — SLIDE.md 参照</div>
+        <div style="font-size:32px; color:#CCCCCC; margin-top:8px;">スライドタイトルが入ります</div>
+      </div>
+
+      <!-- コンテンツエリア -->
+      <div class="content-area">
+        <div class="area-label content-area-label">Content Area — polygon-hub-spoke pattern</div>
+
+        <!-- SVG：ペンタゴン + 連結線
+          コンテンツエリアサイズ: 1920 × 860px 相当
+          ペンタゴン中心: (960, 450)、半径: 220px
+          頂点(0-indexed, 上から時計回り):
+            0(top):       (960, 230)
+            1(right-top): (1170, 370)
+            2(right-bot): (1096, 616)
+            3(left-bot):  (824, 616)
+            4(left-top):  (750, 370)
+        -->
+        <svg style="position:absolute;top:0;left:0;width:1920px;height:860px;" viewBox="0 0 1920 860">
+          <!-- ペンタゴン塗り -->
+          <polygon
+            points="960,230 1170,370 1096,616 824,616 750,370"
+            fill="#F5F5F5"
+            stroke="#CCCCCC"
+            stroke-width="3"
+          />
+          <!-- 中央テーマラベル -->
+          <text x="960" y="436" text-anchor="middle" font-size="26" font-weight="bold" fill="#444444">中心テーマ</text>
+          <text x="960" y="472" text-anchor="middle" font-size="20" fill="#888888">center theme</text>
+
+          <!-- スポーク接続線（バッジ → テキストブロック方向） -->
+          <!-- 上(01) → 上テキスト -->
+          <line x1="960" y1="230" x2="960" y2="104" stroke="#CCCCCC" stroke-width="2" stroke-dasharray="6,4"/>
+          <!-- 右上(02) → 右テキスト上 -->
+          <line x1="1170" y1="370" x2="1360" y2="316" stroke="#CCCCCC" stroke-width="2" stroke-dasharray="6,4"/>
+          <!-- 右下(03) → 右テキスト下 -->
+          <line x1="1096" y1="616" x2="1360" y2="600" stroke="#CCCCCC" stroke-width="2" stroke-dasharray="6,4"/>
+          <!-- 左下(04) → 左テキスト下 -->
+          <line x1="824" y1="616" x2="560" y2="600" stroke="#CCCCCC" stroke-width="2" stroke-dasharray="6,4"/>
+          <!-- 左上(05) → 左テキスト上 -->
+          <line x1="750" y1="370" x2="560" y2="316" stroke="#CCCCCC" stroke-width="2" stroke-dasharray="6,4"/>
+        </svg>
+
+        <!-- 番号バッジ：各頂点 -->
+        <!-- 01: top (960, 230) -->
+        <div class="badge-circle" style="left:926px; top:196px;">01</div>
+        <!-- 02: right-top (1170, 370) -->
+        <div class="badge-circle" style="left:1136px; top:336px;">02</div>
+        <!-- 03: right-bot (1096, 616) -->
+        <div class="badge-circle" style="left:1062px; top:582px;">03</div>
+        <!-- 04: left-bot (824, 616) -->
+        <div class="badge-circle" style="left:790px; top:582px;">04</div>
+        <!-- 05: left-top (750, 370) -->
+        <div class="badge-circle" style="left:716px; top:336px;">05</div>
+
+        <!-- テキストブロック：上(01) -->
+        <div class="text-block" style="left:780px; top:40px; width:360px; text-align:center; align-items:center;">
+          <span class="text-block-label">heading (01)</span>
+          <span class="text-block-heading">見出し 01</span>
+          <p class="text-block-body" style="text-align:center;">スポークの説明テキストが<br>入ります</p>
+        </div>
+
+        <!-- テキストブロック：右上(02) -->
+        <div class="text-block" style="left:1396px; top:220px; width:400px;">
+          <span class="text-block-label">heading (02)</span>
+          <span class="text-block-heading">見出し 02</span>
+          <p class="text-block-body">スポークの説明テキストが入ります。補足情報を記述。</p>
+        </div>
+
+        <!-- テキストブロック：右下(03) -->
+        <div class="text-block" style="left:1396px; top:510px; width:400px;">
+          <span class="text-block-label">heading (03)</span>
+          <span class="text-block-heading">見出し 03</span>
+          <p class="text-block-body">スポークの説明テキストが入ります。補足情報を記述。</p>
+        </div>
+
+        <!-- テキストブロック：左下(04) -->
+        <div class="text-block" style="left:120px; top:510px; width:400px; text-align:right; align-items:flex-end;">
+          <span class="text-block-label">heading (04)</span>
+          <span class="text-block-heading">見出し 04</span>
+          <p class="text-block-body" style="text-align:right;">スポークの説明テキストが入ります。補足情報を記述。</p>
+        </div>
+
+        <!-- テキストブロック：左上(05) -->
+        <div class="text-block" style="left:120px; top:220px; width:400px; text-align:right; align-items:flex-end;">
+          <span class="text-block-label">heading (05)</span>
+          <span class="text-block-heading">見出し 05</span>
+          <p class="text-block-body" style="text-align:right;">スポークの説明テキストが入ります。補足情報を記述。</p>
+        </div>
+
+      </div>
+
+      <!-- フッターエリア（SLIDE.mdの Slide Frame で定義） -->
+      <div style="padding:16px 80px 20px; border-top:1px dashed #CCCCCC; flex-shrink:0; background:#FAFAFA; display:flex; justify-content:space-between; align-items:flex-end;">
+        <div>
+          <div class="area-label" style="margin-bottom:4px;">Footer Area — SLIDE.md 参照</div>
+          <div style="font-size:18px; color:#CCCCCC;">ブランドフッター</div>
+        </div>
+        <div style="font-size:18px; color:#CCCCCC;">ページ番号</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>

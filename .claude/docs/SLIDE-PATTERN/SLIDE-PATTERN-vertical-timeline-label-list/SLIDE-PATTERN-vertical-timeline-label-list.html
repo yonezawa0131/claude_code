@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>SLIDE-PATTERN-vertical-timeline-label-list</title>
+<style>
+  body { background: #E8E8E8; padding: 40px 20px; font-family: sans-serif; margin: 0; }
+  .slide-label { font-size: 16px; line-height: 1; color: #666; text-align: center; margin: 0 0 12px; }
+  .slide-outer { margin: 0 auto 32px; width: 1440px; /* 1920 × 0.75 */ }
+  .slide-wrapper { width: 1920px; transform-origin: top left; transform: scale(0.75); margin-bottom: -270px; /* 1080 × (1 - 0.75) */ }
+  .slide { width: 1920px; height: 1080px; background: #FFFFFF; border: 1px solid #CCCCCC; box-sizing: border-box; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+  .area-label { font-size: 20px; color: #999999; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+  .placeholder-box { background: #F0F0F0; border: 2px dashed #CCCCCC; display: flex; align-items: center; justify-content: center; color: #AAAAAA; font-size: 24px; }
+  /* コンテンツエリア */
+  .content-area { flex: 1; padding: 40px 80px 40px; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+  /* タイムライン全体のラッパー */
+  .timeline-wrapper { display: flex; flex: 1; gap: 0; }
+  /* 左カラム：タイムライン */
+  .timeline-left { width: 600px; flex-shrink: 0; position: relative; display: flex; flex-direction: column; justify-content: space-between; }
+  /* 各タイムラインアイテム */
+  .timeline-item { display: flex; align-items: center; position: relative; flex: 1; }
+  /* 垂直ラインの外枠 */
+  .timeline-axis { width: 40px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; height: 100%; position: relative; }
+  /* ドット（丸） */
+  .dot { width: 28px; height: 28px; border-radius: 50%; background: #666666; flex-shrink: 0; z-index: 1; }
+  /* ステップラベル */
+  .step-label { font-size: 28px; font-weight: bold; color: #333333; margin-left: 20px; white-space: nowrap; }
+  /* 右カラム：説明ボックス */
+  .timeline-right { flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding-left: 32px; }
+  /* 説明ボックス */
+  .desc-box { flex: 1; background: #F0F0F0; border: 1px solid #CCCCCC; border-radius: 8px; padding: 16px 28px; display: flex; align-items: center; margin-bottom: 16px; }
+  .desc-box:last-child { margin-bottom: 0; }
+  /* 矢印 */
+  .desc-arrow { font-size: 20px; color: #AAAAAA; margin-right: 16px; flex-shrink: 0; }
+  .desc-text { font-size: 22px; color: #555555; line-height: 1.5; }
+</style>
+</head>
+<body>
+<p class="slide-label">[vertical-timeline-label-list]</p>
+<div class="slide-outer">
+  <div class="slide-wrapper">
+    <div class="slide">
+
+      <!-- タイトルエリア（SLIDE.mdの Slide Frame で定義） -->
+      <div style="padding:28px 80px 24px; border-bottom:1px dashed #CCCCCC; flex-shrink:0; background:#FAFAFA;">
+        <div class="area-label">Title Area — SLIDE.md 参照</div>
+        <div style="font-size:32px; color:#CCCCCC; margin-top:8px;">スライドタイトルが入ります</div>
+      </div>
+
+      <!-- コンテンツエリア -->
+      <div class="content-area">
+        <div class="area-label">Content Area — vertical-timeline-label-list</div>
+
+        <div class="timeline-wrapper">
+          <!-- 左カラム：タイムラインのドット＋ラベル -->
+          <div class="timeline-left">
+            <div class="area-label" style="margin-bottom:16px;">Step Label Col</div>
+
+            <!-- ステップ1 -->
+            <div class="timeline-item" style="position:relative;">
+              <div style="width:40px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; position:relative;">
+                <div class="dot"></div>
+                <!-- 縦線（ステップ1→2） -->
+                <div style="width:4px; background:#BBBBBB; flex:1; min-height:40px;"></div>
+              </div>
+              <span class="step-label">お申し込み・登録</span>
+            </div>
+
+            <!-- ステップ2 -->
+            <div class="timeline-item">
+              <div style="width:40px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; position:relative;">
+                <div class="dot"></div>
+                <div style="width:4px; background:#BBBBBB; flex:1; min-height:40px;"></div>
+              </div>
+              <span class="step-label">プロジェクト設計</span>
+            </div>
+
+            <!-- ステップ3 -->
+            <div class="timeline-item">
+              <div style="width:40px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; position:relative;">
+                <div class="dot"></div>
+                <div style="width:4px; background:#BBBBBB; flex:1; min-height:40px;"></div>
+              </div>
+              <span class="step-label">学生募集</span>
+            </div>
+
+            <!-- ステップ4 -->
+            <div class="timeline-item">
+              <div style="width:40px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; position:relative;">
+                <div class="dot"></div>
+                <div style="width:4px; background:#BBBBBB; flex:1; min-height:40px;"></div>
+              </div>
+              <span class="step-label">マッチング</span>
+            </div>
+
+            <!-- ステップ5 -->
+            <div class="timeline-item">
+              <div style="width:40px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; position:relative;">
+                <div class="dot"></div>
+                <div style="width:4px; background:#BBBBBB; flex:1; min-height:40px;"></div>
+              </div>
+              <span class="step-label">活動開始</span>
+            </div>
+
+            <!-- ステップ6（最後：縦線なし） -->
+            <div class="timeline-item">
+              <div style="width:40px; flex-shrink:0; display:flex; flex-direction:column; align-items:center;">
+                <div class="dot"></div>
+              </div>
+              <span class="step-label">活動終了・継続</span>
+            </div>
+          </div>
+
+          <!-- 右カラム：説明ボックス -->
+          <div class="timeline-right">
+            <div class="area-label" style="margin-bottom:16px;">Description Box Col</div>
+
+            <div class="desc-box">
+              <span class="desc-arrow">◀</span>
+              <span class="desc-text">申込内容をもとに事務局で審査の上、登録できるかどうかを判断いたします。</span>
+            </div>
+
+            <div class="desc-box">
+              <span class="desc-arrow">◀</span>
+              <span class="desc-text">学生を受け入れるプロジェクトを事務局との面談しながら設計します。</span>
+            </div>
+
+            <div class="desc-box">
+              <span class="desc-arrow">◀</span>
+              <span class="desc-text">募集要項をもとに、Webサイトへの掲載、説明資料への掲載を行います。</span>
+            </div>
+
+            <div class="desc-box">
+              <span class="desc-arrow">◀</span>
+              <span class="desc-text">学生との一次面談後、企業の活動にマッチしそうな学生をご紹介します。</span>
+            </div>
+
+            <div class="desc-box">
+              <span class="desc-arrow">◀</span>
+              <span class="desc-text">プランに応じて必要な契約を学生と結んでいただき、活動を始めます。</span>
+            </div>
+
+            <div class="desc-box">
+              <span class="desc-arrow">◀</span>
+              <span class="desc-text">活動終了時には、他の参画企業と合同での活動報告会も企画しています。</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- フッターエリア（SLIDE.mdの Slide Frame で定義） -->
+      <div style="padding:16px 80px 20px; border-top:1px dashed #CCCCCC; flex-shrink:0; background:#FAFAFA; display:flex; justify-content:space-between; align-items:flex-end;">
+        <div>
+          <div class="area-label" style="margin-bottom:4px;">Footer Area — SLIDE.md 参照</div>
+          <div style="font-size:18px; color:#CCCCCC;">ブランドフッター</div>
+        </div>
+        <div style="font-size:18px; color:#CCCCCC;">ページ番号</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>

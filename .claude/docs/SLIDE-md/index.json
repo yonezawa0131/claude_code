@@ -1,0 +1,62 @@
+[
+  {
+    "name": "anthropic",
+    "label": "Anthropic（テラコッタ）",
+    "scene": "AI・テクノロジー系カンファレンス・製品紹介・研究発表",
+    "swatches": ["#CC785C", "#EFE9DF", "#F5F0E8", "#1A1A1A"]
+  },
+  {
+    "name": "blue-simple-diagram",
+    "label": "ブルー（シンプル図解）",
+    "scene": "教育・研修・ビジネス発表・グラフや図解を多用した情報整理型プレゼン",
+    "swatches": ["#29ABE2", "#A8DCF0", "#FFFFFF", "#1A1A1A"]
+  },
+  {
+    "name": "blue-teal-recruitment",
+    "label": "ブルー×ティール（採用・コーポレート）",
+    "scene": "採用・企業紹介・スタートアップのカンファレンス発表・コーポレートブランディング",
+    "swatches": ["#167DE4", "#14BECE", "#F7F8FA", "#2E3133"]
+  },
+  {
+    "name": "corporate-red",
+    "label": "コーポレートレッド（IR・決算）",
+    "scene": "決算説明会・IR資料・投資家向けプレゼンテーション・コーポレートレポート・ビジネス発表",
+    "swatches": ["#CC0000", "#1A1A1A", "#FFFFFF", "#555555"]
+  },
+  {
+    "name": "digital",
+    "label": "デジタル（ガバメント）",
+    "scene": "行政・政策説明・公共資料・フォーマルなビジネスプレゼン",
+    "swatches": ["#0017B6", "#505CFF", "#FFFFFF", "#1A1A1A"]
+  },
+  {
+    "name": "gemini-color-system",
+    "label": "Gemini（AIプロダクト）",
+    "scene": "AI系カンファレンス・テクノロジー系プレゼン・プロダクト紹介",
+    "swatches": ["#4285F4", "#9168C0", "#F8FAFD", "#1F1F1F"]
+  },
+  {
+    "name": "golden-yellow",
+    "label": "ゴールデンイエロー（BtoB）",
+    "scene": "BtoBビジネス発表・社内共有・パートナー向けプレゼン",
+    "swatches": ["#FFCA28", "#FFF9C4", "#FEFDF7", "#1E1E1E"]
+  },
+  {
+    "name": "green-blue-business",
+    "label": "グリーン×ブルー（ビジネス）",
+    "scene": "営業・サービス提案・BtoB",
+    "swatches": ["#2BB5A0", "#3D9BC8", "#FFFFFF", "#1A1A2E"]
+  },
+  {
+    "name": "MintGreen",
+    "label": "ミントグリーン（IR・決算）",
+    "scene": "決算説明・IR資料・投資家向けプレゼン・経営報告・コーポレートピッチ",
+    "swatches": ["#01B8C8", "#0D9ED7", "#FFFFFF", "#252525"]
+  },
+  {
+    "name": "sky-corporate",
+    "label": "スカイコーポレート（統合報告書）",
+    "scene": "統合報告書・IR資料・コーポレートレポート・アニュアルレポート・株主向けプレゼンテーション",
+    "swatches": ["#3DAED8", "#2B8BBD", "#FFFFFF", "#1A1A1A"]
+  }
+]
