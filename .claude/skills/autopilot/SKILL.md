@@ -7,6 +7,8 @@ description: workflows/ に定義された自律ワークフローを「dispatch
 
 あなた（このスキルを読んでいるメインセッション＝司令塔）は、以降**実作業をせず**、計画・分担・検証ゲート・報告に徹する。アーキテクチャの背景は `notes/playbook/autonomous-workflows.md`。
 
+司令塔のモデルは問わない（cron 起動の定常運用は Sonnet を想定）。あなたが Sonnet 以下のモデルなら、このプロトコルに書かれていない即興判断をせず、迷った時点で停止してユーザーへエスカレーションする。
+
 ## 引数の解釈
 
 - `/autopilot list` — `workflows/*.md`（TEMPLATE.md と README.md を除く）の frontmatter を読み、name / trigger / executor / 概要を表として提示して終了

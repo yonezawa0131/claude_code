@@ -8,7 +8,7 @@ Claude を「話しかける相手」ではなく「不在時に境界内で動�
 ## アーキテクチャ
 
 ```
-トリガー                Fable（司令塔）              実行層                検証層
+トリガー                司令塔（メインセッション）      実行層                検証層
 ─────────           ─────────────────         ─────────────        ──────────────
 cron / Routine  ──▶  workflows/*.md を読む ──▶  executor-sonnet  ─▶  verifier(読取専用)
 ファイル投入           計画・分担・境界の強制        executor-opus         + 機械的チェック
@@ -21,13 +21,23 @@ cron / Routine  ──▶  workflows/*.md を読む ──▶  executor-sonnet  
 
 | 役割 | モデル | 担当 | やらないこと |
 |---|---|---|---|
-| 司令塔 | **Fable**（メインセッション） | ワークフロー解釈、タスク分割、dispatch、検証結果の最終判断、ユーザーへの報告 | 実作業（ファイル大量編集・長い調査）を自分でやらない |
+| 司令塔 | **メインセッションのモデル**（定常運用は Sonnet 推奨、後述） | ワークフロー解釈、タスク分割、dispatch、検証結果の最終判断、ユーザーへの報告 | 実作業（ファイル大量編集・長い調査）を自分でやらない |
 | 実行 | **executor-opus** | 複雑・多段・判断を要する作業（デバッグ、リファクタ、長文統合） | 検証の自己申告（自分の成果を自分で合格にしない） |
 | 実行 | **executor-sonnet** | 仕様が明確な定型作業(要約、整形、索引同期、下書き生成) | 仕様の再解釈・スコープ拡大 |
 | 分類 | **triage**（haiku） | 安価な一次分類・ルーティング。確信がなければ上位へエスカレーション | 実作業 |
 | 検証 | **verifier**（opus・読取専用） | 成果物をワークフローの受け入れ基準と照合し PASS/FAIL 判定 | 修正(書き込みツールを持たない) |
 
 原則: **作る者と検証する者を分ける**（maker-checker）。verifier は書き込みツールを持たないので、構造的に「検証者が勝手に直して合格にする」事故が起きない。
+
+### 司令塔のモデル選択
+
+司令塔は特定モデルに依存しない。/autopilot のプロトコルは意図的に機械的（Load → Dispatch → Verify → Retry 1回 → Log、灰色は停止してエスカレーション）に作ってあり、判断力が必要な仕事は executor-opus と verifier(opus) 側に寄せてある。したがって:
+
+- **cron 起動の定常運用: Sonnet 司令塔が理想**。オーケストレーション自体は安価なモデルで十分で、コストは実行層・検証層に集中投下する
+  - ローカル CLI: `claude --model sonnet -p "/autopilot repo-sweep"`
+  - Routines（web）: セッションのモデルはアカウントのモデル設定に従う。トリガー単位でのモデル指定はできないため、既定モデルを Sonnet にしておく
+- **上位モデル（Fable/Opus）の司令塔が要る場面**: 新しいワークフローの設計、定義の見直し、2 回 FAIL 後の原因分析など、プロトコル外の判断を伴う作業
+- Sonnet 司令塔の追加規律: プロトコルを厳格に守り、**プロトコルに書かれていない即興判断をしない**。迷ったら停止してユーザーへエスカレーション（これは下位モデルほど厳守する）
 
 ### エスカレーションの梯子
 
@@ -60,7 +70,7 @@ triage(haiku) → executor-sonnet → executor-opus → Fable → **ユーザー
 定義しただけのワークフローは手動起動のみ。無人化するには:
 
 - **Claude Code on the web / Routines**: `create_trigger` で cron + 新規セッション起動。prompt には自己完結の指示を書く（例: `リポジトリ claude_code で /autopilot repo-sweep を実行して結果を commit・push する`）
-- **ローカル CLI**: OS の cron から `claude -p "/autopilot repo-sweep" --permission-mode acceptEdits` を叩く
+- **ローカル CLI**: OS の cron から `claude --model sonnet -p "/autopilot repo-sweep" --permission-mode acceptEdits` を叩く（司令塔は Sonnet で十分。前節参照）
 - **ファイルトリガー**: 現状は「フォルダに置いたら次のセッション冒頭で /autopilot ingest-to-vault と言う」運用。完全自動化するなら inotify + CLI
 
 コスト注意: cron トリガーは寝ている間も課金される。**1 本を 1 週間安定運用してから次を武装する**（記事の教訓: 壊れやすい 5 本を持つ者は 5 本の子守りをする）。
