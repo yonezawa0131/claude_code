@@ -83,7 +83,7 @@ vault/
 | 週次 | スケジューラ / 手動 | lint: 矛盾・重複・リンク切れ・孤立ノート・仮リンク精査 = **memory-dream Skill** | entities/ concepts/ INDEX.md | 安価〜中位 |
 | 週次(日曜) | スケジューラ / 手動 | synthesis: vault 全体を横断し「今週何が変わったか・ドリフト・矛盾」を 1 ページ = **vault-synthesis Skill** | reviews/ NOW.md | 上位(Opus 級) |
 
-ルーチン作業(ノート更新)を上位モデルに回さない。上位モデルが席代を稼ぐのは synthesis だけ。週次 synthesis は「自分では絶対やらない 1 つのこと(7 日分を通読して意味を書く)」をやるので、**毎週唯一読み返す価値のあるファイル**になる。
+ルーチン作業(ノート更新)を上位モデルに回さない。上位モデルが席代を稼ぐのは synthesis だけ。この tier 分けの一般原則(モデル = 能力、effort = 徹底度、間違えたときにどちらを触るか)は [`model-effort-selection.md`](model-effort-selection.md) を参照。週次 synthesis は「自分では絶対やらない 1 つのこと(7 日分を通読して意味を書く)」をやるので、**毎週唯一読み返す価値のあるファイル**になる。
 
 ## 健全性の指標(唯一のメトリクス)
 
