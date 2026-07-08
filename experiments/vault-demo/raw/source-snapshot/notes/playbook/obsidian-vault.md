@@ -79,6 +79,7 @@ vault/
 | 頻度 | 起動 | 作業 | 書き込み先 | モデル tier |
 |---|---|---|---|---|
 | セッション毎 | hook / 記憶ルール | 決定・失敗・気づきを日付付きで記録 | raw/daily/ | セッションのモデル |
+| セッション終了時 | 手動 / 終了前ルーチン | compound: 教訓・検証済み事実・仮説をコンパイル層と Skill に書き戻し = **session-compound Skill** | entities/ concepts/ NOW.md(+該当 Skill) | セッションのモデル |
 | 日次(早朝 cron) | スケジューラ | compile: raw/ の新着を entities/concepts へ反映・日次ダイジェスト・NOW.md 更新 = **vault-compile Skill** | entities/ concepts/ reviews/ NOW.md | 安価(Sonnet/Haiku) |
 | 週次 | スケジューラ / 手動 | lint: 矛盾・重複・リンク切れ・孤立ノート・仮リンク精査 = **memory-dream Skill** | entities/ concepts/ INDEX.md | 安価〜中位 |
 | 週次(日曜) | スケジューラ / 手動 | synthesis: vault 全体を横断し「今週何が変わったか・ドリフト・矛盾」を 1 ページ = **vault-synthesis Skill** | reviews/ NOW.md | 上位(Opus 級) |
