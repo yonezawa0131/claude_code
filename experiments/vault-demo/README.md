@@ -17,6 +17,7 @@
 ```
 vault-demo/
 ├── raw/source-snapshot/   # 元リポジトリ 9 ファイルの無加工スナップショット(ground truth。触らない)
+├── raw/reading/           # 取り込んだ記事(無加工。触らない)
 ├── entities/              # 成果物 1 つ 1 ページ(Skill / script / hook / playbook)
 ├── concepts/              # 設計原則 1 つ 1 ページ(playbook から抽出)
 ├── NOW.md                 # 現在の焦点(20 行以内)

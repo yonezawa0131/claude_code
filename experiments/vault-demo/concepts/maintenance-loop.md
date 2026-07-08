@@ -14,11 +14,12 @@
 | 日次(早朝 cron) | compile: 新着を entities/concepts へ反映・NOW.md 更新 | [[skill-vault-compile]] |
 | 週次 | lint: 矛盾・重複・リンク切れ・孤立ノート精査 | [[skill-memory-dream]] |
 | 週次(日曜) | synthesis: 横断して「今週何が変わったか」を 1 ページ | [[skill-vault-synthesis]] |
+| セッション終了時 | compound: 教訓・事実・仮説をコンパイル層と Skill に書き戻し | [[skill-session-compound]] |
 
 **モデル tier 分け**: ルーチン(ノート更新)は安価なモデル(Sonnet/Haiku)。上位モデルが席代を稼ぐのは synthesis だけ。ルーチンを上位モデルに回さない。
 
 ## 関連
 
-[[playbook-obsidian-vault]] / [[graph-health-metric]] / [[hook-session-start]]
+[[playbook-obsidian-vault]] / [[graph-health-metric]] / [[hook-session-start]] / [[state-file-discipline]]
 
 [出典](../raw/source-snapshot/notes/playbook/obsidian-vault.md)
