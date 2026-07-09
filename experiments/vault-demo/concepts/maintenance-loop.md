@@ -15,10 +15,10 @@
 | 週次 | lint: 矛盾・重複・リンク切れ・孤立ノート精査 | [[skill-memory-dream]] |
 | 週次(日曜) | synthesis: 横断して「今週何が変わったか」を 1 ページ | [[skill-vault-synthesis]] |
 
-**モデル tier 分け**: ルーチン(ノート更新)は安価なモデル(Sonnet/Haiku)。上位モデルが席代を稼ぐのは synthesis だけ。ルーチンを上位モデルに回さない。
+**モデル tier 分け**: ルーチン(ノート更新)は安価なモデル(Sonnet/Haiku)。上位モデルが席代を稼ぐのは synthesis だけ。ルーチンを上位モデルに回さない。この tier 分けは一般原則としての [[model-vs-effort]](ルーチンは小さいモデルへ、難タスクは大きいモデルの方がタスク総額で安くなり得る)の適用例。
 
 ## 関連
 
-[[playbook-obsidian-vault]] / [[graph-health-metric]] / [[hook-session-start]]
+[[playbook-obsidian-vault]] / [[graph-health-metric]] / [[hook-session-start]] / [[model-vs-effort]]
 
 [出典](../raw/source-snapshot/notes/playbook/obsidian-vault.md)
