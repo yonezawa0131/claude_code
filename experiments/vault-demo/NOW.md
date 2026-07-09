@@ -11,6 +11,7 @@
 - 汚染回避の 3 条件(隔離フォルダ・トップレベルに自動ロード面を置かない・削除可能な実験コミット)を満たす配置に確定。
 - raw/ は元 9 ファイルの無加工スナップショット。entities/ が成果物ページ、concepts/ が設計原則ページ。
 - 新規 playbook `model-effort-selection.md`(モデル/effort の使い分け)を [[playbook-model-effort]] / [[model-vs-effort]] としてコンパイル済み。`#domain/model` タグを新設。
+- カーパシー式 Claude 活用術記事を取込: raw/reading/ にクリップ、[[article-karpathy-claude-playbook]] に要約、[[success-criteria-loop]] を新設。`#type/article` `#domain/agent` タグ追加。
 
 ## 未解決の仮説
 

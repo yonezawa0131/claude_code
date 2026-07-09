@@ -6,8 +6,8 @@
 
 ここに定義したタグだけを使う(エージェントに自由発明させない。新種が要るならまずこの表を更新する)。
 
-- **type**: `#type/skill` `#type/script` `#type/hook` `#type/config` `#type/playbook` `#type/concept`
-- **domain**: `#domain/memory` `#domain/vault` `#domain/import` `#domain/infra` `#domain/model`(モデル/effort の選択・運用)
+- **type**: `#type/skill` `#type/script` `#type/hook` `#type/config` `#type/playbook` `#type/concept` `#type/article`
+- **domain**: `#domain/memory` `#domain/vault` `#domain/import` `#domain/infra` `#domain/model`(モデル/effort の選択・運用) `#domain/agent`(エージェント活用の設計・運用)
 - **layer**: `#layer/rule`(守るべき規律) `#layer/procedure`(手順) `#layer/tool`(実行物)
 
 ## entities/(成果物 1 つ 1 ページ)
@@ -20,6 +20,7 @@
 - [[playbook-memory-dream-pointer]] — memory-dream playbook から Skill への移行ポインタ
 - [[playbook-model-effort]] — モデル選択と effort 設定の使い分け判断手順の定義元 playbook
 - [[hook-session-start]] — SessionStart フック(個人 Skill の同期)
+- [[article-karpathy-claude-playbook]] — カーパシー式 Claude 活用術記事(2026-07)の要約と取り入れ候補の抽出
 
 ## concepts/(設計原則 1 つ 1 ページ)
 
@@ -32,6 +33,7 @@
 - [[single-source-dedup]] — 定義は 1 箇所・上位ルールを下位で再掲しない
 - [[capture-friction]] — capture の摩擦最小化(単一投入口・低摩擦入力)
 - [[model-vs-effort]] — モデル(能力)と effort(徹底度)の使い分け・判断手順
+- [[success-criteria-loop]] — 成功条件駆動ループ(命令ではなくゴール+検証手段を与えて反復させる)
 
 ## ルート
 
