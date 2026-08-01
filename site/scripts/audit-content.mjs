@@ -89,8 +89,22 @@ for (const file of files) {
     }
   }
 
-  if (/hasAffiliate:\s*false/.test(fm) && /amzn\.to|amazon\.co\.jp|a8\.net|af\.moshimo/.test(raw)) {
-    errors.push(at('hasAffiliate: false ですがアフィリエイトらしきリンクがあります（PR表記が出ません）'));
+  if (/hasAffiliate:\s*false/.test(fm) && /amzn\.to|a8\.net|af\.moshimo|hb\.afl\.rakuten|ck\.jp\.ap\.valuecommerce/.test(raw)) {
+    errors.push(at('hasAffiliate: false ですがアフィリエイトリンクがあります（PR表記が出ません）'));
+  }
+
+  // タグの付いていない商品リンクは、読者を外に送るだけで成果にならない
+  for (const [, url] of fm.matchAll(/^\s*amazon:\s*(https?:\/\/\S+)/gm)) {
+    if (!/[?&]tag=/.test(url)) {
+      errors.push(at(`Amazonリンクに tag= がありません: ${url.slice(0, 60)}`));
+    }
+  }
+  for (const [, url] of fm.matchAll(/^\s*rakuten:\s*(https?:\/\/\S+)/gm)) {
+    if (!/hb\.afl\.rakuten|\bafl\.rakuten\b/.test(url)) {
+      warnings.push(
+        at(`楽天リンクがアフィリエイト経由でない可能性があります: ${url.slice(0, 60)}`),
+      );
+    }
   }
 
   for (const { pattern, why } of RISKY_PHRASES) {

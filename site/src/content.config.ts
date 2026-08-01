@@ -3,13 +3,28 @@ import { glob } from 'astro/loaders';
 // astro:content の再エクスポートは Astro 7 で非推奨になったので zod から直接使う
 import * as z from 'zod';
 
+/**
+ * ショップ別のリンク。
+ * amazon は ASIN（英数字10桁）でも完全URLでも書ける。
+ * ASIN で書いた場合、consts.ts の amazonTag が未設定ならリンクは出力されない。
+ * rakuten / yahoo は、ASPが発行したURLをそのまま貼る。
+ */
+const shopLinksSchema = z
+  .object({
+    amazon: z.string().optional(),
+    rakuten: z.string().optional(),
+    yahoo: z.string().optional(),
+    official: z.string().optional(),
+  })
+  .default({});
+
 /** 記事内で紹介する商品・サービス1件分 */
 const productSchema = z.object({
   name: z.string(),
   /** 表内での短縮名。省略時は name を使う */
   shortName: z.string().optional(),
-  /** アフィリエイトリンク。未取得の間は空にしておき、リンクは出さない */
-  url: z.string().optional(),
+  /** 提携前は空にしておく。ボタンは「リンク準備中」になり、リンク切れを作らない */
+  links: shopLinksSchema,
   /** 参考価格の表示用文字列（「12,800円」「月額1,078円」など） */
   price: z.string().optional(),
   /** 5点満点 */

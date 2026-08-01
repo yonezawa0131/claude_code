@@ -14,7 +14,7 @@ keyPoints:
 products:
   - name: エレコム DPA-SSP01BK
     shortName: エレコム DPA-SSP01BK
-    url: ''
+    # links: 提携後に追記する（amazon は ASIN でも可）
     tested: false
     pros:
       - 対応天板厚が10〜80mmと広く、厚めの天板でも使える
@@ -25,7 +25,7 @@ products:
       固定方式: クランプ
   - name: グリーンハウス GH-AMDX1
     shortName: グリーンハウス GH-AMDX1
-    url: ''
+    # links: 提携後に追記する（amazon は ASIN でも可）
     price: 4,998円
     tested: false
     pros:
@@ -39,7 +39,7 @@ products:
       保証: 3年
   - name: エルゴトロン LX デスクマウント
     shortName: エルゴトロン LX
-    url: ''
+    # links: 提携後に追記する（amazon は ASIN でも可）
     price: 18,200円
     tested: false
     pros:

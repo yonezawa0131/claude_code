@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+    paths: ['site/**', '.github/workflows/ci.yml']
+  pull_request:
+    paths: ['site/**', '.github/workflows/ci.yml']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - run: npm ci
+
+      # 法令表記・カテゴリ・評価の整合。ビルドは通るが公開すると問題になるものを止める
+      - name: 記事の監査
+        run: npm run audit:content
+
+      # リンク組み立て・型チェック・ビルド
+      - name: ビルド
+        run: npm run build

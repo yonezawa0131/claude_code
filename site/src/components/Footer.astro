@@ -61,9 +61,11 @@ const legal = [
       </div>
     </div>
 
-    <p class="mt-8 border-t border-neutral-200 pt-6 text-xs leading-relaxed text-neutral-500 dark:border-neutral-800 dark:text-neutral-500">
-      {PR_DISCLOSURE.long}
-    </p>
+    <div class="mt-8 space-y-2 border-t border-neutral-200 pt-6 text-xs leading-relaxed text-neutral-500 dark:border-neutral-800 dark:text-neutral-500">
+      <p>{PR_DISCLOSURE.long}</p>
+      {/* Amazonアソシエイト運営規約が要求する開示文。ステマ規制とは別の義務 */}
+      <p>{PR_DISCLOSURE.amazonRequired}</p>
+    </div>
     <p class="mt-3 text-xs text-neutral-500 dark:text-neutral-500">
       © {year} {SITE.name}
     </p>

@@ -7,12 +7,13 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro check && astro build",
+    "build": "npm run test && astro check && astro build",
     "build:fast": "astro build",
     "preview": "astro preview",
     "check": "astro check",
     "assets": "node scripts/generate-assets.mjs",
-    "audit:content": "node scripts/audit-content.mjs"
+    "audit:content": "node scripts/audit-content.mjs",
+    "test": "node --experimental-strip-types --test \"src/**/*.test.ts\""
   },
   "dependencies": {
     "@astrojs/mdx": "^7.0.5",

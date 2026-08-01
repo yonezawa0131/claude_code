@@ -1,0 +1,63 @@
+---
+import AffiliateLink from './AffiliateLink.astro';
+import { resolveLinks, type ShopLinks } from '../lib/affiliate';
+import { AFFILIATE } from '../consts';
+
+/**
+ * ショップごとのボタンを横並びで出す。
+ *
+ * 1つのショップにしかリンクしないと、そのショップを使っていない読者を
+ * 取りこぼす。Amazonと楽天では利用者層もポイント経済圏も違うので、
+ * 出せるものは並べる。
+ */
+interface Props {
+  links?: ShopLinks;
+  /** どの商品へのリンクか。スクリーンリーダー向けにボタンへ含める */
+  productName: string;
+  compact?: boolean;
+}
+
+const { links, productName, compact = false } = Astro.props;
+const resolved = resolveLinks(links, AFFILIATE);
+
+/**
+ * 各ショップの識別色。並んだときに一目で見分けがつくことが目的。
+ * variant="bare" と組み合わせるので、CTAの背景色とは競合しない。
+ */
+const shopStyle: Record<string, string> = {
+  amazon: 'bg-[#e8912d] hover:bg-[#cf7d1e] text-white',
+  rakuten: 'bg-[#bf0000] hover:bg-[#9e0000] text-white',
+  yahoo: 'bg-[#5c2d91] hover:bg-[#4a2475] text-white',
+  official:
+    'border border-neutral-400 text-neutral-800 hover:bg-neutral-100 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-800',
+};
+
+const size = compact ? 'rounded px-2.5 py-1.5 text-xs' : 'rounded-lg px-5 py-3 text-[0.95rem]';
+---
+
+{
+  resolved.length === 0 ? (
+    <p class="not-prose text-sm text-neutral-500 dark:text-neutral-400">
+      {/* 提携が承認されるまではここが出る。リンク切れを作らないための状態 */}
+      リンク準備中
+    </p>
+  ) : (
+    <div class:list={['not-prose flex flex-wrap items-center gap-2']}>
+      {resolved.map((link) => (
+        <AffiliateLink
+          href={link.href}
+          sponsored={link.sponsored}
+          shop={link.shop}
+          variant="bare"
+          class={`${size} ${shopStyle[link.shop]}`}
+        >
+          <span class="sr-only">{productName}を</span>
+          {link.label}
+          <span aria-hidden="true" class="text-[0.7em] opacity-75">
+            ↗
+          </span>
+        </AffiliateLink>
+      ))}
+    </div>
+  )
+}

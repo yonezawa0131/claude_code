@@ -10,6 +10,7 @@ import KeyPoints from '../../components/KeyPoints.astro';
 import Toc from '../../components/Toc.astro';
 import Faq from '../../components/Faq.astro';
 import ComparisonTable from '../../components/ComparisonTable.astro';
+import ProductCard from '../../components/ProductCard.astro';
 import RelatedPosts from '../../components/RelatedPosts.astro';
 import { getPosts, relatedPosts, categoryName, readingMinutes } from '../../lib/posts';
 import { formatDate } from '../../lib/format';
@@ -46,6 +47,10 @@ const sharedSpecKeys = [...new Set(d.products.flatMap((p) => Object.keys(p.specs
   (key) => d.products.filter((p) => key in p.specs).length >= 2,
 );
 const showComparison = d.products.length >= 2 && sharedSpecKeys.length > 0;
+
+// 個別カードは、表に出ない情報（良かった点・気になった点）を持つ商品にだけ出す。
+// 情報のない商品でカードを出しても、購入ボタンが並ぶだけの水増しになる。
+const cardProducts = d.products.filter((p) => p.pros.length > 0 || p.cons.length > 0);
 
 const jsonLd = schema.graph([
   schema.organization(),
@@ -124,6 +129,17 @@ const jsonLd = schema.graph([
             columns={sharedSpecKeys}
             caption="この記事で触れた製品の比較"
           />
+        )
+      }
+
+      {
+        cardProducts.length > 0 && (
+          <section aria-labelledby="products-heading">
+            <h2 id="products-heading">この記事で触れた製品</h2>
+            {cardProducts.map((product) => (
+              <ProductCard product={product} />
+            ))}
+          </section>
         )
       }
 

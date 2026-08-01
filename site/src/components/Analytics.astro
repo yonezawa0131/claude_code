@@ -1,0 +1,33 @@
+---
+import { ANALYTICS } from '../consts';
+
+/**
+ * GA4 のタグ。測定IDが未設定なら何も出力しない。
+ *
+ * アフィリエイトリンクのクリックは、GA4 の拡張計測機能（既定で有効）が
+ * 「離脱クリック」として自動で拾うため、カスタムイベントは実装していない。
+ * ショップ別に分けて見たい場合は、リンクに付いている data-affiliate 属性を
+ * GTM 側の変数として拾うのが軽い。
+ */
+const { ga4Id } = ANALYTICS;
+---
+
+{
+  ga4Id && (
+    <>
+      <script
+        is:inline
+        async
+        src={`https://www.googletagmanager.com/gtag/js?id=${ga4Id}`}
+      />
+      <script is:inline define:vars={{ ga4Id }}>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() {
+          dataLayer.push(arguments);
+        }
+        gtag('js', new Date());
+        gtag('config', ga4Id);
+      </script>
+    </>
+  )
+}

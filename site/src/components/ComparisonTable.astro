@@ -1,11 +1,13 @@
 ---
-import AffiliateLink from './AffiliateLink.astro';
+import ShopLinks from './ShopLinks.astro';
 import Rating from './Rating.astro';
+import { hasAnyLink, type ShopLinks as ShopLinksType } from '../lib/affiliate';
+import { AFFILIATE } from '../consts';
 
 interface Product {
   name: string;
   shortName?: string;
-  url?: string;
+  links?: ShopLinksType;
   price?: string;
   rating?: number;
   specs: Record<string, string>;
@@ -17,10 +19,12 @@ interface Props {
   /** 表に出すスペック列。省略時は全商品のキーの和集合 */
   columns?: string[];
   caption?: string;
-  shop?: string;
 }
 
-const { products, columns, caption, shop } = Astro.props;
+const { products, columns, caption } = Astro.props;
+
+// リンクが1つもないうちは、空の列を出しても意味がないので列ごと省く
+const showLinkColumn = products.some((p) => hasAnyLink(p.links, AFFILIATE));
 
 const specColumns =
   columns ?? [...new Set(products.flatMap((p) => Object.keys(p.specs)))];
@@ -54,9 +58,13 @@ const specColumns =
               {col}
             </th>
           ))}
-          <th scope="col" class="px-3 py-2.5 text-left font-bold whitespace-nowrap">
-            <span class="sr-only">リンク</span>
-          </th>
+          {
+            showLinkColumn && (
+              <th scope="col" class="px-3 py-2.5 text-left font-bold whitespace-nowrap">
+                <span class="sr-only">購入先</span>
+              </th>
+            )
+          }
         </tr>
       </thead>
       <tbody>
@@ -85,11 +93,12 @@ const specColumns =
               {specColumns.map((col) => (
                 <td class="px-3 py-3 whitespace-nowrap">{p.specs[col] ?? '—'}</td>
               ))}
-              <td class="px-3 py-3 whitespace-nowrap">
-                <AffiliateLink href={p.url} variant="text" shop={shop}>
-                  詳細
-                </AffiliateLink>
-              </td>
+              {showLinkColumn && (
+                /* ボタンは折り返させる。nowrap にすると表そのものが際限なく横に伸びる */
+                <td class="min-w-40 px-3 py-3">
+                  <ShopLinks links={p.links} productName={p.name} compact />
+                </td>
+              )}
             </tr>
           ))
         }

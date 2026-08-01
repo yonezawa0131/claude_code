@@ -1,11 +1,12 @@
 ---
-import AffiliateLink from './AffiliateLink.astro';
+import ShopLinks from './ShopLinks.astro';
 import Rating from './Rating.astro';
+import type { ShopLinks as ShopLinksType } from '../lib/affiliate';
 
 interface Product {
   name: string;
   shortName?: string;
-  url?: string;
+  links?: ShopLinksType;
   price?: string;
   rating?: number;
   pros: string[];
@@ -18,10 +19,9 @@ interface Props {
   product: Product;
   /** 「1位」などの順位バッジ */
   rank?: number;
-  shop?: string;
 }
 
-const { product, rank, shop } = Astro.props;
+const { product, rank } = Astro.props;
 ---
 
 <article
@@ -112,7 +112,7 @@ const { product, rank, shop } = Astro.props;
     <slot />
 
     <div class="pt-1">
-      <AffiliateLink href={product.url} shop={shop}>詳細を見る</AffiliateLink>
+      <ShopLinks links={product.links} productName={product.name} />
     </div>
   </div>
 </article>

@@ -13,7 +13,7 @@ keyPoints:
   - 動作音は製品により約39〜55dB。集合住宅では時間帯の配慮とチェアマットが実務的な対策になります
 products:
   - name: FlexiSpot E7
-    url: ''
+    # links: 提携後に追記する（amazon は ASIN でも可）
     tested: false
     pros:
       - 幅120/140/160/180cmの4サイズから選べ、部屋の残りスペースに合わせやすい
@@ -27,7 +27,7 @@ products:
       昇降範囲: 60.7cm〜125.7cm
       重量: 49.8kg〜60.5kg（天板サイズにより変動）
   - name: FlexiSpot E8
-    url: ''
+    # links: 提携後に追記する（amazon は ASIN でも可）
     tested: false
     pros:
       - E7よりわずかに昇降範囲が広い（62.5cm〜127.7cm）

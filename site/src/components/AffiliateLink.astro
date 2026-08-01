@@ -1,19 +1,28 @@
 ---
 /**
- * アフィリエイトリンクは必ずこのコンポーネント経由で出す。
- * - rel="sponsored nofollow noopener" を強制（Google のガイドライン要件）
- * - URL 未設定なら、リンクではなくプレースホルダを出す（リンク切れを作らない）
+ * 外部リンクの最小単位。アフィリエイトリンクは必ずこれを通す。
+ *
+ * - rel="sponsored nofollow noopener" を強制する（Googleのガイドライン要件）
+ * - href がなければリンクにせず、プレースホルダを出す。
+ *   提携審査が通る前に記事を公開しても、リンク切れが発生しない
  */
 interface Props {
   href?: string;
-  /** 見た目。cta = 大きいボタン、text = 本文中インライン */
-  variant?: 'cta' | 'outline' | 'text';
-  /** ASP名など。「公式サイトで見る（Amazon）」のように出す */
+  /** アフィリエイトリンクか。false なら sponsored を外す */
+  sponsored?: boolean;
+  /**
+   * bare は配置だけを持ち、色は呼び出し側が付ける。
+   * ショップごとに色を変える ShopLinks で使う（cta の背景色と競合させないため）。
+   */
+  variant?: 'cta' | 'outline' | 'text' | 'bare';
+  /** 計測用。GA4 側でショップ別のクリック数を見るときに使う */
   shop?: string;
   class?: string;
 }
 
-const { href, variant = 'cta', shop, class: className } = Astro.props;
+const { href, sponsored = true, variant = 'cta', shop, class: className } = Astro.props;
+
+const rel = sponsored ? 'sponsored nofollow noopener' : 'nofollow noopener';
 
 const base =
   'inline-flex items-center justify-center gap-1.5 font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2';
@@ -22,6 +31,7 @@ const styles: Record<string, string> = {
   cta: `${base} w-full rounded-lg bg-cta-600 px-5 py-3.5 text-white shadow-sm hover:bg-cta-700 sm:w-auto sm:min-w-64`,
   outline: `${base} w-full rounded-lg border-2 border-brand-600 px-5 py-3 text-brand-700 hover:bg-brand-50 sm:w-auto sm:min-w-64 dark:border-brand-400 dark:text-brand-300 dark:hover:bg-brand-900/40`,
   text: 'text-brand-700 underline underline-offset-2 dark:text-brand-300',
+  bare: base,
 };
 ---
 
@@ -29,13 +39,12 @@ const styles: Record<string, string> = {
   href ? (
     <a
       href={href}
-      rel="sponsored nofollow noopener"
+      rel={rel}
       target="_blank"
       class:list={[styles[variant], className]}
-      data-affiliate={shop ?? true}
+      data-affiliate={shop ?? 'other'}
     >
       <slot />
-      {shop && variant !== 'text' && <span class="text-xs font-medium opacity-80">（{shop}）</span>}
     </a>
   ) : (
     <span
@@ -44,7 +53,6 @@ const styles: Record<string, string> = {
         className,
       ]}
     >
-      {/* 提携審査が通るまではここが出る */}
       リンク準備中
     </span>
   )
