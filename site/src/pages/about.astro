@@ -2,7 +2,9 @@
 import PageLayout from '../layouts/PageLayout.astro';
 import { SITE } from '../consts';
 
-const authorSet = SITE.author !== '' && SITE.author !== '運営者';
+// consts.ts が as const なので、比較ではなく配列で判定する（リテラル型どうしの比較は型エラーになる）
+const PLACEHOLDER_AUTHORS: readonly string[] = ['', '運営者'];
+const authorSet = !PLACEHOLDER_AUTHORS.includes(SITE.author);
 ---
 
 <PageLayout
