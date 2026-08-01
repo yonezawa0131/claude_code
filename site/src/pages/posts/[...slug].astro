@@ -39,6 +39,14 @@ const trail = [
   { name: d.title },
 ];
 
+// 比較表は「並べて意味がある」ときだけ出す。
+// 2製品以上あり、かつ2製品以上が共通で持つスペック列が1つ以上ないと、
+// セルが「—」だらけの表になって読者の判断材料にならない。
+const sharedSpecKeys = [...new Set(d.products.flatMap((p) => Object.keys(p.specs)))].filter(
+  (key) => d.products.filter((p) => key in p.specs).length >= 2,
+);
+const showComparison = d.products.length >= 2 && sharedSpecKeys.length > 0;
+
 const jsonLd = schema.graph([
   schema.organization(),
   schema.website(),
@@ -107,13 +115,17 @@ const jsonLd = schema.graph([
     <Toc headings={headings} />
 
     <div class="prose prose-neutral dark:prose-invert max-w-none">
+      <Content />
+
       {
-        d.products.length > 1 && (
-          <ComparisonTable products={d.products} caption="まずは一覧で比較" />
+        showComparison && (
+          <ComparisonTable
+            products={d.products}
+            columns={sharedSpecKeys}
+            caption="この記事で触れた製品の比較"
+          />
         )
       }
-
-      <Content />
 
       <Faq items={d.faq} />
       <RelatedPosts posts={related} />

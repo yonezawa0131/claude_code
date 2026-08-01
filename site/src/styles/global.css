@@ -45,7 +45,8 @@ body {
   /* 日本語は行間を広めに取ったほうが滞在時間が伸びる */
   text-spacing-trim: trim-start;
   word-break: normal;
-  overflow-wrap: anywhere;
+  /* anywhere にすると「10.9m²」のような塊まで割れるので、必要なときだけ折る */
+  overflow-wrap: break-word;
   line-break: strict;
 }
 
@@ -77,8 +78,21 @@ body {
   text-underline-offset: 3px;
 }
 
+/*
+  記事本文の表。スマホ幅で列が潰れて読めなくなるより、表だけ横スクロールさせる。
+  ページ全体が横スクロールしないよう、スクロールは表の内側に閉じ込める。
+*/
 .prose :where(table):not(:where([class~='not-prose'] *)) {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
   font-size: 0.925rem;
+}
+
+.prose :where(table td, table th):not(:where([class~='not-prose'] *)) {
+  /* 数値と単位の間で折り返さない */
+  word-break: keep-all;
 }
 
 /* 横に長い比較表はページごと横スクロールさせず、表だけスクロールさせる */
