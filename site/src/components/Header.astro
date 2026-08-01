@@ -1,0 +1,43 @@
+---
+import { SITE, NAV } from '../consts';
+
+const items = NAV.filter((n) => n.header !== false);
+const path = Astro.url.pathname.replace(/\/$/, '');
+---
+
+<header class="sticky top-0 z-50 border-b border-neutral-200 bg-white/90 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/90">
+  <div class="mx-auto flex max-w-5xl items-center gap-4 px-4 py-3">
+    <a
+      href="/"
+      class="shrink-0 text-lg font-bold tracking-tight text-brand-700 dark:text-brand-300"
+    >
+      {SITE.name}
+    </a>
+
+    <nav aria-label="メインナビゲーション" class="ml-auto min-w-0">
+      <ul class="flex items-center gap-1 overflow-x-auto text-sm whitespace-nowrap">
+        {
+          items.map((item) => {
+            const current = path === item.href.replace(/\/$/, '');
+            return (
+              <li>
+                <a
+                  href={item.href}
+                  aria-current={current ? 'page' : undefined}
+                  class:list={[
+                    'block rounded-md px-3 py-2 transition-colors',
+                    current
+                      ? 'bg-brand-100 font-semibold text-brand-800 dark:bg-brand-900 dark:text-brand-100'
+                      : 'text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800',
+                  ]}
+                >
+                  {item.label}
+                </a>
+              </li>
+            );
+          })
+        }
+      </ul>
+    </nav>
+  </div>
+</header>

@@ -1,0 +1,102 @@
+---
+import AffiliateLink from './AffiliateLink.astro';
+import Rating from './Rating.astro';
+
+interface Product {
+  name: string;
+  shortName?: string;
+  url?: string;
+  price?: string;
+  rating?: number;
+  specs: Record<string, string>;
+  tested: boolean;
+}
+
+interface Props {
+  products: Product[];
+  /** 表に出すスペック列。省略時は全商品のキーの和集合 */
+  columns?: string[];
+  caption?: string;
+  shop?: string;
+}
+
+const { products, columns, caption, shop } = Astro.props;
+
+const specColumns =
+  columns ?? [...new Set(products.flatMap((p) => Object.keys(p.specs)))];
+---
+
+<figure class="not-prose my-8">
+  {
+    caption && (
+      <figcaption class="mb-2 text-sm font-bold text-neutral-700 dark:text-neutral-300">
+        {caption}
+      </figcaption>
+    )
+  }
+  <div class="table-scroll rounded-lg border border-neutral-200 dark:border-neutral-800">
+    <table class="w-full min-w-max border-collapse text-sm">
+      <thead>
+        <tr class="bg-neutral-100 dark:bg-neutral-800">
+          <th
+            scope="col"
+            class="sticky left-0 z-10 bg-neutral-100 px-3 py-2.5 text-left font-bold whitespace-nowrap dark:bg-neutral-800"
+            >商品</th
+          >
+          {products.some((p) => p.rating !== undefined) && (
+            <th scope="col" class="px-3 py-2.5 text-left font-bold whitespace-nowrap">評価</th>
+          )}
+          {products.some((p) => p.price) && (
+            <th scope="col" class="px-3 py-2.5 text-left font-bold whitespace-nowrap">参考価格</th>
+          )}
+          {specColumns.map((col) => (
+            <th scope="col" class="px-3 py-2.5 text-left font-bold whitespace-nowrap">
+              {col}
+            </th>
+          ))}
+          <th scope="col" class="px-3 py-2.5 text-left font-bold whitespace-nowrap">
+            <span class="sr-only">リンク</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          products.map((p) => (
+            <tr class="border-t border-neutral-200 even:bg-neutral-50 dark:border-neutral-800 dark:even:bg-neutral-900/50">
+              <th
+                scope="row"
+                class="sticky left-0 z-10 bg-inherit px-3 py-3 text-left font-semibold whitespace-nowrap"
+              >
+                {p.shortName ?? p.name}
+                {p.tested && (
+                  <span class="ml-1.5 rounded bg-brand-100 px-1.5 py-0.5 text-[0.65rem] font-bold text-brand-800 dark:bg-brand-900 dark:text-brand-100">
+                    使用済
+                  </span>
+                )}
+              </th>
+              {products.some((x) => x.rating !== undefined) && (
+                <td class="px-3 py-3 whitespace-nowrap">
+                  {p.rating !== undefined ? <Rating value={p.rating} /> : '—'}
+                </td>
+              )}
+              {products.some((x) => x.price) && (
+                <td class="px-3 py-3 whitespace-nowrap tabular-nums">{p.price ?? '—'}</td>
+              )}
+              {specColumns.map((col) => (
+                <td class="px-3 py-3 whitespace-nowrap">{p.specs[col] ?? '—'}</td>
+              ))}
+              <td class="px-3 py-3 whitespace-nowrap">
+                <AffiliateLink href={p.url} variant="text" shop={shop}>
+                  詳細
+                </AffiliateLink>
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+  <p class="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+    価格は調査時点のものです。最新の価格は各販売サイトでご確認ください。
+  </p>
+</figure>

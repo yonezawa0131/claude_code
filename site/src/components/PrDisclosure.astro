@@ -1,0 +1,33 @@
+---
+import { PR_DISCLOSURE } from '../consts';
+
+/**
+ * ステマ規制（景品表示法の指定告示・2023年10月1日施行）対応。
+ * 消費者が「広告である」と一見して分かる必要があるため、
+ * 本文冒頭・ファーストビュー内に配置し、折りたたまない。
+ */
+interface Props {
+  /** 記事上部用の目立つ表示か、控えめなインライン表示か */
+  variant?: 'block' | 'inline';
+}
+
+const { variant = 'block' } = Astro.props;
+---
+
+{
+  variant === 'block' ? (
+    <aside
+      class="not-prose mb-6 flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-100"
+    >
+      <span
+        aria-hidden="true"
+        class="mt-0.5 shrink-0 rounded bg-amber-500 px-1.5 py-0.5 text-[0.7rem] font-bold text-white"
+      >
+        PR
+      </span>
+      <p class="leading-relaxed">{PR_DISCLOSURE.short}</p>
+    </aside>
+  ) : (
+    <p class="not-prose text-xs text-neutral-500 dark:text-neutral-400">{PR_DISCLOSURE.short}</p>
+  )
+}

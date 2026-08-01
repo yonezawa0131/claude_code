@@ -1,0 +1,65 @@
+---
+import { Image } from 'astro:assets';
+import { categoryName } from '../lib/posts';
+import { formatDate } from '../lib/format';
+import type { Post } from '../lib/posts';
+
+interface Props {
+  post: Post;
+  /** トップの主役記事などで大きく出す */
+  featured?: boolean;
+}
+
+const { post, featured = false } = Astro.props;
+const { title, description, publishDate, updatedDate, category, heroImage, heroImageAlt } =
+  post.data;
+const href = `/posts/${post.id}`;
+const shown = updatedDate ?? publishDate;
+---
+
+<article
+  class:list={[
+    'group relative overflow-hidden rounded-xl border border-neutral-200 bg-white transition-shadow hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900',
+    featured && 'sm:col-span-2',
+  ]}
+>
+  {
+    heroImage && (
+      <Image
+        src={heroImage}
+        alt={heroImageAlt ?? ''}
+        widths={[400, 800]}
+        sizes="(min-width: 640px) 400px, 100vw"
+        class:list={['w-full object-cover', featured ? 'h-56' : 'h-40']}
+        loading="lazy"
+      />
+    )
+  }
+
+  <div class="p-5">
+    <div class="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-500 dark:text-neutral-400">
+      <a
+        href={`/category/${category}`}
+        class="relative z-10 rounded bg-brand-100 px-2 py-0.5 font-semibold text-brand-800 hover:bg-brand-200 dark:bg-brand-900 dark:text-brand-100"
+      >
+        {categoryName(category)}
+      </a>
+      <time datetime={shown.toISOString()}>
+        {updatedDate ? `${formatDate(shown)} 更新` : formatDate(shown)}
+      </time>
+    </div>
+
+    <h2
+      class:list={[
+        'font-bold text-neutral-900 group-hover:text-brand-700 dark:text-neutral-50 dark:group-hover:text-brand-300',
+        featured ? 'text-xl' : 'text-base',
+      ]}
+    >
+      <a href={href} class="after:absolute after:inset-0">{title}</a>
+    </h2>
+
+    <p class="mt-2 line-clamp-3 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+      {description}
+    </p>
+  </div>
+</article>

@@ -1,0 +1,34 @@
+---
+interface Props {
+  items: { q: string; a: string }[];
+  heading?: string;
+}
+
+const { items, heading = 'よくある質問' } = Astro.props;
+---
+
+{
+  items.length > 0 && (
+    <section class="my-10" aria-labelledby="faq-heading">
+      <h2 id="faq-heading">{heading}</h2>
+      <div class="not-prose space-y-3">
+        {items.map((item) => (
+          <details class="group rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+            <summary class="cursor-pointer list-none px-4 py-3.5 font-bold text-neutral-900 marker:content-[''] hover:bg-neutral-50 dark:text-neutral-100 dark:hover:bg-neutral-800/60">
+              <span class="mr-2 text-brand-600 dark:text-brand-400" aria-hidden="true">
+                Q.
+              </span>
+              {item.q}
+            </summary>
+            <div class="border-t border-neutral-200 px-4 py-3.5 text-[0.95rem] leading-relaxed text-neutral-700 dark:border-neutral-800 dark:text-neutral-300">
+              <span class="mr-2 font-bold text-neutral-500" aria-hidden="true">
+                A.
+              </span>
+              {item.a}
+            </div>
+          </details>
+        ))}
+      </div>
+    </section>
+  )
+}

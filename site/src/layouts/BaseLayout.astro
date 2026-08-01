@@ -1,0 +1,50 @@
+---
+import Seo from '../components/Seo.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { SITE } from '../consts';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+  bare?: boolean;
+  image?: string;
+  type?: 'website' | 'article';
+  noindex?: boolean;
+  publishDate?: Date;
+  updatedDate?: Date;
+  jsonLd?: string;
+  /** 記事ページなど、本文幅を狭くしたい場合 */
+  narrow?: boolean;
+}
+
+const { narrow = false, ...seo } = Astro.props;
+---
+
+<!doctype html>
+<html lang={SITE.lang} class="scroll-smooth">
+  <head>
+    <Seo {...seo} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  </head>
+  <body
+    class="min-h-dvh bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100"
+  >
+    <a
+      href="#main"
+      class="sr-only rounded bg-brand-600 px-4 py-2 text-white focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-100"
+    >
+      本文へスキップ
+    </a>
+
+    <Header />
+
+    <main id="main" class:list={['mx-auto w-full px-4 py-8', narrow ? 'max-w-3xl' : 'max-w-5xl']}>
+      <slot />
+    </main>
+
+    <Footer />
+  </body>
+</html>

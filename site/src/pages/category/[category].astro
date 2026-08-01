@@ -1,0 +1,54 @@
+---
+import type { GetStaticPaths, InferGetStaticPropsType } from 'astro';
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { getPosts, categoryName, categoryDescription } from '../../lib/posts';
+import { CATEGORIES } from '../../consts';
+import * as schema from '../../lib/schema';
+
+export const getStaticPaths = (async () => {
+  const posts = await getPosts();
+  return CATEGORIES.map((c) => ({
+    params: { category: c.slug },
+    props: { posts: posts.filter((p) => p.data.category === c.slug) },
+  }));
+}) satisfies GetStaticPaths;
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+
+const category = Astro.params.category!;
+const { posts }: Props = Astro.props;
+
+const name = categoryName(category);
+const description = categoryDescription(category) || `${name}に関する記事の一覧です。`;
+
+const trail = [{ name: 'ホーム', href: '/' }, { name }];
+const jsonLd = schema.graph([
+  schema.organization(),
+  schema.website(),
+  schema.breadcrumbs(trail),
+]);
+---
+
+<BaseLayout title={name} description={description} jsonLd={jsonLd}>
+  <Breadcrumbs trail={trail} />
+
+  <header class="mb-8">
+    <h1 class="text-2xl font-bold tracking-tight sm:text-3xl">{name}</h1>
+    <p class="mt-2 text-neutral-600 dark:text-neutral-400">{description}</p>
+  </header>
+
+  {
+    posts.length === 0 ? (
+      <p class="text-neutral-600 dark:text-neutral-400">このカテゴリの記事は準備中です。</p>
+    ) : (
+      <div class="grid gap-5 sm:grid-cols-2">
+        {posts.map((post) => (
+          <PostCard post={post} />
+        ))}
+      </div>
+    )
+  }
+</BaseLayout>

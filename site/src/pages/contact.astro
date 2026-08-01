@@ -1,0 +1,42 @@
+---
+import PageLayout from '../layouts/PageLayout.astro';
+import { SITE } from '../consts';
+---
+
+<PageLayout
+  title="お問い合わせ"
+  description={`${SITE.name}へのお問い合わせ方法をご案内します。記事内容の誤りのご指摘、掲載依頼などはこちらから。`}
+>
+  <p>
+    記事内容についてのご指摘、掲載内容に関するお問い合わせは、以下よりご連絡ください。
+  </p>
+
+  {
+    SITE.email ? (
+      <p>
+        メール: <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+      </p>
+    ) : (
+      <div class="not-prose rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-100">
+        <p class="font-bold">問い合わせ先が未設定です</p>
+        <p class="mt-1 leading-relaxed">
+          公開前に <code>src/consts.ts</code> の <code>SITE.email</code> に連絡先を設定するか、
+          外部フォーム（Googleフォーム等）へのリンクに差し替えてください。連絡先がないサイトは
+          信頼性の面で不利になり、ASPの提携審査でも落ちる要因になります。
+        </p>
+      </div>
+    )
+  }
+
+  <h2>いただいたご連絡について</h2>
+  <ul>
+    <li>記事内の誤りのご指摘は歓迎しています。根拠となる情報源を添えていただけると助かります。</li>
+    <li>返信をお約束するものではありませんが、内容は必ず確認しています。</li>
+    <li>いただいた個人情報の取り扱いは<a href="/privacy-policy">プライバシーポリシー</a>に従います。</li>
+  </ul>
+
+  <h2>製品提供・タイアップのご依頼について</h2>
+  <p>
+    製品の提供を受けて記事を書く場合、その事実を記事内に明記します。提供の有無にかかわらず、実際に使って確認した内容だけを書く方針は変えません。評価内容についてのご要望にはお応えできませんので、あらかじめご了承ください。
+  </p>
+</PageLayout>

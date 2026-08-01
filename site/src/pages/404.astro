@@ -1,0 +1,42 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostCard from '../components/PostCard.astro';
+import { getPosts } from '../lib/posts';
+
+const latest = (await getPosts()).slice(0, 4);
+---
+
+<BaseLayout
+  noindex
+  title="ページが見つかりません"
+  description="お探しのページは見つかりませんでした。"
+>
+  <div class="py-8">
+    <p class="text-sm font-bold text-brand-600 dark:text-brand-400">404</p>
+    <h1 class="mt-2 text-2xl font-bold sm:text-3xl">ページが見つかりません</h1>
+    <p class="mt-3 text-neutral-600 dark:text-neutral-400">
+      URLが変わったか、削除された可能性があります。
+    </p>
+    <a
+      href="/"
+      class="mt-5 inline-block rounded-lg bg-brand-600 px-5 py-2.5 font-bold text-white hover:bg-brand-700"
+    >
+      トップページへ
+    </a>
+  </div>
+
+  {
+    latest.length > 0 && (
+      <section class="mt-10" aria-labelledby="latest-404">
+        <h2 id="latest-404" class="mb-4 text-lg font-bold">
+          新着記事
+        </h2>
+        <div class="grid gap-5 sm:grid-cols-2">
+          {latest.map((post) => (
+            <PostCard post={post} />
+          ))}
+        </div>
+      </section>
+    )
+  }
+</BaseLayout>

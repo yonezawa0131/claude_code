@@ -1,0 +1,33 @@
+---
+interface Props {
+  value: number;
+  /** 数値も併記するか */
+  showValue?: boolean;
+}
+
+const { value, showValue = true } = Astro.props;
+const clamped = Math.max(0, Math.min(5, value));
+const percent = (clamped / 5) * 100;
+---
+
+<span class="inline-flex items-center gap-1.5 align-middle">
+  <span
+    class="relative inline-block text-base leading-none tracking-tight"
+    role="img"
+    aria-label={`5点満点中${clamped.toFixed(1)}点`}
+  >
+    <span class="text-neutral-300 dark:text-neutral-700" aria-hidden="true">★★★★★</span>
+    <span
+      class="absolute inset-0 overflow-hidden text-amber-500"
+      style={`width:${percent}%`}
+      aria-hidden="true">★★★★★</span
+    >
+  </span>
+  {
+    showValue && (
+      <span class="text-sm font-semibold text-neutral-700 tabular-nums dark:text-neutral-300">
+        {clamped.toFixed(1)}
+      </span>
+    )
+  }
+</span>

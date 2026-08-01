@@ -1,0 +1,32 @@
+{
+  "name": "rokujo-desk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "6畳デスク研究所 — 狭い部屋の在宅ワークデスク環境に特化した情報サイト",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro check && astro build",
+    "build:fast": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "assets": "node scripts/generate-assets.mjs",
+    "audit:content": "node scripts/audit-content.mjs"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^7.0.5",
+    "@astrojs/rss": "^4.0.19",
+    "@astrojs/sitemap": "^3.7.3",
+    "@tailwindcss/typography": "^0.5.20",
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^7.1.6",
+    "sharp": "^0.35.3",
+    "tailwindcss": "^4.3.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "typescript": "^6.0.3"
+  }
+}

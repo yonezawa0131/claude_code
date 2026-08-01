@@ -1,0 +1,36 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import * as schema from '../lib/schema';
+
+interface Props {
+  title: string;
+  description: string;
+  /** 規約系ページは検索結果に出す必要がないので既定で noindex */
+  noindex?: boolean;
+  updated?: string;
+}
+
+const { title, description, noindex = false, updated } = Astro.props;
+
+const trail = [{ name: 'ホーム', href: '/' }, { name: title }];
+const jsonLd = schema.graph([
+  schema.organization(),
+  schema.website(),
+  schema.breadcrumbs(trail),
+]);
+---
+
+<BaseLayout narrow {title} {description} {noindex} {jsonLd}>
+  <Breadcrumbs {trail} />
+
+  <article class="prose prose-neutral dark:prose-invert max-w-none">
+    <h1>{title}</h1>
+    <slot />
+    {
+      updated && (
+        <p class="text-sm text-neutral-500 dark:text-neutral-400">最終更新: {updated}</p>
+      )
+    }
+  </article>
+</BaseLayout>

@@ -1,0 +1,118 @@
+---
+import AffiliateLink from './AffiliateLink.astro';
+import Rating from './Rating.astro';
+
+interface Product {
+  name: string;
+  shortName?: string;
+  url?: string;
+  price?: string;
+  rating?: number;
+  pros: string[];
+  cons: string[];
+  specs: Record<string, string>;
+  tested: boolean;
+}
+
+interface Props {
+  product: Product;
+  /** 「1位」などの順位バッジ */
+  rank?: number;
+  shop?: string;
+}
+
+const { product, rank, shop } = Astro.props;
+---
+
+<article
+  class="not-prose my-8 overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+>
+  <header class="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-neutral-200 bg-neutral-50 px-5 py-4 dark:border-neutral-800 dark:bg-neutral-900/60">
+    {
+      rank !== undefined && (
+        <span class="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-600 text-sm font-bold text-white">
+          {rank}
+        </span>
+      )
+    }
+    <h3 class="min-w-0 flex-1 text-lg font-bold text-neutral-900 dark:text-neutral-50">
+      {product.name}
+    </h3>
+    {
+      product.tested && (
+        <span class="rounded-full bg-brand-100 px-2.5 py-1 text-xs font-semibold text-brand-800 dark:bg-brand-900 dark:text-brand-100">
+          実際に使用
+        </span>
+      )
+    }
+  </header>
+
+  <div class="space-y-4 px-5 py-5">
+    <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+      {product.rating !== undefined && <Rating value={product.rating} />}
+      {
+        product.price && (
+          <p class="text-sm text-neutral-700 dark:text-neutral-300">
+            参考価格 <span class="font-bold">{product.price}</span>
+          </p>
+        )
+      }
+    </div>
+
+    {
+      Object.keys(product.specs).length > 0 && (
+        <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
+          {Object.entries(product.specs).map(([key, value]) => (
+            <>
+              <dt class="text-neutral-500 dark:text-neutral-400">{key}</dt>
+              <dd class="font-medium text-neutral-800 dark:text-neutral-200">{value}</dd>
+            </>
+          ))}
+        </dl>
+      )
+    }
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      {
+        product.pros.length > 0 && (
+          <div class="rounded-lg bg-brand-50 px-4 py-3 dark:bg-brand-900/30">
+            <p class="mb-1.5 text-sm font-bold text-brand-800 dark:text-brand-200">良かった点</p>
+            <ul class="space-y-1 text-sm text-neutral-700 dark:text-neutral-300">
+              {product.pros.map((item) => (
+                <li class="flex gap-1.5">
+                  <span aria-hidden="true" class="text-brand-600 dark:text-brand-400">
+                    ✓
+                  </span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      }
+      {
+        product.cons.length > 0 && (
+          <div class="rounded-lg bg-neutral-100 px-4 py-3 dark:bg-neutral-800/60">
+            <p class="mb-1.5 text-sm font-bold text-neutral-700 dark:text-neutral-300">気になった点</p>
+            <ul class="space-y-1 text-sm text-neutral-700 dark:text-neutral-300">
+              {product.cons.map((item) => (
+                <li class="flex gap-1.5">
+                  <span aria-hidden="true" class="text-neutral-500">
+                    －
+                  </span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      }
+    </div>
+
+    <slot />
+
+    <div class="pt-1">
+      <AffiliateLink href={product.url} shop={shop}>詳細を見る</AffiliateLink>
+    </div>
+  </div>
+</article>

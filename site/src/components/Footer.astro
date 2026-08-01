@@ -1,0 +1,71 @@
+---
+import { SITE, NAV, PR_DISCLOSURE } from '../consts';
+
+const year = new Date().getFullYear();
+const legal = [
+  { label: '運営者情報', href: '/about' },
+  { label: 'プライバシーポリシー', href: '/privacy-policy' },
+  { label: '免責事項', href: '/disclaimer' },
+  { label: 'お問い合わせ', href: '/contact' },
+];
+---
+
+<footer class="mt-16 border-t border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900">
+  <div class="mx-auto max-w-5xl px-4 py-10">
+    <div class="grid gap-8 sm:grid-cols-2">
+      <div>
+        <p class="text-base font-bold text-brand-700 dark:text-brand-300">{SITE.name}</p>
+        <p class="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+          {SITE.description}
+        </p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-6 text-sm">
+        {
+          NAV.length > 0 && (
+            <nav aria-label="カテゴリ">
+              <p class="mb-2 font-semibold text-neutral-900 dark:text-neutral-100">カテゴリ</p>
+              <ul class="space-y-1.5">
+                {NAV.map((item) => (
+                  <li>
+                    <a
+                      href={item.href}
+                      class="text-neutral-600 underline-offset-2 hover:underline dark:text-neutral-400"
+                    >
+                      {item.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          )
+        }
+
+        <nav aria-label="サイト情報">
+          <p class="mb-2 font-semibold text-neutral-900 dark:text-neutral-100">サイト情報</p>
+          <ul class="space-y-1.5">
+            {
+              legal.map((item) => (
+                <li>
+                  <a
+                    href={item.href}
+                    class="text-neutral-600 underline-offset-2 hover:underline dark:text-neutral-400"
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+      </div>
+    </div>
+
+    <p class="mt-8 border-t border-neutral-200 pt-6 text-xs leading-relaxed text-neutral-500 dark:border-neutral-800 dark:text-neutral-500">
+      {PR_DISCLOSURE.long}
+    </p>
+    <p class="mt-3 text-xs text-neutral-500 dark:text-neutral-500">
+      © {year} {SITE.name}
+    </p>
+  </div>
+</footer>

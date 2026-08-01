@@ -1,0 +1,100 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+
+/*
+  デザイントークン。ジャンルに合わせて変えるのは --color-brand-* だけで済むようにしている。
+*/
+@theme {
+  --color-brand-50: oklch(0.97 0.02 155);
+  --color-brand-100: oklch(0.94 0.04 155);
+  --color-brand-200: oklch(0.88 0.07 155);
+  --color-brand-300: oklch(0.8 0.1 155);
+  --color-brand-400: oklch(0.71 0.13 155);
+  --color-brand-500: oklch(0.63 0.14 155);
+  --color-brand-600: oklch(0.54 0.13 155);
+  --color-brand-700: oklch(0.45 0.11 155);
+  --color-brand-800: oklch(0.37 0.09 155);
+  --color-brand-900: oklch(0.3 0.07 155);
+
+  /* CTA（アフィリエイトボタン）は本文リンクと明確に差をつける */
+  --color-cta-500: oklch(0.68 0.18 45);
+  --color-cta-600: oklch(0.6 0.19 40);
+  --color-cta-700: oklch(0.52 0.18 38);
+
+  --font-sans:
+    'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'BIZ UDPGothic', Meiryo,
+    system-ui, sans-serif;
+
+  --text-base: 1.0625rem;
+  --text-base--line-height: 1.9;
+}
+
+:root {
+  color-scheme: light dark;
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  /* 日本語は行間を広めに取ったほうが滞在時間が伸びる */
+  text-spacing-trim: trim-start;
+  word-break: normal;
+  overflow-wrap: anywhere;
+  line-break: strict;
+}
+
+/* 記事本文 -------------------------------------------------------------- */
+
+.prose :where(h2):not(:where([class~='not-prose'] *)) {
+  margin-top: 2.75rem;
+  margin-bottom: 1.25rem;
+  padding: 0.5rem 0 0.5rem 0.85rem;
+  border-left: 5px solid var(--color-brand-500);
+  background: color-mix(in oklch, var(--color-brand-50) 70%, transparent);
+  border-radius: 0.25rem;
+  font-size: 1.4rem;
+  line-height: 1.5;
+}
+
+.prose :where(h3):not(:where([class~='not-prose'] *)) {
+  margin-top: 2rem;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 2px dotted var(--color-brand-200);
+  font-size: 1.2rem;
+  line-height: 1.6;
+}
+
+.prose :where(a):not(:where([class~='not-prose'] *)) {
+  color: var(--color-brand-700);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.prose :where(table):not(:where([class~='not-prose'] *)) {
+  font-size: 0.925rem;
+}
+
+/* 横に長い比較表はページごと横スクロールさせず、表だけスクロールさせる */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (prefers-color-scheme: dark) {
+  .prose :where(h2):not(:where([class~='not-prose'] *)) {
+    background: color-mix(in oklch, var(--color-brand-900) 40%, transparent);
+  }
+  .prose :where(a):not(:where([class~='not-prose'] *)) {
+    color: var(--color-brand-300);
+  }
+  .prose :where(h3):not(:where([class~='not-prose'] *)) {
+    border-bottom-color: var(--color-brand-800);
+  }
+}

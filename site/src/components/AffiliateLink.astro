@@ -1,0 +1,51 @@
+---
+/**
+ * アフィリエイトリンクは必ずこのコンポーネント経由で出す。
+ * - rel="sponsored nofollow noopener" を強制（Google のガイドライン要件）
+ * - URL 未設定なら、リンクではなくプレースホルダを出す（リンク切れを作らない）
+ */
+interface Props {
+  href?: string;
+  /** 見た目。cta = 大きいボタン、text = 本文中インライン */
+  variant?: 'cta' | 'outline' | 'text';
+  /** ASP名など。「公式サイトで見る（Amazon）」のように出す */
+  shop?: string;
+  class?: string;
+}
+
+const { href, variant = 'cta', shop, class: className } = Astro.props;
+
+const base =
+  'inline-flex items-center justify-center gap-1.5 font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2';
+
+const styles: Record<string, string> = {
+  cta: `${base} w-full rounded-lg bg-cta-600 px-5 py-3.5 text-white shadow-sm hover:bg-cta-700 sm:w-auto sm:min-w-64`,
+  outline: `${base} w-full rounded-lg border-2 border-brand-600 px-5 py-3 text-brand-700 hover:bg-brand-50 sm:w-auto sm:min-w-64 dark:border-brand-400 dark:text-brand-300 dark:hover:bg-brand-900/40`,
+  text: 'text-brand-700 underline underline-offset-2 dark:text-brand-300',
+};
+---
+
+{
+  href ? (
+    <a
+      href={href}
+      rel="sponsored nofollow noopener"
+      target="_blank"
+      class:list={[styles[variant], className]}
+      data-affiliate={shop ?? true}
+    >
+      <slot />
+      {shop && variant !== 'text' && <span class="text-xs font-medium opacity-80">（{shop}）</span>}
+    </a>
+  ) : (
+    <span
+      class:list={[
+        'inline-flex items-center gap-1.5 rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400',
+        className,
+      ]}
+    >
+      {/* 提携審査が通るまではここが出る */}
+      リンク準備中
+    </span>
+  )
+}

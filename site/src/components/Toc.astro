@@ -1,0 +1,40 @@
+---
+import type { MarkdownHeading } from 'astro';
+
+interface Props {
+  headings: MarkdownHeading[];
+}
+
+// h2/h3 だけを目次に出す。h4 以下は粒度が細かすぎて逆に読みにくい
+const items = Astro.props.headings.filter((h) => h.depth === 2 || h.depth === 3);
+---
+
+{
+  items.length >= 3 && (
+    <nav
+      class="not-prose my-6 rounded-xl border border-neutral-200 bg-neutral-50 px-5 py-4 dark:border-neutral-800 dark:bg-neutral-900"
+      aria-labelledby="toc-heading"
+    >
+      <p id="toc-heading" class="mb-2.5 text-sm font-bold text-neutral-900 dark:text-neutral-100">
+        目次
+      </p>
+      <ol class="space-y-1.5 text-sm">
+        {items.map((h) => (
+          <li class:list={[h.depth === 3 && 'ml-4']}>
+            <a
+              href={`#${h.slug}`}
+              class:list={[
+                'underline-offset-2 hover:underline',
+                h.depth === 2
+                  ? 'font-medium text-neutral-800 dark:text-neutral-200'
+                  : 'text-neutral-600 dark:text-neutral-400',
+              ]}
+            >
+              {h.text}
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  )
+}

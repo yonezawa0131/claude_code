@@ -1,0 +1,38 @@
+---
+/**
+ * 記事冒頭の要点ボックス。
+ * 読者の直帰を減らす目的と、AI検索が要約として抜き出しやすい形にする目的を兼ねる。
+ */
+interface Props {
+  points: string[];
+  title?: string;
+}
+
+const { points, title = 'この記事の結論' } = Astro.props;
+---
+
+{
+  points.length > 0 && (
+    <aside
+      class="not-prose my-6 rounded-xl border border-brand-200 bg-brand-50 px-5 py-4 dark:border-brand-800 dark:bg-brand-950/40"
+      aria-labelledby="key-points-heading"
+    >
+      <p
+        id="key-points-heading"
+        class="mb-2.5 text-sm font-bold text-brand-800 dark:text-brand-200"
+      >
+        {title}
+      </p>
+      <ul class="space-y-2">
+        {points.map((point) => (
+          <li class="flex gap-2 text-[0.95rem] leading-relaxed text-neutral-800 dark:text-neutral-200">
+            <span aria-hidden="true" class="mt-0.5 shrink-0 text-brand-600 dark:text-brand-400">
+              ●
+            </span>
+            <span>{point}</span>
+          </li>
+        ))}
+      </ul>
+    </aside>
+  )
+}
