@@ -16,6 +16,15 @@
     mixed  : トレンド区間とレンジ区間が交互に現れる
     random : ドリフトなしの幾何ブラウン運動（優位性のない戦略が優位性を
              持てないはずの対照群。ここで利益が出るならエンジンのバグ）
+    intraday : ランダムウォークに「日中モメンタム」だけを埋め込んだ**陽性対照**。
+             セッション最終バーのリターンが、そのセッション初バーのリターンの
+             beta 倍だけ押し上げられる。それ以外の性質は random と同じ
+             （トレンドもレンジもない）。
+             検出器が「何も見つけない」とき、それがデータにパターンが無いからか
+             コードが壊れているからかを区別するために要る。
+
+陰性対照（random）だけでは足りない。何も検出しないコードは、
+陰性対照を必ず通ってしまう。**存在するパターンを検出できることを先に示す。**
 
 出力CSVの列・形式は fetch_ohlcv.py と完全に同じ:
     timestamp,open,high,low,close,volume
@@ -52,6 +61,13 @@ BAR_TIMEDELTA = dt.timedelta(hours=1)
 
 # 1本のバー内の値動き経路を何分割して生成するか（ブラウニアン・ブリッジのステップ数）
 INTRABAR_STEPS = 20
+
+# 陽性対照（intradayレジーム）の既定値。
+# 1セッション24本＝1時間足で1日。ANCHOR_STARTがUTC 00:00なので、
+# セッションの区切りは IntradayMomentum の既定設定と一致する
+DEFAULT_SESSION_BARS = 24
+# 初バーのリターンが最終バーに乗る倍率。0にすると random と同じ性質になる
+DEFAULT_INTRADAY_BETA = 1.0
 
 
 # ---------------------------------------------------------------------------
@@ -113,6 +129,50 @@ def _generate_random_path(
     return np.exp(log_prices)
 
 
+def _generate_intraday_momentum_path(
+    rng: np.random.Generator,
+    bars: int,
+    start_price: float,
+    sigma: float = 0.006,
+    session_bars: int = DEFAULT_SESSION_BARS,
+    beta: float = DEFAULT_INTRADAY_BETA,
+) -> np.ndarray:
+    """陽性対照。ランダムウォークに、日中モメンタムだけを埋め込む。
+
+    各セッションの**最終バー**の対数リターンに、
+    そのセッションの**初バー**の対数リターンの beta 倍を加える。
+
+        r[last] = beta * r[first] + noise
+
+    加える量の期待値は0なので、系列全体としてのドリフトは生まれない。
+    つまり買い持ちでは取れず、**セッション内の位置を見て初めて取れる**利益になる。
+
+    セッションの区切りは ANCHOR_START（UTC 00:00）に揃えてあるので、
+    IntradayMomentum(session_hours=24, session_start_hour=0) の区切りと一致する。
+
+    埋め込んだ効果の大きさは事前に計算できる。ロングだけを取る場合、
+    初バーが上げた（確率1/2）ときの最終バーの期待リターンは
+
+        beta * sigma * sqrt(2/pi)
+
+    beta=1.0, sigma=0.006 なら約 +0.48%。往復コスト0.18%を引いても残る水準で、
+    「検出できて当然」の強さにしてある。**弱い信号を検出できるかは別の問題**で、
+    それは強さを下げたデータで測ること。
+    """
+    if session_bars < 2:
+        raise ValueError("--session-bars は2以上である必要があります")
+
+    log_returns = sigma * rng.standard_normal(bars)
+    for start in range(0, bars, session_bars):
+        last = start + session_bars - 1
+        if last >= bars:
+            break  # 端数のセッションには埋め込まない
+        log_returns[last] += beta * log_returns[start]
+
+    log_prices = np.log(start_price) + np.cumsum(log_returns)
+    return np.exp(log_prices)
+
+
 def _generate_mixed_path(
     rng: np.random.Generator,
     bars: int,
@@ -142,11 +202,24 @@ def _generate_mixed_path(
     return closes
 
 
-REGIME_GENERATORS: dict[str, Callable[[np.random.Generator, int, float], np.ndarray]] = {
-    "trend": lambda rng, bars, price: _generate_trend_path(rng, bars, price),
-    "range": lambda rng, bars, price: _generate_range_path(rng, bars, price),
-    "mixed": lambda rng, bars, price: _generate_mixed_path(rng, bars, price),
-    "random": lambda rng, bars, price: _generate_random_path(rng, bars, price),
+def _intraday_entry(
+    rng: np.random.Generator, bars: int, price: float, **options
+) -> np.ndarray:
+    return _generate_intraday_momentum_path(
+        rng,
+        bars,
+        price,
+        session_bars=int(options.get("session_bars", DEFAULT_SESSION_BARS)),
+        beta=float(options.get("beta", DEFAULT_INTRADAY_BETA)),
+    )
+
+
+REGIME_GENERATORS: dict[str, Callable[..., np.ndarray]] = {
+    "trend": lambda rng, bars, price, **_: _generate_trend_path(rng, bars, price),
+    "range": lambda rng, bars, price, **_: _generate_range_path(rng, bars, price),
+    "mixed": lambda rng, bars, price, **_: _generate_mixed_path(rng, bars, price),
+    "random": lambda rng, bars, price, **_: _generate_random_path(rng, bars, price),
+    "intraday": _intraday_entry,
 }
 
 
@@ -192,8 +265,12 @@ def _brownian_bridge_high_low(
 # ---------------------------------------------------------------------------
 
 
-def make_synthetic_ohlcv(bars: int, seed: int, regime: str) -> pd.DataFrame:
-    """指定されたレジーム・シードに従って合成OHLCVデータフレームを作る"""
+def make_synthetic_ohlcv(bars: int, seed: int, regime: str, **options) -> pd.DataFrame:
+    """指定されたレジーム・シードに従って合成OHLCVデータフレームを作る。
+
+    options はレジームごとの追加パラメータ（intraday の session_bars / beta）。
+    知らないキーは無視される。
+    """
     if bars <= 0:
         raise ValueError("--bars は1以上の整数を指定してください")
     if regime not in REGIME_GENERATORS:
@@ -202,7 +279,7 @@ def make_synthetic_ohlcv(bars: int, seed: int, regime: str) -> pd.DataFrame:
     rng = np.random.default_rng(seed)
 
     # バーごとの終値系列を生成
-    closes = REGIME_GENERATORS[regime](rng, bars, INITIAL_PRICE)
+    closes = REGIME_GENERATORS[regime](rng, bars, INITIAL_PRICE, **options)
 
     # 始値は「1本前の終値」。最初のバーの始値は初期価格とする
     opens = np.empty(bars)
@@ -264,7 +341,22 @@ def _parse_args() -> argparse.Namespace:
         type=str,
         required=True,
         choices=sorted(REGIME_GENERATORS.keys()),
-        help="価格系列の性質（trend/range/mixed/random）",
+        help="価格系列の性質（trend/range/mixed/random/intraday）",
+    )
+    parser.add_argument(
+        "--session-bars",
+        type=int,
+        default=DEFAULT_SESSION_BARS,
+        help=f"intradayレジーム: 1セッションのバー数（既定 {DEFAULT_SESSION_BARS}）",
+    )
+    parser.add_argument(
+        "--intraday-beta",
+        type=float,
+        default=DEFAULT_INTRADAY_BETA,
+        help=(
+            "intradayレジーム: 初バーのリターンが最終バーに乗る倍率"
+            f"（既定 {DEFAULT_INTRADAY_BETA}、0でパターンなし）"
+        ),
     )
     return parser.parse_args()
 
@@ -273,7 +365,13 @@ def main() -> None:
     args = _parse_args()
 
     try:
-        df = make_synthetic_ohlcv(args.bars, args.seed, args.regime)
+        df = make_synthetic_ohlcv(
+            args.bars,
+            args.seed,
+            args.regime,
+            session_bars=args.session_bars,
+            beta=args.intraday_beta,
+        )
     except ValueError as exc:
         print(f"エラー: パラメータが不正です。{exc}", file=sys.stderr)
         sys.exit(1)

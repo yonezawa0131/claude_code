@@ -339,3 +339,153 @@ class IchimokuTrend:
 
 STRATEGIES["donchian"] = DonchianBreakout
 STRATEGIES["ichimoku"] = IchimokuTrend
+
+
+@dataclass
+class IntradayMomentum:
+    """セッション最初の値動きで、セッション最後のポジションを決める。
+
+    Shen, Urquhart & Wang (2022, Financial Review) が
+    ビットコインで報告した日中モメンタム。もとは Gao, Han, Li & Zhou (2018) が
+    S&P500 ETF で見つけた現象のビットコイン版。
+
+    **この時間軸で、ビットコインを対象に、査読論文の裏付けがある数少ない仮説。**
+    ただし論文が見つけたのは特定の標本期間での現象であり、
+    今も続いている保証はない。だから検証する。
+
+    ## セッション境界という問題
+
+    株式には寄り付きと引けがあるが、ビットコインは24時間動く。
+    論文は出来高を取引セッションの代理変数として使ったが、
+    ここでは扱いやすさを優先して時計ベースで区切っている。
+
+    **どこで区切るかはパラメータであり、結果を見てから選べば当てはめになる。**
+    区切りを変えて試した回数は記録しておくこと
+    （growth.expected_max_sharpe が、その回数から偶然の水準を出す）。
+
+    ## 仕組み
+
+    1. セッション開始から entry_bars 本ぶんの値動きを測る
+    2. その符号（と大きさ）で、セッション終盤 exit_bars 本のポジションを決める
+    3. セッション終了で手仕舞う
+
+    エンジンは「バー t のシグナルをバー t+1 の始値で執行する」ので、
+    終盤の窓を**持ちたい1本前**に direction を立てる。
+    ここを揃えないと、狙ったバーではなく次のセッションの頭を持つことになる。
+
+    中間の時間帯はノーポジ。1セッションに1往復しかしないので、
+    取引回数が抑えられるのも利点になる。
+    """
+
+    #: セッションの長さ（時間）。24なら1日1セッション
+    session_hours: int = 24
+    #: セッション開始時刻（UTC）
+    session_start_hour: int = 0
+    #: 冒頭の何本で方向を測るか
+    entry_bars: int = 1
+    #: 終盤の何本でポジションを持つか
+    exit_bars: int = 1
+    #: この値幅を超えたときだけ動く。ノイズで反応しないための閾値
+    threshold: float = 0.0
+    allow_short: bool = False
+    atr_period: int = 14
+    stop_atr: float | None = 2.0
+    name: str = "日中モメンタム"
+
+    def warmup(self) -> int:
+        return max(self.session_hours, self.atr_period) + 2
+
+    def _session_position(
+        self, hours: np.ndarray, bar_hours: float
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """UTCの絶対時刻から、セッション番号とセッション内の位置を出す。
+
+        **データの並びを一切見ずに、時計だけで決める。**
+        行を数えてセッションの長さを求めると、
+        「このセッションが何本で終わるか」は最後の1本が来るまで確定しない。
+        それを使って途中のバーの判断をすれば、未来を覗いたことになる。
+        """
+        shifted = hours - self.session_start_hour
+        session_id = np.floor(shifted / self.session_hours).astype(np.int64)
+        offset = shifted - session_id * self.session_hours
+        position = np.rint(offset / bar_hours).astype(np.int64)
+        return session_id, position
+
+    def generate(self, df: pd.DataFrame) -> pd.DataFrame:
+        sig = _empty_signals(df.index)
+        n = len(df)
+        if n < 2:
+            return sig
+
+        idx = df.index
+        bar_delta = pd.Series(idx).diff().median()
+        bar_hours = float(bar_delta.total_seconds()) / 3600.0
+        if bar_hours <= 0:
+            raise ValueError("バーの間隔を推定できません")
+
+        bars_per_session = int(round(self.session_hours / bar_hours))
+        if bars_per_session < self.entry_bars + self.exit_bars:
+            raise ValueError(
+                f"1セッション {bars_per_session} 本に対して、"
+                f"測る {self.entry_bars} 本と持つ {self.exit_bars} 本の合計が多すぎます。"
+                "同じバーで測って賭けることになるので、この設定は認めていません"
+            )
+
+        # 1970年基点の絶対時刻で区切る。最初の行を基点にすると、
+        # データの開始位置が変わるだけでセッションの区切りが動いてしまう。
+        # index の分解能（ns/us/ms）に依存しないよう、必ず秒に直してから割る
+        epoch = pd.Timestamp("1970-01-01", tz="UTC")
+        if idx.tz is None:
+            epoch = epoch.tz_localize(None)
+        hours = (idx - epoch).total_seconds().to_numpy(dtype=float) / 3600.0
+        session_id, position = self._session_position(hours, bar_hours)
+        # 「次のバー」は時計から分かる。実際の次の行を見る必要はない。
+        # エンジンは direction[t] を t+1 本目の始値で執行するので、
+        # 判断はここで1本ぶん前倒ししておく
+        next_session, next_position = self._session_position(hours + bar_hours, bar_hours)
+
+        opens = df["open"].to_numpy(dtype=float)
+        closes = df["close"].to_numpy(dtype=float)
+
+        # セッション冒頭の値動き。entry_bars 本が閉じた時点で確定する
+        session_open: dict[int, float] = {}
+        entry_return: dict[int, float] = {}
+        for i in range(n):
+            sid = int(session_id[i])
+            if position[i] == 0:
+                session_open[sid] = opens[i]
+            if position[i] == self.entry_bars - 1 and sid in session_open:
+                base = session_open[sid]
+                if base > 0:
+                    entry_return[sid] = closes[i] / base - 1.0
+
+        # 終盤の exit_bars 本を持つ。冒頭の窓とは必ず離れている
+        hold_start = bars_per_session - self.exit_bars
+
+        direction = np.zeros(n, dtype=float)
+        for i in range(n):
+            if not hold_start <= next_position[i] < bars_per_session:
+                continue
+            r = entry_return.get(int(next_session[i]))
+            if r is None or abs(r) < self.threshold:
+                continue
+            if r > 0:
+                direction[i] = 1.0
+            elif r < 0 and self.allow_short:
+                direction[i] = -1.0
+
+        sig["direction"] = direction
+
+        if self.stop_atr is not None:
+            close = df["close"]
+            atr = ind.atr(df["high"], df["low"], close, self.atr_period)
+            stop_dist = atr * self.stop_atr
+            sig["stop_loss"] = np.where(
+                direction > 0,
+                close - stop_dist,
+                np.where(direction < 0, close + stop_dist, np.nan),
+            )
+        return sig
+
+
+STRATEGIES["intraday_momentum"] = IntradayMomentum
