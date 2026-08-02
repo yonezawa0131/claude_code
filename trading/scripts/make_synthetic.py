@@ -136,6 +136,7 @@ def _generate_intraday_momentum_path(
     sigma: float = 0.006,
     session_bars: int = DEFAULT_SESSION_BARS,
     beta: float = DEFAULT_INTRADAY_BETA,
+    beta_end: float | None = None,
 ) -> np.ndarray:
     """陽性対照。ランダムウォークに、日中モメンタムだけを埋め込む。
 
@@ -158,16 +159,33 @@ def _generate_intraday_momentum_path(
     beta=1.0, sigma=0.006 なら約 +0.48%。往復コスト0.18%を引いても残る水準で、
     「検出できて当然」の強さにしてある。**弱い信号を検出できるかは別の問題**で、
     それは強さを下げたデータで測ること。
+
+    ## 優位性が消えていく相場
+
+    beta_end を指定すると、beta から beta_end まで**セッションごとに線形で変化**する。
+    beta=1.0, beta_end=0.0 なら「効いていた優位性が、期間の後半にかけて
+    裁定されて消えていく」データになる。
+
+    これは実際に起きることであり（発見・公表された異常収益は縮小する傾向がある）、
+    **全期間で1回バックテストすると気づけない**という点で厄介でもある。
+    前半の利益が後半の損失を覆い隠して、平均すればプラスに見えてしまう。
+    ウォークフォワード検証がこれを捉えられるかを測るために使う。
     """
     if session_bars < 2:
         raise ValueError("--session-bars は2以上である必要があります")
 
     log_returns = sigma * rng.standard_normal(bars)
-    for start in range(0, bars, session_bars):
+    starts = list(range(0, bars, session_bars))
+    finish = beta if beta_end is None else beta_end
+
+    for n, start in enumerate(starts):
         last = start + session_bars - 1
         if last >= bars:
             break  # 端数のセッションには埋め込まない
-        log_returns[last] += beta * log_returns[start]
+        # セッションごとに beta -> beta_end へ線形に変化させる
+        progress = n / (len(starts) - 1) if len(starts) > 1 else 0.0
+        strength = beta + (finish - beta) * progress
+        log_returns[last] += strength * log_returns[start]
 
     log_prices = np.log(start_price) + np.cumsum(log_returns)
     return np.exp(log_prices)
@@ -211,6 +229,9 @@ def _intraday_entry(
         price,
         session_bars=int(options.get("session_bars", DEFAULT_SESSION_BARS)),
         beta=float(options.get("beta", DEFAULT_INTRADAY_BETA)),
+        beta_end=(
+            None if options.get("beta_end") is None else float(options["beta_end"])
+        ),
     )
 
 
@@ -358,6 +379,16 @@ def _parse_args() -> argparse.Namespace:
             f"（既定 {DEFAULT_INTRADAY_BETA}、0でパターンなし）"
         ),
     )
+    parser.add_argument(
+        "--intraday-beta-end",
+        type=float,
+        default=None,
+        help=(
+            "intradayレジーム: 期間の最後での倍率。"
+            "指定すると beta からここまで線形に変化する"
+            "（0を指定すれば「優位性が裁定されて消えていく」データになる）"
+        ),
+    )
     return parser.parse_args()
 
 
@@ -371,6 +402,7 @@ def main() -> None:
             args.regime,
             session_bars=args.session_bars,
             beta=args.intraday_beta,
+            beta_end=args.intraday_beta_end,
         )
     except ValueError as exc:
         print(f"エラー: パラメータが不正です。{exc}", file=sys.stderr)

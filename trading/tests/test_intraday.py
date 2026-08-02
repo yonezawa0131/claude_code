@@ -281,6 +281,39 @@ def test_overlapping_windows_are_rejected():
         strategy.generate(_frame(beta=1.0, bars=300))
 
 
+def test_breakeven_matches_the_cost_arithmetic():
+    """検出できる信号の下限が、コストの算術と一致する。
+
+    1トレードの粗利の期待値は、ロングだけ取る場合
+
+        beta × sigma × sqrt(2/π)
+
+    で、これが往復コストを超えたところが分岐点になる。
+    成行（往復0.180%）なら beta=0.376、指値（往復0.020%）なら beta=0.042。
+
+    実測がこの計算とずれるなら、**エンジンのコスト計上が算術と合っていない。**
+    戦略の検証というより、エンジンの検算にあたる。
+    """
+    sigma = 0.006
+    gross_per_trade = sigma * np.sqrt(2.0 / np.pi)
+    breakeven_beta = GMO_EXCHANGE.round_trip_rate(OrderType.TAKER) / gross_per_trade
+    assert 0.3 < breakeven_beta < 0.45, breakeven_beta
+
+    def mean_return(beta: float) -> float:
+        returns = []
+        for seed in (1, 2, 3):
+            df = _frame(beta=beta, seed=seed, bars=20_000)
+            returns.append(
+                evaluate(
+                    run_backtest(df, IntradayMomentum(stop_atr=None), GMO_EXCHANGE, CONFIG)
+                ).total_return
+            )
+        return float(np.mean(returns))
+
+    assert mean_return(breakeven_beta * 0.8) < 0, "分岐点より弱い信号で利益が出ています"
+    assert mean_return(breakeven_beta * 1.2) > 0, "分岐点より強い信号を取り切れていません"
+
+
 def test_threshold_reduces_the_number_of_trades():
     """閾値を上げれば取引回数は減る。ノイズで動かないための調整。"""
     df = _frame(beta=1.0)

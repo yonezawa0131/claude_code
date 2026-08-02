@@ -90,17 +90,110 @@ def check_causality(
     return violations
 
 
+#: 減衰とみなす標準化スコアの閾値。
+#: 合成データ（優位性が一定 vs 線形に消滅、各10シード）で測ったところ、
+#: 一定のときは [-0.95, +1.43]、消滅するときは [-1.75, -1.09] に分かれた。
+#: -1.0 は両者のちょうど境目で、**余裕はほとんどない**。
+#: この値だけで採否を決めず、必ず期間ごとの並びも見ること。
+DECAY_Z_THRESHOLD = -1.0
+
+#: この本数を下回る期間があると、期間ごとの成績がノイズに埋もれて
+#: 傾向を読めない（metrics.evaluate() の警告と同じ基準）
+MIN_TRADES_PER_WINDOW = 30
+
+
 @dataclass
 class WalkForwardResult:
-    """ウォークフォワード検証の結果。"""
+    """ウォークフォワード検証の結果。
+
+    **勝った期間の数だけを見てはいけない。** 数は順番を捨ててしまう。
+
+    優位性が期間の後半にかけて消えていくデータで測ると、
+    6分割のうち4期間はプラスのまま残る（10シード中9回）。
+    「4/6で勝ち越し」と読めば合格に見えるが、実際には
+    最後の2期間で負けていて、**その戦略はもう死んでいる**。
+
+    順番を見る統計量を2つ持たせてある。
+      - decay_z : 後半の平均が前半よりどれだけ悪いか（標準偏差で割った値）
+      - 最終期間が負で、全体が正か（＝過去の利益が現在の損失を隠していないか）
+    """
 
     windows: list[tuple[pd.Timestamp, pd.Timestamp, Report]]
 
+    @property
+    def returns(self) -> np.ndarray:
+        return np.array([rep.total_return for _, _, rep in self.windows])
+
+    @property
+    def decay(self) -> float:
+        """後半の平均リターン − 前半の平均リターン。
+
+        マイナスなら、時間が経つにつれて成績が落ちている。
+        """
+        arr = self.returns
+        if len(arr) < 4:
+            return float("nan")
+        half = len(arr) // 2
+        return float(arr[half:].mean() - arr[:half].mean())
+
+    @property
+    def decay_z(self) -> float:
+        """decay を期間リターンの標準偏差で割った値。
+
+        効果の大きさに依存しない形にするための標準化。
+        リターンそのもので閾値を切ると、
+        優位性が大きい戦略ほど誤検知しやすくなる。
+        """
+        arr = self.returns
+        if len(arr) < 4:
+            return float("nan")
+        sd = arr.std(ddof=1)
+        if sd == 0 or np.isnan(sd):
+            return float("nan")
+        return self.decay / sd
+
+    def warnings(self) -> list[str]:
+        """採用してはいけない兆候を並べる。"""
+        arr = self.returns
+        out: list[str] = []
+        if len(arr) == 0:
+            return ["検証できた期間がありません。"]
+
+        beat = sum(1 for _, _, r in self.windows if r.excess_over_buy_hold > 0)
+        if beat <= len(arr) / 2:
+            out.append(
+                "過半の期間で買い持ちに勝てていません。"
+                "この戦略を採用する根拠は現時点でありません。"
+            )
+
+        z = self.decay_z
+        if not np.isnan(z) and z < DECAY_Z_THRESHOLD:
+            out.append(
+                f"後半の成績が前半より落ちています（標準化スコア {z:+.2f}）。"
+                "優位性が失われつつある可能性があります。"
+                "全期間の平均は、過去の利益が現在の損失を隠して作られたものかもしれません。"
+            )
+
+        if len(arr) >= 2 and arr[-1] < 0 < arr.mean():
+            out.append(
+                f"全期間の平均はプラスですが、最新の期間はマイナスです"
+                f"（{arr[-1] * 100:+.2f}%）。"
+                "**測っているのは過去の相場で、今の相場ではありません。**"
+            )
+
+        thin = [rep.trade_count for _, _, rep in self.windows if rep.trade_count < MIN_TRADES_PER_WINDOW]
+        if thin:
+            out.append(
+                f"取引が {MIN_TRADES_PER_WINDOW} 回に満たない期間が {len(thin)} 個あります"
+                f"（最小 {min(thin)} 回）。"
+                "期間ごとの成績がノイズに埋もれ、傾向を読めません。"
+                "期間を減らすか、データを増やしてください。"
+            )
+        return out
+
     def summary(self) -> str:
         lines = ["ウォークフォワード検証", ""]
-        returns = []
         for start, end, rep in self.windows:
-            returns.append(rep.total_return)
             mark = "○" if rep.excess_over_buy_hold > 0 else "×"
             lines.append(
                 f"{mark} {start:%Y-%m-%d} 〜 {end:%Y-%m-%d}: "
@@ -108,23 +201,32 @@ class WalkForwardResult:
                 f"(買い持ち {rep.buy_hold_return * 100:+7.2f}%, "
                 f"{rep.trade_count} 回)"
             )
-        if returns:
-            arr = np.array(returns)
+
+        arr = self.returns
+        if len(arr):
             positive = int((arr > 0).sum())
             beat = sum(1 for _, _, r in self.windows if r.excess_over_buy_hold > 0)
+            sd = arr.std(ddof=1) if len(arr) > 1 else float("nan")
             lines += [
                 "",
                 f"勝ち越した期間 : {positive} / {len(arr)}",
                 f"買い持ちに勝った期間: {beat} / {len(arr)}",
                 f"期間リターンの平均 : {arr.mean() * 100:+.2f} %",
-                f"期間リターンの標準偏差 : {arr.std(ddof=1) * 100 if len(arr) > 1 else float('nan'):.2f} %",
+                f"期間リターンの標準偏差 : {sd * 100:.2f} %",
             ]
-            if beat <= len(arr) / 2:
-                lines.append("")
-                lines.append(
-                    "→ 過半の期間で買い持ちに勝てていません。"
-                    "この戦略を採用する根拠は現時点でありません。"
-                )
+            if not np.isnan(self.decay):
+                lines += [
+                    "",
+                    f"後半 − 前半 : {self.decay * 100:+.2f} pt"
+                    f"（標準化 {self.decay_z:+.2f}）",
+                    "  ※ 勝った期間の数は順番を捨てます。"
+                    "優位性が消えていく戦略でも、前半の貯金で数だけは残ります",
+                ]
+
+        issues = self.warnings()
+        if issues:
+            lines.append("")
+            lines.extend(f"→ {w}" for w in issues)
         return "\n".join(lines)
 
 
