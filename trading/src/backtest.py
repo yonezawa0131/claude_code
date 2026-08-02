@@ -35,6 +35,7 @@ import numpy as np
 import pandas as pd
 
 from .costs import CostModel, OrderType
+from .growth import AdaptiveSizing
 
 
 REQUIRED_COLUMNS = ("open", "high", "low", "close", "volume")
@@ -79,6 +80,11 @@ class BacktestConfig:
 
     #: レバレッジ。国内の個人は2倍が上限
     leverage: float = 1.0
+
+    #: 成績に応じてポジションサイズを変える設定。
+    #: 指定すると risk_per_trade より優先される。
+    #: 資産が最高値を更新している間だけ拡大し、ドローダウン中は必ず縮小する
+    adaptive_sizing: AdaptiveSizing | None = None
 
     def __post_init__(self) -> None:
         if self.initial_capital <= 0:
@@ -245,6 +251,8 @@ def run_backtest(
     index = df.index
 
     cash = config.initial_capital
+    peak_equity = config.initial_capital
+    highs_made = 0
     side = Side.FLAT
     size = 0.0
     entry_price = 0.0
@@ -313,13 +321,17 @@ def run_backtest(
 
         fill = _fill_price(raw_price, new_side, cost, config.order_type)
 
-        if config.risk_per_trade is not None and not np.isnan(stop):
+        risk_fraction = config.risk_per_trade
+        if config.adaptive_sizing is not None:
+            risk_fraction = config.adaptive_sizing.risk_for(cash, peak_equity, highs_made)
+
+        if risk_fraction is not None and not np.isnan(stop):
             # 損切りまでの距離からサイズを逆算する。
             # 損切りが遠い（＝ボラティリティが高い）ときは自動的に小さく建つ
             stop_distance = abs(fill - stop)
             if stop_distance <= 0:
                 return
-            risk_amount = cash * config.risk_per_trade
+            risk_amount = cash * risk_fraction
             notional = risk_amount * fill / stop_distance
             # レバレッジ上限は超えられない
             notional = min(notional, cash * config.leverage)
@@ -405,6 +417,9 @@ def run_backtest(
                 active_target = new_target
 
         equity[i] = mark_to_market(closes[i])
+        if equity[i] > peak_equity:
+            peak_equity = equity[i]
+            highs_made += 1
 
     # 最終バーで持ち越していたら手仕舞う
     if side is not Side.FLAT:
