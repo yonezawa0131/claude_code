@@ -25,7 +25,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from trading.src.backtest import BacktestConfig, run_backtest
+from trading.src.backtest import BacktestConfig, MakerFill, run_backtest
 from trading.src.costs import PRESETS, OrderType, breakeven_move
 from trading.src.metrics import evaluate, multiple_testing_report
 from trading.src.strategy import STRATEGIES
@@ -75,6 +75,28 @@ def main() -> int:
     parser.add_argument(
         "--order-type", default="taker", choices=["taker", "maker"], help="執行方法"
     )
+    parser.add_argument(
+        "--assume-maker-always-fills",
+        action="store_true",
+        help=(
+            "指値の約定判定を外し、必ず約定する前提で計算する。"
+            "結果は上振れするので、比較のためだけに使うこと"
+        ),
+    )
+    parser.add_argument(
+        "--maker-offset",
+        type=float,
+        default=None,
+        help=(
+            "指値を始値から何割離して置くか（既定はコストモデルのハーフスプレッド）。"
+            "離すほど約定しにくくなる"
+        ),
+    )
+    parser.add_argument(
+        "--chase-if-unfilled",
+        action="store_true",
+        help="指値が約定しなかったら、そのバーの終値で成行に切り替える",
+    )
     parser.add_argument("--allow-short", action="store_true", help="ショートを許可する")
     parser.add_argument(
         "--leverage", type=float, default=1.0, help="レバレッジ（国内個人は2.0が上限）"
@@ -105,12 +127,20 @@ def main() -> int:
         raise SystemExit(f"未知のコストモデル: {args.cost}")
 
     order_type = OrderType(args.order_type)
+
+    # 指値は既定で約定判定を入れる。「必ず約定する」は明示的に選ばせる
+    maker_fill = None
+    if order_type is OrderType.MAKER and not args.assume_maker_always_fills:
+        offset = args.maker_offset if args.maker_offset is not None else cost.half_spread
+        maker_fill = MakerFill(offset=offset, chase_at_close=args.chase_if_unfilled)
+
     config = BacktestConfig(
         initial_capital=args.capital,
         position_fraction=args.fraction,
         order_type=order_type,
         allow_short=args.allow_short,
         leverage=args.leverage,
+        maker_fill=maker_fill,
     )
 
     print("=" * 68)

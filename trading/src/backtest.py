@@ -48,6 +48,92 @@ class Side(Enum):
 
 
 @dataclass(frozen=True)
+class MakerFill:
+    """指値注文が約定したかどうかを、バーの高値安値から判定する。
+
+    ## なぜ要るか
+
+    指値のコストは成行の9分の1（GMOコインの実料率で往復0.020% 対 0.180%）。
+    しかしそれは**約定した場合の話**で、指値は必ずしも約定しない。
+    「並べたら必ず約定する」前提で計算した優位性は、実在しない。
+
+    ## 判定の仕方
+
+    始値から offset だけ不利でない側に指値を置く。
+    買いなら始値の下、売りなら始値の上。
+    そのバーの値動きが**指値を抜けた**ときだけ約定とする。
+
+        買い: low  < 始値 × (1 - offset) なら約定
+        売り: high > 始値 × (1 + offset) なら約定
+
+    「抜けた」を条件にするのは、指値と同値までしか来なかった場合、
+    板に先に並んでいた注文が優先されて自分まで回ってこない可能性が高いため。
+    OHLCVからは板の順番が分からないので、**約定しなかった側に倒す**。
+
+    ## 逆選択はモデル化しない。勝手に出てくる
+
+    指値が約定するのは「価格が自分に向かってきたとき」＝
+    買い指値なら下げているとき。約定した直後に不利な方向へ動きやすい。
+
+    これは**別途モデル化する必要がない**。
+    正直に置いて正直に約定判定すれば、そのバーの値動きから自動的に出てくる。
+    やるべきなのは、それを打ち消さないことだけ。
+
+    ## offset は「約定するか」だけを決める。値段は良くしない
+
+    指値を深く置けば実際には約定価格も良くなるが、**ここでは加算しない**。
+    スプレッドを払わずに済む分は `CostModel.cost_rate(MAKER)` が
+    すでに織り込んでいるので、ここで値段も良くすると**二重計上**になる。
+
+    最初の実装はこれを間違えていて、EMAクロス戦略の成績が
+    成行 +6,843% に対して指値 +16,471% という、
+    片道2bpの値段改善を1,470往復ぶん積み上げただけの数字を出していた。
+
+    そのため、この模型では**深い offset は単に不利**になる（約定率だけ下がる）。
+    実際には「深く置くほど、約定しにくいが値段は良い」というトレードオフがある。
+    そこは表現できていない。**保守側のずれ**として受け入れている。
+
+    ## この模型が捉えていないもの
+
+    - 板の厚み。自分の注文量が板を動かす影響は入っていない
+    - バー内の時間順序。安値がバーの前半に来たか後半かは分からない
+    - 部分約定。全量約定するか、しないかの二択にしてある
+    - 深く置いたときの値段改善（上記のとおり、意図的に入れていない）
+    """
+
+    #: 始値から何割離して置くか（0.0002 = 2bp）。
+    #: 0にすると始値ちょうどに置くことになり、
+    #: 始値は常に [安値, 高値] の内側なので判定が退化する
+    offset: float = 0.0002
+
+    #: 約定しなかったとき、そのバーの終値で成行に切り替えるか。
+    #: False なら見送る（次のバーで置き直す動きになる）
+    chase_at_close: bool = False
+
+    def __post_init__(self) -> None:
+        if self.offset <= 0:
+            raise ValueError(
+                "offset は正の値である必要があります。"
+                "0にすると始値ちょうどに置くことになり、"
+                "始値は必ず高値安値の内側にあるため常に約定してしまいます"
+            )
+        if self.offset > 0.05:
+            raise ValueError("offset が大きすぎます（5%超）")
+
+    def fills(self, side: Side, open_price: float, high: float, low: float) -> bool:
+        """そのバーで指値が約定したか。
+
+        side は「自分が出す注文の向き」。買い注文なら Side.LONG、
+        売り注文なら Side.SHORT（ロングの決済も売り注文なので SHORT）。
+        """
+        if side is Side.LONG:
+            return bool(low < open_price * (1.0 - self.offset))
+        if side is Side.SHORT:
+            return bool(high > open_price * (1.0 + self.offset))
+        return False
+
+
+@dataclass(frozen=True)
 class BacktestConfig:
     """バックテストの実行条件。"""
 
@@ -72,6 +158,14 @@ class BacktestConfig:
 
     #: 執行方法。既定は保守側の TAKER
     order_type: OrderType = OrderType.TAKER
+
+    #: 指値の約定判定。order_type=MAKER のときだけ効く。
+    #: **None のままだと「並べたら必ず約定する」前提**になり、
+    #: MAKER の結果は上振れする。指値で運用するつもりなら必ず指定すること。
+    #:
+    #: なお損切りは常に成行として扱う（指値では逆行時に約定しないため）。
+    #: 利確は指値なので order_type に従う
+    maker_fill: MakerFill | None = None
 
     #: ショートを許可するか。
     #: 国内では現物で売り建てできず、証拠金取引（個人は2倍まで）が必要。
@@ -102,6 +196,11 @@ class BacktestConfig:
             raise ValueError(
                 "国内の個人向け暗号資産証拠金取引は2倍が上限です"
                 "（2020年5月施行の内閣府令）"
+            )
+        if self.maker_fill is not None and self.order_type is not OrderType.MAKER:
+            raise ValueError(
+                "maker_fill は order_type=MAKER のときだけ意味を持ちます。"
+                "成行で約定判定をしても、判定するものがありません"
             )
 
 
@@ -273,16 +372,22 @@ def run_backtest(
         # ショートは建値と現在値の差で評価する
         return cash + size * (2 * entry_price - price)
 
-    def close_position(exit_raw: float, when: pd.Timestamp, reason: str) -> None:
+    def close_position(
+        exit_raw: float,
+        when: pd.Timestamp,
+        reason: str,
+        order_type: OrderType | None = None,
+    ) -> None:
         nonlocal cash, side, size, entry_price, entry_time, entry_cost
         nonlocal active_stop, active_target
 
         if side is Side.FLAT:
             return
 
+        order_type = config.order_type if order_type is None else order_type
         # 決済は建てたのと逆側なので、コストの向きも逆になる
         exit_side = Side.SHORT if side is Side.LONG else Side.LONG
-        exit_price = _fill_price(exit_raw, exit_side, cost, config.order_type)
+        exit_price = _fill_price(exit_raw, exit_side, cost, order_type)
         exit_cost = abs(exit_raw - exit_price) * size
 
         if side is Side.LONG:
@@ -315,11 +420,13 @@ def run_backtest(
         active_target = np.nan
 
     def open_position(new_side: Side, raw_price: float, when: pd.Timestamp,
-                      stop: float, target: float) -> None:
+                      stop: float, target: float,
+                      order_type: OrderType | None = None) -> None:
         nonlocal cash, side, size, entry_price, entry_time, entry_cost
         nonlocal active_stop, active_target
 
-        fill = _fill_price(raw_price, new_side, cost, config.order_type)
+        order_type = config.order_type if order_type is None else order_type
+        fill = _fill_price(raw_price, new_side, cost, order_type)
 
         risk_fraction = config.risk_per_trade
         if config.adaptive_sizing is not None:
@@ -357,6 +464,27 @@ def run_backtest(
         active_stop = stop
         active_target = target
 
+    unfilled_entries = 0
+    unfilled_exits = 0
+
+    def resolve_fill(order_side: Side, i: int) -> tuple[float, OrderType] | None:
+        """このバーで、その向きの注文がいくらで約定するかを返す。
+
+        指値の約定判定を入れている場合だけ、約定しないことがある。
+        戻り値が None なら、この注文は成立しなかった。
+        """
+        if config.order_type is not OrderType.MAKER or config.maker_fill is None:
+            return opens[i], config.order_type
+
+        if config.maker_fill.fills(order_side, opens[i], highs[i], lows[i]):
+            # 約定した。値段は始値を基準にしたまま、コストだけ MAKER のものを使う。
+            # 指値ぶんの値段改善を足すと cost_rate との二重計上になる
+            return opens[i], OrderType.MAKER
+        if config.maker_fill.chase_at_close:
+            # 約定しなかったので終値で成行に切り替える。手数料は成行のもの
+            return closes[i], OrderType.TAKER
+        return None
+
     for i in range(len(df)):
         if i < warmup:
             equity[i] = cash
@@ -379,8 +507,12 @@ def run_backtest(
 
             # 同一バーで両方に触れた場合は、損切りが先に起きたとみなす（保守側）
             if hit_stop:
-                close_position(float(active_stop), bar_time, "stop_loss")
+                # **損切りは常に成行。** 逆行しているときに指値では約定しない
+                close_position(
+                    float(active_stop), bar_time, "stop_loss", OrderType.TAKER
+                )
             elif hit_target:
+                # 利確はもともと板に置く指値なので、執行方法はそのまま
                 close_position(float(active_target), bar_time, "take_profit")
 
         # --- 2. 1本前のバーで出たシグナルを、このバーの始値で執行する
@@ -392,16 +524,33 @@ def run_backtest(
             desired = Side.SHORT
 
         if desired is not side:
+            still_holding = False
             if side is not Side.FLAT:
-                close_position(opens[i], bar_time, "signal")
-            if desired is not Side.FLAT:
-                open_position(
-                    desired,
-                    opens[i],
-                    bar_time,
-                    float(stops[i - 1]),
-                    float(targets[i - 1]),
-                )
+                # 決済は建玉と逆向きの注文になる
+                exit_order = Side.SHORT if side is Side.LONG else Side.LONG
+                filled = resolve_fill(exit_order, i)
+                if filled is None:
+                    # 指値が約定しなかった。**降りたくても降りられない。**
+                    # 次のバーで置き直すことになる（ポジションは残る）
+                    unfilled_exits += 1
+                    still_holding = True
+                else:
+                    close_position(filled[0], bar_time, "signal", filled[1])
+
+            if desired is not Side.FLAT and not still_holding:
+                filled = resolve_fill(desired, i)
+                if filled is None:
+                    # 指値が約定しなかった。この機会は取れない
+                    unfilled_entries += 1
+                else:
+                    open_position(
+                        desired,
+                        filled[0],
+                        bar_time,
+                        float(stops[i - 1]),
+                        float(targets[i - 1]),
+                        filled[1],
+                    )
         elif side is not Side.FLAT:
             # 同じ向きを維持する場合でも、損切り水準は更新する（トレーリング）
             new_stop = float(stops[i - 1])
@@ -421,9 +570,10 @@ def run_backtest(
             peak_equity = equity[i]
             highs_made += 1
 
-    # 最終バーで持ち越していたら手仕舞う
+    # 最終バーで持ち越していたら手仕舞う。
+    # データが尽きて強制的に閉じるので、成行として扱う
     if side is not Side.FLAT:
-        close_position(closes[-1], index[-1], "end_of_data")
+        close_position(closes[-1], index[-1], "end_of_data", OrderType.TAKER)
         equity[-1] = cash
 
     equity_series = pd.Series(equity, index=index, name="equity").ffill()
@@ -431,6 +581,21 @@ def run_backtest(
     if cost.unverified:
         warnings.append(
             f"コストモデル「{cost.name}」には未確認の数字が含まれます: {cost.note}"
+        )
+
+    if config.order_type is OrderType.MAKER and config.maker_fill is None:
+        warnings.append(
+            "指値（MAKER）で計算していますが、約定判定を入れていません。"
+            "「並べたら必ず約定する」前提なので、この結果は上振れしています。"
+            "BacktestConfig(maker_fill=MakerFill()) を指定してください。"
+        )
+    if unfilled_entries or unfilled_exits:
+        attempted = len(trades) + unfilled_entries
+        rate = unfilled_entries / attempted if attempted else 0.0
+        warnings.append(
+            f"指値が約定しなかった回数: 新規 {unfilled_entries} 回"
+            f"（試みた {attempted} 回の {rate * 100:.1f}%）、決済 {unfilled_exits} 回。"
+            "決済の未約定は、降りたい場面で降りられなかったことを意味します。"
         )
 
     return BacktestResult(
