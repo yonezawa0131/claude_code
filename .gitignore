@@ -1,0 +1,5 @@
+.venv-trading/
+__pycache__/
+*.pyc
+trading/data/*.csv
+!trading/data/.gitkeep
