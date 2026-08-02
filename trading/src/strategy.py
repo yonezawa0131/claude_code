@@ -202,3 +202,140 @@ STRATEGIES: dict[str, type] = {
     "ema_atr": EmaCrossATR,
     "rsi_reversion": RsiMeanReversion,
 }
+
+
+@dataclass
+class DonchianBreakout:
+    """N本の高値を上抜けたら買う、ブレイクアウト戦略。
+
+    タートルズで知られる型。トレンドが続く相場では機能しやすく、
+    レンジ相場では上下に振られて損失が積み上がる。
+
+    ADXフィルタを入れると、トレンドが弱い局面で見送れる。
+    合成データの検証でEMAクロス戦略がレンジ相場で -94% になったのは
+    まさにこの見送りができていなかったためで、
+    フィルタが効くかどうかは実データで確かめる価値がある。
+    """
+
+    entry_period: int = 20
+    exit_period: int = 10
+    atr_period: int = 14
+    stop_atr: float = 2.0
+    #: ADXがこの値を下回る局面は見送る。None ならフィルタなし
+    adx_threshold: float | None = 25.0
+    adx_period: int = 14
+    allow_short: bool = False
+    name: str = "ドンチャンブレイクアウト"
+
+    def warmup(self) -> int:
+        return max(self.entry_period, self.atr_period, self.adx_period) + 2
+
+    def generate(self, df: pd.DataFrame) -> pd.DataFrame:
+        high, low, close = df["high"], df["low"], df["close"]
+        upper, lower = ind.donchian(high, low, self.entry_period)
+        exit_upper, exit_lower = ind.donchian(high, low, self.exit_period)
+        atr = ind.atr(high, low, close, self.atr_period)
+
+        if self.adx_threshold is not None:
+            adx, _, _ = ind.directional_movement(high, low, close, self.adx_period)
+            trending = (adx >= self.adx_threshold).to_numpy()
+        else:
+            trending = np.ones(len(df), dtype=bool)
+
+        c = close.to_numpy(dtype=float)
+        up = upper.to_numpy(dtype=float)
+        dn = lower.to_numpy(dtype=float)
+        xu = exit_upper.to_numpy(dtype=float)
+        xd = exit_lower.to_numpy(dtype=float)
+
+        direction = np.zeros(len(df), dtype=float)
+        current = 0.0
+        for i in range(len(df)):
+            if np.isnan(up[i]) or np.isnan(dn[i]):
+                direction[i] = 0.0
+                continue
+            if current == 0.0:
+                if trending[i] and c[i] > up[i]:
+                    current = 1.0
+                elif trending[i] and self.allow_short and c[i] < dn[i]:
+                    current = -1.0
+            elif current > 0 and not np.isnan(xd[i]) and c[i] < xd[i]:
+                current = 0.0
+            elif current < 0 and not np.isnan(xu[i]) and c[i] > xu[i]:
+                current = 0.0
+            direction[i] = current
+
+        sig = _empty_signals(df.index)
+        sig["direction"] = direction
+        stop_dist = atr * self.stop_atr
+        sig["stop_loss"] = np.where(
+            direction > 0,
+            close - stop_dist,
+            np.where(direction < 0, close + stop_dist, np.nan),
+        )
+        return sig
+
+
+@dataclass
+class IchimokuTrend:
+    """一目均衡表による トレンドフォロー。
+
+    条件は日本語圏で一般的に紹介されている「三役好転」に近い形にした。
+
+    - 終値が雲の上にある
+    - 転換線が基準線を上回る
+    - 現在の終値が26本前の終値を上回る（遅行スパンの条件）
+
+    雲は26本前のデータから作られた値を参照しているので過去参照であり、
+    先読みにはならない。check_causality() でも確認している。
+    """
+
+    tenkan_period: int = 9
+    kijun_period: int = 26
+    senkou_b_period: int = 52
+    displacement: int = 26
+    atr_period: int = 14
+    stop_atr: float = 2.5
+    allow_short: bool = False
+    name: str = "一目均衡表"
+
+    def warmup(self) -> int:
+        return self.senkou_b_period + self.displacement + 2
+
+    def generate(self, df: pd.DataFrame) -> pd.DataFrame:
+        high, low, close = df["high"], df["low"], df["close"]
+        ich = ind.ichimoku(
+            high, low, close,
+            self.tenkan_period, self.kijun_period,
+            self.senkou_b_period, self.displacement,
+        )
+        cloud_top = pd.concat([ich["senkou_a"], ich["senkou_b"]], axis=1).max(axis=1)
+        cloud_bottom = pd.concat([ich["senkou_a"], ich["senkou_b"]], axis=1).min(axis=1)
+
+        bullish = (
+            (close > cloud_top)
+            & (ich["tenkan"] > ich["kijun"])
+            & (close > ich["chikou_reference"])
+        )
+        bearish = (
+            (close < cloud_bottom)
+            & (ich["tenkan"] < ich["kijun"])
+            & (close < ich["chikou_reference"])
+        )
+
+        direction = np.where(bullish, 1.0, np.where(bearish & self.allow_short, -1.0, 0.0))
+
+        sig = _empty_signals(df.index)
+        sig["direction"] = direction
+        atr = ind.atr(high, low, close, self.atr_period)
+        stop_dist = atr * self.stop_atr
+        sig["stop_loss"] = np.where(
+            direction > 0,
+            close - stop_dist,
+            np.where(direction < 0, close + stop_dist, np.nan),
+        )
+        return sig
+
+
+STRATEGIES["donchian"] = DonchianBreakout
+STRATEGIES["ichimoku"] = IchimokuTrend
