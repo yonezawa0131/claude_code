@@ -413,3 +413,92 @@ if __name__ == "__main__":
             print(f"  ERROR {name}\n        {type(exc).__name__}: {exc}")
     print(f"\n{len(tests) - failures} / {len(tests)} 通過")
     raise SystemExit(1 if failures else 0)
+
+
+# --- 7. 資金管理 -----------------------------------------------------------
+
+
+def test_breakeven_win_rate_arithmetic() -> None:
+    """損益比と必要勝率の関係。勝率30%なら損益比2.33以上が必要。"""
+    from trading.src.metrics import breakeven_win_rate, required_reward_risk
+
+    assert abs(breakeven_win_rate(1.0) - 0.5) < 1e-12
+    assert abs(breakeven_win_rate(2.0) - 1 / 3) < 1e-12
+    assert abs(breakeven_win_rate(3.0) - 0.25) < 1e-12
+    assert abs(required_reward_risk(0.3) - 7 / 3) < 1e-9
+
+
+def test_recovery_return_asymmetry() -> None:
+    """-50%からの回復には+100%が必要。"""
+    from trading.src.metrics import recovery_return
+
+    assert abs(recovery_return(0.5) - 1.0) < 1e-12
+    assert abs(recovery_return(0.2) - 0.25) < 1e-12
+    assert recovery_return(0.9) > 8.9
+
+
+def test_risk_based_sizing_limits_loss() -> None:
+    """risk_per_trade を設定すると、1回の損切りでの損失がその率に収まること。"""
+    from trading.src.metrics import evaluate
+
+    idx = pd.date_range("2026-01-01", periods=8, freq="1h", tz="UTC")
+    df = pd.DataFrame(
+        {
+            "open": [100.0] * 8,
+            "high": [101.0] * 8,
+            "low": [99.0, 99.0, 99.0, 90.0, 99.0, 99.0, 99.0, 99.0],
+            "close": [100.0] * 8,
+            "volume": [1.0] * 8,
+        },
+        index=idx,
+    )
+
+    class LongWithStop:
+        name = "損切り付き"
+
+        def warmup(self) -> int:
+            return 1
+
+        def generate(self, d: pd.DataFrame) -> pd.DataFrame:
+            return pd.DataFrame(
+                {
+                    "direction": np.ones(len(d)),
+                    "stop_loss": np.full(len(d), 95.0),  # 5%下
+                    "take_profit": np.full(len(d), np.nan),
+                },
+                index=d.index,
+            )
+
+    capital = 1_000_000.0
+    result = run_backtest(
+        df, LongWithStop(), ZERO_COST,
+        BacktestConfig(initial_capital=capital, risk_per_trade=0.01),
+    )
+    stopped = [t for t in result.trades if t.reason == "stop_loss"]
+    assert stopped, "損切りが発動していません"
+    loss = abs(stopped[0].pnl)
+    # 資金の1%（1万円）程度に収まっているはず。多少の誤差は許容
+    assert loss <= capital * 0.012, f"損失が {loss:,.0f} 円で、想定の1%を超えています"
+    assert loss >= capital * 0.008, f"損失が {loss:,.0f} 円で、想定より小さすぎます"
+
+
+def test_risk_per_trade_rejects_reckless_values() -> None:
+    """1トレードで資金の50%超を危険に晒す設定を拒否すること。"""
+    try:
+        BacktestConfig(risk_per_trade=0.8)
+    except ValueError as exc:
+        assert "50%" in str(exc)
+    else:
+        raise AssertionError("危険な risk_per_trade が通ってしまいました")
+
+
+def test_kelly_is_zero_for_losing_strategy() -> None:
+    """負けている戦略のケリー値が0以下になること。"""
+    from trading.src.metrics import kelly_fraction
+    from trading.src.backtest import Trade, Side
+
+    t = pd.Timestamp("2026-01-01", tz="UTC")
+    trades = [
+        Trade(t, t, Side.LONG, 100, 99, 1, 0, -100.0, "stop_loss") for _ in range(7)
+    ] + [Trade(t, t, Side.LONG, 100, 101, 1, 0, 100.0, "take_profit") for _ in range(3)]
+    assert kelly_fraction(trades) < 0

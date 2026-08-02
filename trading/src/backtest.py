@@ -53,8 +53,21 @@ class BacktestConfig:
     #: 初期資金（円）
     initial_capital: float = 500_000.0
 
-    #: 1トレードで投じる資金の割合。1.0 で全額
+    #: 1トレードで投じる資金の割合。1.0 で全額。
+    #: risk_per_trade を指定した場合はそちらが優先される
     position_fraction: float = 1.0
+
+    #: 1トレードで許容する損失を、資金に対する率で指定する（例: 0.01 = 1%）。
+    #: 損切り価格までの距離からポジションサイズを逆算するため、
+    #: ボラティリティが高いときは自動的に小さく建てることになる。
+    #:
+    #: Barber & Odean 系の研究が示すとおり、個人の損失の大半は
+    #: 銘柄選択の失敗ではなく、コストと過大なポジションから来る。
+    #: ケリー基準の数理では、賭け金を最適値の c 倍にすると
+    #: 長期成長率は概ね c(2-c) 倍になり、2倍賭けると成長率はゼロになる。
+    #: 半分に抑えれば最大成長率の約75%を保ちながら変動を大きく減らせる。
+    #: None なら position_fraction による固定割合になる
+    risk_per_trade: float | None = None
 
     #: 執行方法。既定は保守側の TAKER
     order_type: OrderType = OrderType.TAKER
@@ -72,6 +85,11 @@ class BacktestConfig:
             raise ValueError("初期資金は正の値である必要があります")
         if not 0 < self.position_fraction <= 1:
             raise ValueError("position_fraction は 0 より大きく 1 以下です")
+        if self.risk_per_trade is not None and not 0 < self.risk_per_trade <= 0.5:
+            raise ValueError(
+                "risk_per_trade は 0 より大きく 0.5 以下です。"
+                "1トレードで資金の50%超を危険に晒す設定は認めていません"
+            )
         if self.leverage < 1:
             raise ValueError("レバレッジは1以上です")
         if self.leverage > 2:
@@ -293,10 +311,23 @@ def run_backtest(
         nonlocal cash, side, size, entry_price, entry_time, entry_cost
         nonlocal active_stop, active_target
 
-        notional = cash * config.position_fraction * config.leverage
+        fill = _fill_price(raw_price, new_side, cost, config.order_type)
+
+        if config.risk_per_trade is not None and not np.isnan(stop):
+            # 損切りまでの距離からサイズを逆算する。
+            # 損切りが遠い（＝ボラティリティが高い）ときは自動的に小さく建つ
+            stop_distance = abs(fill - stop)
+            if stop_distance <= 0:
+                return
+            risk_amount = cash * config.risk_per_trade
+            notional = risk_amount * fill / stop_distance
+            # レバレッジ上限は超えられない
+            notional = min(notional, cash * config.leverage)
+        else:
+            notional = cash * config.position_fraction * config.leverage
+
         if notional <= 0 or raw_price <= 0:
             return
-        fill = _fill_price(raw_price, new_side, cost, config.order_type)
         qty = notional / fill
         entry_cost = abs(fill - raw_price) * qty
 

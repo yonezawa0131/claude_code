@@ -179,3 +179,119 @@ def evaluate(result: BacktestResult) -> Report:
         yen_per_day=(final - initial) / days,
         warnings=warnings,
     )
+
+
+# ---------------------------------------------------------------------------
+# 資金管理の算術
+#
+# いずれも実証研究で裏付けのある関係を、計算できる形にしたもの。
+# ---------------------------------------------------------------------------
+
+
+def breakeven_win_rate(reward_risk_ratio: float) -> float:
+    """損益比から、損益分岐に必要な勝率を出す。
+
+    必要勝率 = 1 / (1 + 損益比)
+
+    勝率30%でも、平均利益が平均損失の2.33倍あれば期待値はプラスになる。
+    逆に損益比1:1なら勝率50%を超えないと成立しない。
+    「勝率が高い戦略が良い戦略」ではない。
+    """
+    if reward_risk_ratio <= 0:
+        raise ValueError("損益比は正の値である必要があります")
+    return 1.0 / (1.0 + reward_risk_ratio)
+
+
+def required_reward_risk(win_rate: float) -> float:
+    """勝率から、損益分岐に必要な損益比を出す。"""
+    if not 0 < win_rate < 1:
+        raise ValueError("勝率は0と1の間である必要があります")
+    return (1.0 - win_rate) / win_rate
+
+
+def recovery_return(drawdown: float) -> float:
+    """ドローダウンから回復するのに必要なリターン。
+
+    必要リターン = 1 / (1 - DD) - 1
+
+    -50%から戻すには+100%が要る。この非対称性が、
+    ポジションサイズを抑えるべき最大の理由になる。
+    """
+    if not 0 <= abs(drawdown) < 1:
+        raise ValueError("ドローダウンは0以上1未満である必要があります")
+    dd = abs(drawdown)
+    return 1.0 / (1.0 - dd) - 1.0
+
+
+def kelly_fraction(trades: list) -> float:
+    """トレード履歴からケリー基準の賭け金比率を推定する。
+
+    f* = 勝率 - (1 - 勝率) / 損益比
+
+    **この値をそのまま使ってはいけない。**
+    賭け金を最適値の c 倍にすると長期成長率は概ね c(2-c) 倍になり、
+    2倍賭けると成長率はゼロ、半分なら最大の約75%を保てる。
+    実務では 1/2 か 1/4 に落として使う。
+
+    さらに、この推定は過去のトレード分布が将来も続く前提に立っている。
+    サンプルが少ないと勝率も損益比もぶれるため、
+    取引回数が少ないうちは信用してはいけない。
+    """
+    if not trades:
+        return 0.0
+    wins = [t.pnl for t in trades if t.pnl > 0]
+    losses = [abs(t.pnl) for t in trades if t.pnl <= 0]
+    if not wins or not losses:
+        return 0.0
+
+    p = len(wins) / len(trades)
+    avg_win = sum(wins) / len(wins)
+    avg_loss = sum(losses) / len(losses)
+    if avg_loss == 0:
+        return 0.0
+
+    b = avg_win / avg_loss
+    return p - (1 - p) / b
+
+
+def money_management_report(result: BacktestResult) -> str:
+    """資金管理の観点からの補足レポート。"""
+    trades = result.trades
+    if not trades:
+        return "トレードがありません。"
+
+    wins = [t.pnl for t in trades if t.pnl > 0]
+    losses = [abs(t.pnl) for t in trades if t.pnl <= 0]
+    win_rate = len(wins) / len(trades)
+    avg_win = sum(wins) / len(wins) if wins else 0.0
+    avg_loss = sum(losses) / len(losses) if losses else 0.0
+    rr = avg_win / avg_loss if avg_loss else float("inf")
+
+    equity = result.equity.dropna()
+    dd = abs(max_drawdown(equity))
+    kelly = kelly_fraction(trades)
+
+    lines = [
+        "資金管理の観点",
+        "",
+        f"  勝率           : {win_rate * 100:.1f} %",
+        f"  平均利益/平均損失: {rr:.2f}",
+        f"  損益分岐に必要な勝率: {breakeven_win_rate(rr) * 100:.1f} %"
+        + ("  （足りている）" if win_rate > breakeven_win_rate(rr) else "  （足りていない）"),
+        "",
+        f"  最大ドローダウン: {dd * 100:.1f} %",
+        f"  そこから戻すのに必要なリターン: {recovery_return(dd) * 100:.1f} %",
+        "",
+        f"  ケリー基準の推定値: {kelly * 100:.1f} %",
+        f"  推奨（半分に落とす）: {max(kelly, 0) / 2 * 100:.1f} %",
+    ]
+    if kelly <= 0:
+        lines.append("")
+        lines.append("  ケリー値が0以下です。この戦略に賭けるべき資金はありません。")
+    if len(trades) < 100:
+        lines.append("")
+        lines.append(
+            f"  ※ 取引 {len(trades)} 回では勝率も損益比も安定しません。"
+            "ケリー値は参考程度に。"
+        )
+    return "\n".join(lines)
