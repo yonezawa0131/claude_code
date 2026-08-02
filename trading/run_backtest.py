@@ -27,7 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from trading.src.backtest import BacktestConfig, run_backtest
 from trading.src.costs import PRESETS, OrderType, breakeven_move
-from trading.src.metrics import evaluate
+from trading.src.metrics import evaluate, multiple_testing_report
 from trading.src.strategy import STRATEGIES
 from trading.src.validate import check_causality, required_return_table, walk_forward
 
@@ -167,6 +167,20 @@ def main() -> int:
             )
         print()
         print("買い持ち差がマイナスの戦略は、ただ持っているより成績が悪いということです。")
+        print()
+        print("-" * 68)
+        print()
+        # 比較した本数がそのまま試行数になる。
+        # 最も良く見えた1つを取り上げて、その数字が偶然で説明できないかを見る
+        best = max(reports, key=lambda x: x[1].sharpe)[1]
+        print(f"最もシャープが高かったのは「{best.strategy_name}」でした。")
+        print()
+        print(multiple_testing_report(best, n_trials=len(reports)))
+        print()
+        print(
+            "※ ここでの試行数は、この1回の比較で回した戦略の数です。"
+            "設定を変えて何度も回したなら、その回数も足して数え直してください。"
+        )
 
     return 0
 

@@ -58,7 +58,9 @@ def win_day_ratio(daily_mean: float, daily_vol: float) -> float:
     return _NORM.cdf(daily_mean / daily_vol)
 
 
-def expected_max_sharpe(n_trials: int, n_observations: int) -> float:
+def expected_max_sharpe(
+    n_trials: int, n_observations: int, periods_per_year: float = 1.0
+) -> float:
     """優位性がまったくない戦略を N 個試したとき、
     最も良く見えたものが示すシャープレシオの期待値。
 
@@ -69,15 +71,41 @@ def expected_max_sharpe(n_trials: int, n_observations: int) -> float:
     **自分が観測したシャープが、この値を超えていなければ、
     それは「たくさん試したから出てきた数字」でしかない。**
 
-    試した戦略の数を数えておくことが、なぜ重要かの根拠がこれ。
+    ## 単位を必ず合わせること
+
+    `periods_per_year` は、**比較したいシャープと同じ年率化係数**を渡す。
+    既定の 1.0 は「1バーあたり」のシャープに対する閾値を返す。
+
+    `metrics.sharpe_ratio()` は年率化した値を返すので、
+    それと比べるなら 1時間足なら 8766、日足なら 365 を渡す必要がある。
+    **ここを合わせ忘れると、閾値が実際より約94倍（1時間足の場合）小さくなる。**
+
+    実際にそうなっていた。1時間足5000本・40戦略のとき、
+    この関数は 0.031 を返す一方、優位性ゼロの戦略を40個試した実測では
+    最良のものが平均 2.42、最悪の回で 4.46 の年率シャープを示した。
+    単位を合わせない比較は、安全装置として機能しない。
+
+    合成データでの検証結果（優位性ゼロ・1時間足5000本・ZERO_COST）:
+
+        試行数   実測の最大（平均）   この式（年率化）
+           5           1.54              1.58
+          10           1.83              2.08
+          20           2.29              2.52
+          40           2.42              2.90
+
+    試行が互いに相関する場合（同じ戦略のパラメータ探索など）は、
+    実測が式を下回る＝**式のほうが厳しい側にずれる**。安全な方向。
     """
     if n_trials < 1 or n_observations < 2:
         raise ValueError("試行数は1以上、観測数は2以上である必要があります")
+    if periods_per_year <= 0:
+        raise ValueError("periods_per_year は正の値である必要があります")
     if n_trials == 1:
         return 0.0
 
-    # 真のシャープが0のときの、シャープ推定量の標準誤差
-    se = 1.0 / math.sqrt(n_observations)
+    # 真のシャープが0のときの、シャープ推定量の標準誤差。
+    # 年率化したシャープと比べるなら、標準誤差も同じ係数で年率化する
+    se = math.sqrt(periods_per_year / n_observations)
 
     z1 = _NORM.inv_cdf(1.0 - 1.0 / n_trials)
     z2 = _NORM.inv_cdf(1.0 - 1.0 / (n_trials * math.e))
@@ -85,13 +113,20 @@ def expected_max_sharpe(n_trials: int, n_observations: int) -> float:
 
 
 def is_sharpe_meaningful(
-    observed_sharpe: float, n_trials: int, n_observations: int
+    observed_sharpe: float,
+    n_trials: int,
+    n_observations: int,
+    periods_per_year: float = 1.0,
 ) -> tuple[bool, float]:
     """観測したシャープが、試行数を考慮しても意味があるか。
 
     戻り値は (意味があるか, 偶然でも到達しうる水準)。
+
+    **observed_sharpe と periods_per_year の単位を必ず揃えること。**
+    バックテストの結果から判定するなら、単位を取り違えようのない
+    `metrics.multiple_testing_report()` を使うほうが安全。
     """
-    threshold = expected_max_sharpe(n_trials, n_observations)
+    threshold = expected_max_sharpe(n_trials, n_observations, periods_per_year)
     return observed_sharpe > threshold, threshold
 
 

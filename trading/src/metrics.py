@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 
 from .backtest import BacktestResult, Side
+from .growth import is_sharpe_meaningful
 
 
 def _periods_per_year(index: pd.DatetimeIndex) -> float:
@@ -74,7 +75,12 @@ class Report:
 
     max_drawdown: float
     buy_hold_max_drawdown: float
+    #: 年率化したシャープレシオ
     sharpe: float
+    #: sharpe の年率化に使った係数。試行数を考慮した判定で単位を合わせるのに要る
+    periods_per_year: float
+    #: シャープの計算に使ったリターンの本数
+    n_observations: int
 
     trade_count: int
     win_rate: float
@@ -159,6 +165,8 @@ def evaluate(result: BacktestResult) -> Report:
             "この回数では、成績が実力か偶然かを判別できません。"
         )
 
+    periods_per_year = _periods_per_year(equity.index)
+
     return Report(
         strategy_name=result.strategy_name,
         cost_model_name=result.cost_model.name,
@@ -169,7 +177,9 @@ def evaluate(result: BacktestResult) -> Report:
         excess_over_buy_hold=total_return - buy_hold_return,
         max_drawdown=max_drawdown(equity),
         buy_hold_max_drawdown=max_drawdown(bh_equity),
-        sharpe=sharpe_ratio(equity, _periods_per_year(equity.index)),
+        sharpe=sharpe_ratio(equity, periods_per_year),
+        periods_per_year=periods_per_year,
+        n_observations=max(len(equity) - 1, 0),
         trade_count=len(result.trades),
         win_rate=win_rate,
         profit_factor=profit_factor,
@@ -252,6 +262,55 @@ def kelly_fraction(trades: list) -> float:
 
     b = avg_win / avg_loss
     return p - (1 - p) / b
+
+
+def multiple_testing_report(report: Report, n_trials: int) -> str:
+    """試した戦略の数を考慮して、観測したシャープに意味があるかを判定する。
+
+    **単位を取り違えようがないので、素の数値を渡す
+    `growth.is_sharpe_meaningful()` より、こちらを使うこと。**
+    年率化係数も観測数も Report が持っているものを使う。
+
+    n_trials には「この結果を出すまでに試した戦略・パラメータの総数」を渡す。
+    採用した1個ではなく、**捨てた分も含めた数**。
+    数え忘れると、閾値が実際より低く出て、偶然を実力と読むことになる。
+    """
+    if n_trials < 1:
+        raise ValueError("試行数は1以上である必要があります")
+
+    ok, threshold = is_sharpe_meaningful(
+        report.sharpe,
+        n_trials=n_trials,
+        n_observations=max(report.n_observations, 2),
+        periods_per_year=report.periods_per_year,
+    )
+
+    lines = [
+        "試行数を考慮した判定",
+        "",
+        f"  試した戦略・設定の数 : {n_trials}",
+        f"  観測数               : {report.n_observations} 本",
+        f"  観測したシャープ     : {report.sharpe:.2f}（年率）",
+        f"  優位性ゼロでも到達しうる水準: {threshold:.2f}",
+        "",
+    ]
+    if n_trials == 1:
+        lines.append(
+            "  ※ 試行数を1として計算しています。"
+            "**実際に試した数を数えて渡さないと、この判定は意味を持ちません。**"
+        )
+    elif ok:
+        lines.append(
+            f"  → 偶然の水準を {report.sharpe - threshold:.2f} 上回っています。"
+            "ただしこれは「偶然では説明しにくい」というだけで、"
+            "将来も続くことの根拠にはなりません。"
+        )
+    else:
+        lines.append(
+            "  → **この成績は、たくさん試したことだけで説明がつきます。**"
+            "優位性の証拠にはなりません。"
+        )
+    return "\n".join(lines)
 
 
 def money_management_report(result: BacktestResult) -> str:
