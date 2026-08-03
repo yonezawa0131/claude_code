@@ -194,10 +194,11 @@ trading/
     test_multiple_testing.py 試行数を考慮した閾値の実証
     test_execution.py      指値の約定判定と逆選択
     test_fetch.py          データ取得（ネットワークを使わない部分）
+    test_cli.py            CLIが実データの形に耐えるか
   run_backtest.py     CLI
 ```
 
-テストは全部で109件。`.venv-trading/bin/python -m pytest trading/tests/ -q` で回る。
+テストは全部で113件。`.venv-trading/bin/python -m pytest trading/tests/ -q` で回る。
 
 ## 数字についての注意
 

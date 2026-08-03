@@ -159,7 +159,21 @@ def main() -> int:
     for name in names:
         strategy = build_strategy(name, args.allow_short)
 
-        violations = check_causality(strategy, df, cuts=4)
+        # 戦略によっては、この足種では成立しない
+        # （日中モメンタムは日足だとセッション内に1本しかない、など）。
+        # **比較の途中で落とさず、その戦略だけ飛ばして先へ進む。**
+        try:
+            violations = check_causality(strategy, df, cuts=4)
+        except ValueError as exc:
+            print(f"[{name}] このデータでは使えません:")
+            print(f"  {exc}")
+            print()
+            if not args.compare_all:
+                return 1
+            print("-" * 68)
+            print()
+            continue
+
         if violations:
             print(f"[{name}] 先読みが検出されました。結果は無効です:")
             for v in violations[:3]:
@@ -167,7 +181,17 @@ def main() -> int:
             print()
             continue
 
-        result = run_backtest(df, strategy, cost, config)
+        try:
+            result = run_backtest(df, strategy, cost, config)
+        except ValueError as exc:
+            print(f"[{name}] 実行できませんでした: {exc}")
+            print()
+            if not args.compare_all:
+                return 1
+            print("-" * 68)
+            print()
+            continue
+
         report = evaluate(result)
         reports.append((name, report))
         print(report.summary())
