@@ -25,6 +25,8 @@
 | 上げ相場に居合わせただけの成績を、実力と読む | **ローテーション検定**。同じ売買パターンをでたらめな時点に置いて比べる |
 | 高ベータ銘柄を選んだだけの成績を、予測力と読む | 銘柄横断では**上位−下位**を本体にする。**無作為割当**の対照も置く |
 | 目標の難易度を、税引前で見積もる | `goal.py` が**税制込み**で必要な粗利を出す。制度で2.22倍変わる |
+| 検証していない戦略を自動で動かす | `run_live.py` は**合格記録がなければ本番モードで発注しない** |
+| 記憶と実際の保有がずれる | 毎回**取引所から読み直す**。差分だけ出すので二重発注も起きない |
 
 ## 使い方
 
@@ -216,6 +218,11 @@ trading/
     growth.py       アンチマーチンゲールの拡大・試行数を考慮した閾値
     cross_section.py 銘柄横断の検定（ベータの罠を避ける）
     goal.py         目標を達成条件に翻訳（元本・税制・コスト・優位性）
+    execution/      執行基盤
+      broker.py     取引所（ペーパー / bitbank）
+      reconcile.py  目標と現在の差分から注文を作る
+      guards.py     本番の関門（検証済みか・上限・損失制限）
+      journal.py    追記専用の記録
   scripts/
     fetch_ohlcv.py    実データ取得（手元で実行）
     make_synthetic.py 合成データ生成（陽性対照 intraday を含む）
@@ -237,10 +244,12 @@ trading/
     test_rotation_null.py  タイミングに意味があったかの検定
     test_cross_section.py  銘柄横断の検定（ベータの罠を含む）
     test_goal.py           目標の分解（元本・税制のレバー）
-  run_backtest.py     CLI
+    test_execution_live.py 執行基盤（発注を止められるか）
+  run_backtest.py     CLI（検証）
+  run_live.py         CLI（執行。既定はペーパー）
 ```
 
-テストは全部で156件。`.venv-trading/bin/python -m pytest trading/tests/ -q` で回る。
+テストは全部で182件。`.venv-trading/bin/python -m pytest trading/tests/ -q` で回る。
 
 ## 数字についての注意
 
