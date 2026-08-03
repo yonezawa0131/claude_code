@@ -197,7 +197,6 @@ trading/
     test_fetch.py          データ取得（ネットワークを使わない部分）
     test_cli.py            CLIが実データの形に耐えるか
     test_rotation_null.py  タイミングに意味があったかの検定
-    test_rotation_null.py  タイミングに意味があったかの検定
   run_backtest.py     CLI
 ```
 
