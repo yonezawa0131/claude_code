@@ -260,6 +260,162 @@ def walk_forward(
     return WalkForwardResult(windows=windows)
 
 
+@dataclass
+class _FixedSignals:
+    """あらかじめ計算したシグナルをそのまま返すだけの戦略。
+
+    ローテーション検定で、ずらした後のシグナルを流すために使う。
+    """
+
+    signals: pd.DataFrame
+    warmup_bars: int
+    name: str = "固定シグナル"
+
+    def warmup(self) -> int:
+        return self.warmup_bars
+
+    def generate(self, df: pd.DataFrame) -> pd.DataFrame:
+        return self.signals
+
+
+@dataclass
+class RotationNullResult:
+    """ローテーション検定の結果。"""
+
+    strategy_name: str
+    observed_return: float
+    observed_sharpe: float
+    null_returns: np.ndarray
+    null_sharpes: np.ndarray
+
+    @property
+    def return_percentile(self) -> float:
+        return float((self.null_returns < self.observed_return).mean() * 100)
+
+    @property
+    def sharpe_percentile(self) -> float:
+        return float((self.null_sharpes < self.observed_sharpe).mean() * 100)
+
+    def summary(self) -> str:
+        n = len(self.null_returns)
+        lines = [
+            "ローテーション検定（タイミングだけを壊した対照）",
+            "",
+            f"  戦略: {self.strategy_name}",
+            f"  ずらした回数: {n} 回",
+            "",
+            f"  実際のリターン : {self.observed_return * 100:+.2f} %",
+            f"  ずらした場合   : 中央値 {np.median(self.null_returns) * 100:+.2f} % "
+            f"（{np.percentile(self.null_returns, 5) * 100:+.1f} 〜 "
+            f"{np.percentile(self.null_returns, 95) * 100:+.1f} %）",
+            f"  → 上位 {100 - self.return_percentile:.1f} %",
+            "",
+            f"  実際のシャープ : {self.observed_sharpe:.2f}",
+            f"  ずらした場合   : 中央値 {np.median(self.null_sharpes):.2f} "
+            f"（{np.percentile(self.null_sharpes, 5):.2f} 〜 "
+            f"{np.percentile(self.null_sharpes, 95):.2f}）",
+            f"  → 上位 {100 - self.sharpe_percentile:.1f} %",
+            "",
+        ]
+        if self.return_percentile >= 95:
+            lines.append(
+                "  → タイミングをずらすと再現しません。"
+                "**この相場でこのタイミングだったこと**に意味があった可能性があります。"
+            )
+        else:
+            lines.append(
+                "  → **同じ売買パターンをでたらめな時点に置いても、同じくらいの成績が出ます。**"
+                "この成績はタイミングの良さでは説明できません。"
+            )
+        return "\n".join(lines)
+
+
+def rotation_null(
+    df: pd.DataFrame,
+    strategy: Strategy,
+    cost: CostModel,
+    config: BacktestConfig | None = None,
+    n_runs: int = 200,
+    seed: int = 0,
+) -> RotationNullResult:
+    """戦略のポジション系列を時間方向にずらして、タイミングの優位性だけを消す。
+
+    ## なぜ理論的な閾値だけでは足りないか
+
+    `growth.expected_max_sharpe` は、リターンが独立同分布であることを前提にした
+    理論値を返す。実際の価格系列にはトレンドも自己相関もあるので、
+    **その相場だからこそ出た数字**を弾けない。
+
+    実データで対照群（コイン投げ）が買い持ちに勝ったとき、
+    それが「タイミングが良かった」のか「上げ相場に居合わせただけ」なのかは、
+    理論値では区別できない。
+
+    ## 何を壊し、何を残すか
+
+    ポジション系列を丸ごと時間方向に回転させる。すると
+
+      - **残る**: 取引回数、建玉の保有期間、市場に晒されている時間の割合、
+        ロングとショートの比率、そしてこの相場そのもの
+      - **壊れる**: 「いつ建てたか」だけ
+
+    残ったものが同じなので、成績の差はタイミングだけに由来する。
+    上げ相場に居合わせた効果は対照側にも同じだけ入るため、相殺される。
+
+    損切り・利確は価格水準なので、そのままずらすと無意味になる。
+    終値に対する比率に直してからずらし、ずらした先の終値に掛け直している。
+    """
+    if n_runs < 20:
+        raise ValueError("回数が少なすぎます。20回以上にしてください")
+
+    base = strategy.generate(df)
+    close = df["close"].to_numpy(dtype=float)
+    direction = base["direction"].to_numpy(dtype=float)
+    # 価格水準ではなく「終値に対する比率」でずらす
+    stop_ratio = base["stop_loss"].to_numpy(dtype=float) / close
+    target_ratio = base["take_profit"].to_numpy(dtype=float) / close
+
+    warm = max(strategy.warmup(), 1)
+    name = getattr(strategy, "name", type(strategy).__name__)
+
+    observed = evaluate(run_backtest(df, strategy, cost, config))
+
+    n = len(df)
+    # 端に寄ったずらし方は元の並びとほとんど同じになるので、十分内側から選ぶ
+    candidates = np.arange(warm + 1, n - warm - 1)
+    if len(candidates) < 10:
+        raise ValueError(
+            f"バー数 {n} に対してウォームアップ {warm} が大きく、"
+            "ずらせる幅がほとんどありません。データを増やしてください"
+        )
+    rng = np.random.default_rng(seed)
+    # ずらし幅の候補が要求回数より少ないときだけ重複を許す
+    offsets = rng.choice(candidates, size=n_runs, replace=n_runs > len(candidates))
+
+    returns, sharpes = [], []
+    for offset in offsets:
+        rotated = pd.DataFrame(
+            {
+                "direction": np.roll(direction, offset),
+                "stop_loss": np.roll(stop_ratio, offset) * close,
+                "take_profit": np.roll(target_ratio, offset) * close,
+            },
+            index=df.index,
+        )
+        report = evaluate(
+            run_backtest(df, _FixedSignals(rotated, warm, name), cost, config)
+        )
+        returns.append(report.total_return)
+        sharpes.append(report.sharpe)
+
+    return RotationNullResult(
+        strategy_name=name,
+        observed_return=observed.total_return,
+        observed_sharpe=observed.sharpe,
+        null_returns=np.array(returns),
+        null_sharpes=np.nan_to_num(np.array(sharpes), nan=0.0),
+    )
+
+
 def required_return_table(
     targets_yen_per_day: tuple[float, ...] = (500.0, 1_000.0, 3_000.0),
     capitals: tuple[float, ...] = (100_000.0, 300_000.0, 500_000.0, 1_000_000.0),

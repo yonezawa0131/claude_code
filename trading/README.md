@@ -22,6 +22,7 @@
 | 優位性が既に消えているのに、過去の利益で平均がプラスに見える | ウォークフォワードで**後半と前半を比較**。勝った期間の数だけでは弾けない |
 | たくさん試して、たまたま良かった1つを実力と読む | `--compare-all` が**試行数を考慮した閾値**を出す。40個試せば優位性ゼロでも年率シャープ2.4は出る |
 | 指値が必ず約定する前提で計算する | 高値安値から**約定判定**。損切りは常に成行。未約定回数を警告に出す |
+| 上げ相場に居合わせただけの成績を、実力と読む | **ローテーション検定**。同じ売買パターンをでたらめな時点に置いて比べる |
 
 ## 使い方
 
@@ -80,10 +81,10 @@ pytest を入れたくない場合、エンジン本体の18件だけは単体�
   --exchange bitbank --pair btc_jpy --interval 1hour \
   --start 2024-01-01 --end 2026-08-01 --out trading/data/btc_jpy_1hour.csv
 
-# 全戦略を比較し、最も良かったものを期間分割で検証する
+# 全戦略を比較し、最も良かったものを期間分割＋ローテーション検定で調べる
 .venv-trading/bin/python trading/run_backtest.py \
   --data trading/data/btc_jpy_1hour.csv \
-  --compare-all --cost gmo --capital 300000 --walk-forward 6
+  --compare-all --cost gmo --capital 300000 --walk-forward 6 --null-runs 200
 ```
 
 データ取得元（bitbank）と、コストの前提（`--cost gmo`）は別で構わない。
@@ -195,10 +196,12 @@ trading/
     test_execution.py      指値の約定判定と逆選択
     test_fetch.py          データ取得（ネットワークを使わない部分）
     test_cli.py            CLIが実データの形に耐えるか
+    test_rotation_null.py  タイミングに意味があったかの検定
+    test_rotation_null.py  タイミングに意味があったかの検定
   run_backtest.py     CLI
 ```
 
-テストは全部で113件。`.venv-trading/bin/python -m pytest trading/tests/ -q` で回る。
+テストは全部で123件。`.venv-trading/bin/python -m pytest trading/tests/ -q` で回る。
 
 ## 数字についての注意
 

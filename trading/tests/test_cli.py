@@ -93,4 +93,14 @@ def test_walk_forward_runs_alongside_compare_all(daily_csv):
     )
     assert result.returncode == 0, result.stderr[-2000:]
     assert "ウォークフォワード検証" in result.stdout
-    assert "期間分割で検証します" in result.stdout
+    assert "さらに検証します" in result.stdout
+
+
+def test_rotation_null_runs_alongside_compare_all(daily_csv):
+    """--null-runs も同じ扱いで、黙って無視されないこと。"""
+    result = _run(
+        "--data", str(daily_csv), "--compare-all", "--cost", "gmo", "--null-runs", "30"
+    )
+    assert result.returncode == 0, result.stderr[-2000:]
+    assert "ローテーション検定" in result.stdout
+    assert "ずらした回数: 30 回" in result.stdout

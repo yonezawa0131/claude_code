@@ -29,7 +29,12 @@ from trading.src.backtest import BacktestConfig, MakerFill, run_backtest
 from trading.src.costs import PRESETS, OrderType, breakeven_move
 from trading.src.metrics import evaluate, multiple_testing_report
 from trading.src.strategy import STRATEGIES
-from trading.src.validate import check_causality, required_return_table, walk_forward
+from trading.src.validate import (
+    check_causality,
+    required_return_table,
+    rotation_null,
+    walk_forward,
+)
 
 
 def load_ohlcv(path: Path) -> pd.DataFrame:
@@ -103,6 +108,16 @@ def main() -> int:
     )
     parser.add_argument(
         "--walk-forward", type=int, default=0, help="期間分割数（0なら実施しない）"
+    )
+    parser.add_argument(
+        "--null-runs",
+        type=int,
+        default=0,
+        help=(
+            "ローテーション検定の回数（0なら実施しない。200程度を推奨）。"
+            "同じ売買パターンをでたらめな時点に置いて、"
+            "タイミングに意味があったかを測る"
+        ),
     )
     parser.add_argument(
         "--compare-all", action="store_true", help="全戦略を同条件で比較する"
@@ -230,35 +245,41 @@ def main() -> int:
             "設定を変えて何度も回したなら、その回数も足して数え直してください。"
         )
 
-    if args.walk_forward:
-        # --compare-all と併用されたときは、採用候補＝買い持ちとの差が最大の戦略を検証する。
+    if args.walk_forward or args.null_runs:
+        # --compare-all と併用されたときは、採用候補＝買い持ちとの差が最大の戦略を調べる。
         # 「全期間で勝った」だけでは、優位性が既に消えている場合を弾けない
         if args.compare_all:
             if not reports:
                 print()
-                print("ウォークフォワード検証を行える戦略がありませんでした。")
+                print("追加の検証を行える戦略がありませんでした。")
                 return 0
             name, best_by_excess = max(reports, key=lambda x: x[1].excess_over_buy_hold)
             print()
             print("=" * 68)
             print(
                 f"買い持ちとの差が最大だった「{best_by_excess.strategy_name}」を"
-                "期間分割で検証します。"
+                "さらに検証します。"
             )
-            print("他の戦略は --strategy <名前> --walk-forward で個別に実行してください。")
+            print("他の戦略は --strategy <名前> を付けて個別に実行してください。")
             print("=" * 68)
         else:
             name = args.strategy
-        print()
-        wf = walk_forward(
-            df,
-            build_strategy(name, args.allow_short),
-            cost,
-            config,
-            n_windows=args.walk_forward,
-        )
-        print(wf.summary())
-        print()
+        target = build_strategy(name, args.allow_short)
+
+        if args.walk_forward:
+            print()
+            print(walk_forward(df, target, cost, config, n_windows=args.walk_forward).summary())
+            print()
+
+        if args.null_runs:
+            print()
+            print(
+                f"同じ売買パターンを、でたらめな時点に {args.null_runs} 回置き直します"
+                "（少し時間がかかります）"
+            )
+            print()
+            print(rotation_null(df, target, cost, config, n_runs=args.null_runs).summary())
+            print()
 
     return 0
 
