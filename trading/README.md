@@ -65,7 +65,17 @@ pytest を入れたくない場合、エンジン本体の18件だけは単体�
 **取得スクリプトは自分のPCで実行すること。** 開発環境からは取引所APIに到達できない。
 
 ```bash
-# データ取得（2.5年ぶんの1時間足で約22,000本。数分かかる）
+# ① まず疎通を確認する（リクエスト1回。数秒）
+.venv-trading/bin/python trading/scripts/fetch_ohlcv.py \
+  --exchange bitbank --pair btc_jpy --diagnose
+
+# ② 短い足種で通し確認（年単位なので3回で終わる）
+.venv-trading/bin/python trading/scripts/fetch_ohlcv.py \
+  --exchange bitbank --pair btc_jpy --interval 1day \
+  --start 2024-01-01 --end 2026-08-01 --out trading/data/btc_jpy_1day.csv
+
+# ③ 本番。1hour が日単位でしか取れない場合は約950回のリクエストになる。
+#    スクリプトが最初に形式を確かめて、回数と所要時間の目安を表示する
 .venv-trading/bin/python trading/scripts/fetch_ohlcv.py \
   --exchange bitbank --pair btc_jpy --interval 1hour \
   --start 2024-01-01 --end 2026-08-01 --out trading/data/btc_jpy_1hour.csv
@@ -183,10 +193,11 @@ trading/
     test_walk_forward.py   判定器の検証（優位性の消滅を捉えられるか）
     test_multiple_testing.py 試行数を考慮した閾値の実証
     test_execution.py      指値の約定判定と逆選択
+    test_fetch.py          データ取得（ネットワークを使わない部分）
   run_backtest.py     CLI
 ```
 
-テストは全部で97件。`.venv-trading/bin/python -m pytest trading/tests/ -q` で回る。
+テストは全部で109件。`.venv-trading/bin/python -m pytest trading/tests/ -q` で回る。
 
 ## 数字についての注意
 

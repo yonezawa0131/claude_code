@@ -14,10 +14,25 @@ CSVファイルとして保存するスクリプト。
                    "low":"...","close":"...","volume":"..."}, ...]}
 
 取得単位の仕様:
-    日足以下（1day, 1week, 1month, 1hour, 4hour, 8hour, 12hour など）の粒度は「年単位」(yyyy)、
-    分足（1min, 5min, 15min, 30min など "min" を含むinterval）は「日単位」(yyyymmdd) で
-    リクエストする。指定した --start / --end の期間をカバーするのに必要な年/日を
-    自動的に列挙し、複数リクエストに分割して取得・結合する。
+    どちらの取引所も、足種によって日付の指定形式が変わる。
+    粗い足は「年単位」(yyyy)、細かい足は「日単位」(yyyymmdd)。
+    **その境界がどこにあるかは、実際に叩いてみないと確実には分からない。**
+
+    そこでこのスクリプトは、既定の想定で1回リクエストしてみて、
+    404 が返ったりデータが空だったりしたら、**もう一方の形式に自動で切り替える**。
+    どちらで通ったかは必ず表示する。
+
+    初版は 1hour を年単位と想定していて 404 になった。
+    想定を書き換えるだけでは、また別の足種で同じことが起きる。
+
+使い方:
+    # まず疎通を確認する（リクエスト2回。数秒で終わる）
+    python trading/scripts/fetch_ohlcv.py --exchange bitbank --pair btc_jpy --diagnose
+
+    # 本番
+    python trading/scripts/fetch_ohlcv.py \
+        --exchange bitbank --pair btc_jpy --interval 1hour \
+        --start 2024-01-01 --end 2026-08-01 --out trading/data/btc_jpy_1hour.csv
 
 使い方:
     python scripts/fetch_ohlcv.py \
@@ -82,13 +97,37 @@ INTERVAL_TO_FREQ: dict[str, str] = {
 }
 
 
+#: 年単位(yyyy)でリクエストすると想定している足種。
+#: **あくまで初期の想定。** 外れていたら実行時に自動で日単位へ切り替える
+YEARLY_INTERVALS = frozenset(
+    {"4hour", "8hour", "12hour", "1day", "1week", "1month"}
+)
+
+
 class FetchError(Exception):
     """データ取得処理における回復不能なエラー"""
 
 
-def _is_minute_interval(interval: str) -> bool:
-    """分足（"min"を含むinterval）かどうかを判定する。分足は日単位(yyyymmdd)で取得する仕様。"""
-    return "min" in interval
+class HttpStatusError(FetchError):
+    """HTTPステータスが返ってきた失敗。再試行してよいかを判断するために区別する。"""
+
+    def __init__(self, status: int, url: str) -> None:
+        super().__init__(f"HTTP {status}: {url}")
+        self.status = status
+        self.url = url
+
+
+def _default_granularity(interval: str) -> str:
+    """その足種を年単位で取れると想定するか、日単位で取れると想定するか。"""
+    return "year" if interval in YEARLY_INTERVALS else "day"
+
+
+def _other(granularity: str) -> str:
+    return "day" if granularity == "year" else "year"
+
+
+def _period_string(day: dt.date, granularity: str) -> str:
+    return str(day.year) if granularity == "year" else day.strftime("%Y%m%d")
 
 
 # ---------------------------------------------------------------------------
@@ -113,6 +152,20 @@ def _http_get(url: str) -> bytes:
             with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT_SECONDS) as resp:
                 body = resp.read()
             return body
+        except urllib.error.HTTPError as exc:
+            # 404 や 400 は待っても直らない。**再試行してよいのは 429 と 5xx だけ。**
+            # 初版はすべてを3回再試行していて、404に対して無駄に6秒待っていた
+            if exc.code != 429 and exc.code < 500:
+                raise HttpStatusError(exc.code, url) from exc
+            last_error = exc
+            if attempt < MAX_RETRIES:
+                backoff = BACKOFF_BASE_SECONDS**attempt
+                print(
+                    f"  [警告] HTTP {exc.code}（試行 {attempt}/{MAX_RETRIES}）"
+                    f"-> {backoff:.1f}秒後に再試行します",
+                    file=sys.stderr,
+                )
+                time.sleep(backoff)
         except (urllib.error.URLError, TimeoutError, ConnectionError, OSError) as exc:
             last_error = exc
             if attempt < MAX_RETRIES:
@@ -211,43 +264,136 @@ FETCHERS = {
 # ---------------------------------------------------------------------------
 
 
-def _build_periods(interval: str, start: dt.date, end: dt.date) -> list[str]:
+def _build_periods(granularity: str, start: dt.date, end: dt.date) -> list[str]:
+    """開始日・終了日をカバーするのに必要な期間指定の文字列を並べる。"""
+    if granularity == "year":
+        return [str(y) for y in range(start.year, end.year + 1)]
+
+    periods = []
+    current = start
+    while current <= end:
+        periods.append(current.strftime("%Y%m%d"))
+        current += dt.timedelta(days=1)
+    return periods
+
+
+def _probe_granularity(
+    exchange: str, pair: str, interval: str, start: dt.date
+) -> tuple[str, pd.DataFrame]:
+    """日付の指定形式を、実際に1回叩いて確かめる。
+
+    **どちらが正しいかを想定で決めない。** 取引所の仕様は足種ごとに違い、
+    ドキュメントと実際がずれていることもある。
+    想定した形式で試し、404 か空応答なら、もう一方を試す。
+
+    戻り値は (通った形式, その1回で取れたデータ)。
     """
-    開始日・終了日をカバーするのに必要な取得単位（年 "yyyy" または日 "yyyymmdd"）の
-    リストを作る。分足は日単位、それ以外は年単位。
-    """
-    if _is_minute_interval(interval):
-        periods = []
-        current = start
-        while current <= end:
-            periods.append(current.strftime("%Y%m%d"))
-            current += dt.timedelta(days=1)
-        return periods
-
-    return [str(y) for y in range(start.year, end.year + 1)]
-
-
-def fetch_ohlcv(exchange: str, pair: str, interval: str, start: dt.date, end: dt.date) -> pd.DataFrame:
-    """指定された取引所・通貨ペア・足種・期間のOHLCVを、必要な回数に分割して取得し結合する"""
-    periods = _build_periods(interval, start, end)
     fetch_fn = FETCHERS[exchange]
+    first = _default_granularity(interval)
 
-    print(f"{exchange} から {pair} / {interval} を取得します（{len(periods)}回のリクエストに分割）")
-
-    frames = []
-    for i, period in enumerate(periods, start=1):
-        print(f"[{i}/{len(periods)}] period={period}")
+    for granularity in (first, _other(first)):
+        period = _period_string(start, granularity)
+        label = "年単位" if granularity == "year" else "日単位"
+        print(f"  {label}（{period}）で試します")
         try:
             df = fetch_fn(pair, interval, period)
-        except FetchError as exc:
-            raise FetchError(f"period={period} の取得に失敗しました: {exc}") from exc
-        if not df.empty:
-            frames.append(df)
+        except HttpStatusError as exc:
+            print(f"    -> HTTP {exc.status}。この形式では取れません")
+            continue
+        if df.empty:
+            print("    -> 応答は返りましたが、データが空でした")
+            continue
+        print(f"    -> {len(df)} 本取得できました。この形式を使います")
+        return granularity, df
 
-    if not frames:
-        raise FetchError("取得できたデータが0件でした。exchange/pair/interval/期間の指定を確認してください。")
+    raise FetchError(
+        f"{exchange} の {pair} / {interval} は、年単位でも日単位でも取得できませんでした。\n"
+        "  次のどれかを疑ってください:\n"
+        "    - 足種の綴り（bitbank: 1min/5min/15min/30min/1hour/4hour/8hour/12hour/1day/1week/1month）\n"
+        "    - 通貨ペアの綴り（bitbank は btc_jpy、GMOコインは BTC_JPY）\n"
+        "    - 開始日にその取引所のデータが存在するか\n"
+        "  --diagnose を付けて実行すると、疎通そのものを確認できます。"
+    )
+
+
+def fetch_ohlcv(
+    exchange: str,
+    pair: str,
+    interval: str,
+    start: dt.date,
+    end: dt.date,
+    partial_out: str | None = None,
+) -> pd.DataFrame:
+    """指定された条件のOHLCVを、必要な回数に分割して取得し結合する。"""
+    fetch_fn = FETCHERS[exchange]
+    print(f"{exchange} から {pair} / {interval} を取得します")
+
+    granularity, first_frame = _probe_granularity(exchange, pair, interval, start)
+
+    periods = _build_periods(granularity, start, end)
+    estimate = len(periods) * MIN_SLEEP_SECONDS / 60.0
+    print()
+    print(f"  リクエスト回数: {len(periods)} 回　所要時間の目安: 約 {estimate:.0f} 分")
+    if len(periods) > 100:
+        print(
+            "  ※ 途中で失敗しても、それまでに取れた分は保存します。"
+            "短く試すなら --interval 4hour（年単位なので数回で終わります）"
+        )
+    print()
+
+    frames = [first_frame]
+    done = _period_string(start, granularity)
+    try:
+        for i, period in enumerate(periods, start=1):
+            if period == done:
+                continue  # 形式の確認で取得済み
+            print(f"[{i}/{len(periods)}] period={period}")
+            df = fetch_fn(pair, interval, period)
+            if not df.empty:
+                frames.append(df)
+    except (FetchError, KeyboardInterrupt) as exc:
+        if partial_out and len(frames) > 1:
+            salvaged = pd.concat(frames, ignore_index=True)
+            salvaged = salvaged.drop_duplicates(subset="timestamp").sort_values("timestamp")
+            salvaged.to_csv(partial_out, index=False, columns=CSV_COLUMNS)
+            print(
+                f"\n  ここまでの {len(salvaged)} 本を {partial_out} に保存しました。"
+                f"\n  続きから取るには --start "
+                f"{salvaged['timestamp'].max().date()} を指定してください。",
+                file=sys.stderr,
+            )
+        raise FetchError(f"period={period} の取得に失敗しました: {exc}") from exc
 
     return pd.concat(frames, ignore_index=True)
+
+
+def diagnose(exchange: str, pair: str) -> int:
+    """疎通だけを確認する。取得が失敗したとき、原因を切り分けるために使う。
+
+    ここが通れば「ネットワークは届いている」、
+    通らなければ「URLの形以前の問題」と分かる。
+    """
+    if exchange == "bitbank":
+        url = f"https://public.bitbank.cc/{pair}/ticker"
+    else:
+        url = f"https://api.coin.z.com/public/v1/ticker?symbol={pair.upper()}"
+
+    print(f"疎通確認: {url}")
+    try:
+        payload = json.loads(_http_get(url))
+    except HttpStatusError as exc:
+        print(f"  HTTP {exc.status} が返りました。")
+        print("  通貨ペアの綴りを確認してください"
+              f"（{exchange} での指定: {'btc_jpy' if exchange == 'bitbank' else 'BTC_JPY'}）")
+        return 1
+    except FetchError as exc:
+        print(f"  到達できませんでした: {exc}")
+        print("  ネットワーク、プロキシ設定、取引所側の障害を確認してください。")
+        return 1
+
+    ok = payload.get("success") == 1 or payload.get("status") == 0
+    print(f"  応答あり（{'正常' if ok else '異常'}）: {json.dumps(payload, ensure_ascii=False)[:200]}")
+    return 0 if ok else 1
 
 
 def _postprocess(df: pd.DataFrame, start: dt.date, end: dt.date) -> pd.DataFrame:
@@ -331,22 +477,59 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="bitbank / GMOコインからOHLCVデータを取得してCSVに保存する")
     parser.add_argument("--exchange", required=True, choices=["bitbank", "gmo"], help="取引所名")
     parser.add_argument("--pair", required=True, help="通貨ペア（例: btc_jpy）")
-    parser.add_argument("--interval", required=True, help="足種（例: 1min, 1hour, 1day）")
-    parser.add_argument("--start", required=True, type=_parse_date, help="取得開始日 YYYY-MM-DD")
-    parser.add_argument("--end", required=True, type=_parse_date, help="取得終了日 YYYY-MM-DD（この日を含む）")
-    parser.add_argument("--out", required=True, help="出力CSVファイルパス")
-    return parser.parse_args()
+    parser.add_argument(
+        "--diagnose",
+        action="store_true",
+        help="疎通だけを確認して終了する（--interval / --start / --end / --out は不要）",
+    )
+    parser.add_argument("--interval", help="足種（例: 1min, 1hour, 1day）")
+    parser.add_argument("--start", type=_parse_date, help="取得開始日 YYYY-MM-DD")
+    parser.add_argument("--end", type=_parse_date, help="取得終了日 YYYY-MM-DD（この日を含む）")
+    parser.add_argument("--out", help="出力CSVファイルパス")
+    parser.add_argument(
+        "--sleep",
+        type=float,
+        default=MIN_SLEEP_SECONDS,
+        help=f"リクエスト間隔の秒数（既定 {MIN_SLEEP_SECONDS}）。短くしすぎると弾かれます",
+    )
+    args = parser.parse_args()
+
+    if not args.diagnose:
+        missing = [
+            name
+            for name in ("interval", "start", "end", "out")
+            if getattr(args, name) is None
+        ]
+        if missing:
+            parser.error(
+                "次の引数が必要です: " + ", ".join(f"--{m}" for m in missing)
+                + "（疎通確認だけなら --diagnose）"
+            )
+    return args
 
 
 def main() -> None:
+    global MIN_SLEEP_SECONDS
     args = _parse_args()
+
+    if args.diagnose:
+        sys.exit(diagnose(args.exchange, args.pair))
+
+    MIN_SLEEP_SECONDS = max(args.sleep, 0.1)
 
     if args.start > args.end:
         print("エラー: --start は --end と同じか、それより前の日付を指定してください", file=sys.stderr)
         sys.exit(1)
 
     try:
-        df = fetch_ohlcv(args.exchange, args.pair, args.interval, args.start, args.end)
+        df = fetch_ohlcv(
+            args.exchange,
+            args.pair,
+            args.interval,
+            args.start,
+            args.end,
+            partial_out=f"{args.out}.partial",
+        )
         df = _postprocess(df, args.start, args.end)
         _validate(df, args.interval)
         _save_csv(df, args.out)
