@@ -85,6 +85,10 @@ pytest を入れたくない場合、エンジン本体の18件だけは単体�
 .venv-trading/bin/python trading/run_backtest.py \
   --data trading/data/btc_jpy_1hour.csv \
   --compare-all --cost gmo --capital 300000 --walk-forward 6 --null-runs 200
+
+# 事前登録した検定（条件は固定。パラメータは渡せない）
+.venv-trading/bin/python trading/scripts/run_preregistered.py \
+  --data trading/data/btc_jpy_1hour.csv
 ```
 
 データ取得元（bitbank）と、コストの前提（`--cost gmo`）は別で構わない。
@@ -185,6 +189,7 @@ trading/
   scripts/
     fetch_ohlcv.py    実データ取得（手元で実行）
     make_synthetic.py 合成データ生成（陽性対照 intraday を含む）
+    run_preregistered.py 事前登録した検定（パラメータを渡せない）
   tests/
     test_engine.py         エンジンの自己検証
     test_exogenous.py      外部データの時点整合
@@ -200,7 +205,7 @@ trading/
   run_backtest.py     CLI
 ```
 
-テストは全部で123件。`.venv-trading/bin/python -m pytest trading/tests/ -q` で回る。
+テストは全部で127件。`.venv-trading/bin/python -m pytest trading/tests/ -q` で回る。
 
 ## 数字についての注意
 

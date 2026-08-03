@@ -104,3 +104,79 @@ def test_rotation_null_runs_alongside_compare_all(daily_csv):
     assert result.returncode == 0, result.stderr[-2000:]
     assert "ローテーション検定" in result.stdout
     assert "ずらした回数: 30 回" in result.stdout
+
+
+# ---------------------------------------------------------------------------
+# 事前登録した検定
+# ---------------------------------------------------------------------------
+
+PREREG = REPO_ROOT / "trading" / "scripts" / "run_preregistered.py"
+
+
+def _run_prereg(data: Path) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [sys.executable, str(PREREG), "--data", str(data)],
+        capture_output=True,
+        text=True,
+        cwd=REPO_ROOT,
+        timeout=900,
+    )
+
+
+@pytest.fixture(scope="module")
+def hourly_null_csv(tmp_path_factory) -> Path:
+    """優位性のない1時間足。"""
+    df = make_synthetic_ohlcv(9_000, 99, "random")
+    path = tmp_path_factory.mktemp("data") / "hourly_random.csv"
+    df.to_csv(path, index=False)
+    return path
+
+
+@pytest.fixture(scope="module")
+def hourly_edge_csv(tmp_path_factory) -> Path:
+    """日中モメンタムを埋め込んだ1時間足。
+
+    本数は実データに合わせる（2.5年ぶんで約22,000本）。
+    9,000本で試したときは6分割の各期間が30トレードに届かず、
+    **合格ではなく「判定不能」になった。** 検定側は正しい。
+    """
+    df = make_synthetic_ohlcv(22_000, 99, "intraday", session_bars=24, beta=1.0)
+    path = tmp_path_factory.mktemp("data") / "hourly_intraday.csv"
+    df.to_csv(path, index=False)
+    return path
+
+
+def test_preregistered_test_rejects_data_without_an_edge(hourly_null_csv):
+    result = _run_prereg(hourly_null_csv)
+    assert result.returncode == 1, result.stdout[-1500:]
+    assert "優位性は示されませんでした" in result.stdout
+    assert "見つからないと分かることも" in result.stdout
+
+
+def test_preregistered_test_accepts_data_with_a_known_edge(hourly_edge_csv):
+    """**陽性対照。** 合格を出せない検定は、不合格にも意味がない。"""
+    result = _run_prereg(hourly_edge_csv)
+    assert result.returncode == 0, result.stdout[-2500:]
+    assert "5つすべてを満たしました" in result.stdout
+    assert "将来も続くことの根拠にはなりません" in result.stdout
+
+
+def test_preregistered_test_refuses_daily_bars(daily_csv):
+    """日足ではこの戦略が成立しないので、走らせずに断ること。"""
+    result = _run_prereg(daily_csv)
+    assert result.returncode == 1
+    assert "1時間足を前提" in result.stdout + result.stderr
+
+
+def test_preregistered_script_exposes_no_tunable_parameters():
+    """**パラメータを渡せないこと自体が仕様。**
+
+    結果を見てから条件を変えられるなら、事前登録の意味がない。
+    """
+    result = subprocess.run(
+        [sys.executable, str(PREREG), "--help"],
+        capture_output=True, text=True, cwd=REPO_ROOT, timeout=60,
+    )
+    assert "--data" in result.stdout
+    for knob in ("--session", "--entry", "--exit", "--threshold", "--strategy", "--cost"):
+        assert knob not in result.stdout, f"{knob} を渡せてしまいます"
