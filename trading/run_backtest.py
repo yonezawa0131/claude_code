@@ -175,12 +175,6 @@ def main() -> int:
         print("-" * 68)
         print()
 
-    if args.walk_forward and not args.compare_all:
-        strategy = build_strategy(args.strategy, args.allow_short)
-        wf = walk_forward(df, strategy, cost, config, n_windows=args.walk_forward)
-        print(wf.summary())
-        print()
-
     if args.compare_all and reports:
         print("まとめ（買い持ちとの差の順）")
         print()
@@ -211,6 +205,36 @@ def main() -> int:
             "※ ここでの試行数は、この1回の比較で回した戦略の数です。"
             "設定を変えて何度も回したなら、その回数も足して数え直してください。"
         )
+
+    if args.walk_forward:
+        # --compare-all と併用されたときは、採用候補＝買い持ちとの差が最大の戦略を検証する。
+        # 「全期間で勝った」だけでは、優位性が既に消えている場合を弾けない
+        if args.compare_all:
+            if not reports:
+                print()
+                print("ウォークフォワード検証を行える戦略がありませんでした。")
+                return 0
+            name, best_by_excess = max(reports, key=lambda x: x[1].excess_over_buy_hold)
+            print()
+            print("=" * 68)
+            print(
+                f"買い持ちとの差が最大だった「{best_by_excess.strategy_name}」を"
+                "期間分割で検証します。"
+            )
+            print("他の戦略は --strategy <名前> --walk-forward で個別に実行してください。")
+            print("=" * 68)
+        else:
+            name = args.strategy
+        print()
+        wf = walk_forward(
+            df,
+            build_strategy(name, args.allow_short),
+            cost,
+            config,
+            n_windows=args.walk_forward,
+        )
+        print(wf.summary())
+        print()
 
     return 0
 

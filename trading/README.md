@@ -25,15 +25,23 @@
 
 ## 使い方
 
+**すべて、リポジトリのルート（`trading/` が見えるディレクトリ）で実行すること。**
+ホームディレクトリで叩くと `No such file or directory` になる。
+
 ```bash
-# 環境（このリポジトリのルートで）
+# 1. リポジトリを取得して、そのディレクトリに入る
+git clone https://github.com/yonezawa0131/claude_code.git
+cd claude_code
+git checkout claude/affiliate-income-site-wmo11w
+
+# 2. 環境を作る（pytest も入れること。テストの大半は pytest で動く）
 python3 -m venv .venv-trading
-.venv-trading/bin/pip install pandas numpy
+.venv-trading/bin/pip install pandas numpy pytest
 
-# エンジンが正しいことを確認する（最初に必ず）
-.venv-trading/bin/python trading/tests/test_engine.py
+# 3. エンジンが正しいことを確認する（最初に必ず）
+.venv-trading/bin/python -m pytest trading/tests -q
 
-# 合成データで挙動を見る（ネットワーク不要）
+# 4. 合成データで挙動を見る（ネットワーク不要）
 .venv-trading/bin/python trading/scripts/make_synthetic.py \
   --bars 5000 --seed 42 --regime mixed --out trading/data/synthetic.csv
 
@@ -44,19 +52,33 @@ python3 -m venv .venv-trading
 .venv-trading/bin/python trading/run_backtest.py --show-required-return
 ```
 
+Python は 3.9 以上で動く（3.9 で構文・注釈の互換性を確認済み）。
+
+pytest を入れたくない場合、エンジン本体の18件だけは単体で走る。
+
+```bash
+.venv-trading/bin/python trading/tests/test_engine.py
+```
+
 ### 実データで測る
 
 **取得スクリプトは自分のPCで実行すること。** 開発環境からは取引所APIに到達できない。
 
 ```bash
+# データ取得（2.5年ぶんの1時間足で約22,000本。数分かかる）
 .venv-trading/bin/python trading/scripts/fetch_ohlcv.py \
   --exchange bitbank --pair btc_jpy --interval 1hour \
   --start 2024-01-01 --end 2026-08-01 --out trading/data/btc_jpy_1hour.csv
 
+# 全戦略を比較し、最も良かったものを期間分割で検証する
 .venv-trading/bin/python trading/run_backtest.py \
-  --data trading/data/btc_jpy_1hour.csv --strategy ema_atr \
-  --cost gmo --capital 300000 --walk-forward 6
+  --data trading/data/btc_jpy_1hour.csv \
+  --compare-all --cost gmo --capital 300000 --walk-forward 6
 ```
+
+データ取得元（bitbank）と、コストの前提（`--cost gmo`）は別で構わない。
+価格系列はどちらの取引所でもほぼ同じで、変わるのは手数料とスプレッドだから。
+**執行するつもりの取引所のコストを指定すること。**
 
 ## 合成データで分かったこと
 
@@ -185,12 +207,16 @@ trading/
 
 ## 次にやること
 
-1. `pytest trading/tests/ -q` を通す（エンジンを信じてよいか確認）
-2. `--show-required-return` で、自分の元本だと1日いくらが何%にあたるかを見る
-3. 手元で実データを取得する（**この環境から取引所APIには到達できない**）
-4. `--compare-all --walk-forward 6` で、買い持ちを安定して上回る戦略があるか探す
-5. **どの期間でも買い持ちを上回る戦略が見つからなければ、そこで止める。**
-   見つからないと分かることが、この基盤の一番の成果になりうる
+上の「使い方」を上から順に実行するだけ。要点は5つ。
+
+1. **リポジトリのルートで実行する。** ホームディレクトリではない
+2. `pytest trading/tests -q` を通す（エンジンを信じてよいか確認）
+3. `--show-required-return` で、自分の元本だと1日いくらが何%にあたるかを見る
+4. 手元で実データを取得する（**開発環境から取引所APIには到達できない**）
+5. `--compare-all --walk-forward 6` で、買い持ちを安定して上回る戦略があるか探す
+
+**どの期間でも買い持ちを上回る戦略が見つからなければ、そこで止める。**
+見つからないと分かることが、この基盤の一番の成果になりうる。
 
 実データで見つからなかったときに、その結論を信じてよい理由が陽性対照になる。
 `--regime intraday` で検出できることを確認済みなので、
