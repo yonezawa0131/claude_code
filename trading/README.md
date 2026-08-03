@@ -23,6 +23,8 @@
 | たくさん試して、たまたま良かった1つを実力と読む | `--compare-all` が**試行数を考慮した閾値**を出す。40個試せば優位性ゼロでも年率シャープ2.4は出る |
 | 指値が必ず約定する前提で計算する | 高値安値から**約定判定**。損切りは常に成行。未約定回数を警告に出す |
 | 上げ相場に居合わせただけの成績を、実力と読む | **ローテーション検定**。同じ売買パターンをでたらめな時点に置いて比べる |
+| 高ベータ銘柄を選んだだけの成績を、予測力と読む | 銘柄横断では**上位−下位**を本体にする。**無作為割当**の対照も置く |
+| 目標の難易度を、税引前で見積もる | `goal.py` が**税制込み**で必要な粗利を出す。制度で2.22倍変わる |
 
 ## 使い方
 
@@ -212,10 +214,15 @@ trading/
     validate.py     先読み検査・ウォークフォワード・必要リターン表
     exogenous.py    外部データの時点整合（refers_to と known_at を分ける）
     growth.py       アンチマーチンゲールの拡大・試行数を考慮した閾値
+    cross_section.py 銘柄横断の検定（ベータの罠を避ける）
+    goal.py         目標を達成条件に翻訳（元本・税制・コスト・優位性）
   scripts/
     fetch_ohlcv.py    実データ取得（手元で実行）
     make_synthetic.py 合成データ生成（陽性対照 intraday を含む）
-    run_preregistered.py 事前登録した検定（パラメータを渡せない・結果は docs/07）
+    make_synthetic_panel.py 複数銘柄の合成データ（ベータの罠の対照を含む）
+    fetch_universe.py 全JPY建て銘柄の日足を取得（銘柄名は取引所に問い合わせる）
+    run_preregistered.py      事前登録その1：日中モメンタム（結果は docs/07）
+    run_preregistered_cross.py 事前登録その2：銘柄横断モメンタム
   tests/
     test_engine.py         エンジンの自己検証
     test_exogenous.py      外部データの時点整合
@@ -228,10 +235,12 @@ trading/
     test_fetch.py          データ取得（ネットワークを使わない部分）
     test_cli.py            CLIが実データの形に耐えるか
     test_rotation_null.py  タイミングに意味があったかの検定
+    test_cross_section.py  銘柄横断の検定（ベータの罠を含む）
+    test_goal.py           目標の分解（元本・税制のレバー）
   run_backtest.py     CLI
 ```
 
-テストは全部で127件。`.venv-trading/bin/python -m pytest trading/tests/ -q` で回る。
+テストは全部で156件。`.venv-trading/bin/python -m pytest trading/tests/ -q` で回る。
 
 ## 数字についての注意
 
