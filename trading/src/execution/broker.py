@@ -387,7 +387,15 @@ class BitbankBroker:
             raise BrokerError(f"価格の応答が異常です: {payload}")
         return float(payload["data"]["last"])
 
-    def place_order(self, order: Order) -> dict:
+    def order_body(self, order: Order) -> dict:
+        """発注に使う本文を組み立てる。**送信はしない。**
+
+        `place_order` はこれをそのまま送る。分けてあるのは、
+        **送らずに中身を確かめられるようにする**ため。
+
+        表示用に別途組み立て直すと、表示と実際の送信内容がずれる。
+        ずれた表示で「確認した」と思い込むほうが、確認しないより危ない。
+        """
         body = {
             "pair": order.pair,
             "amount": f"{order.amount:.8f}",
@@ -398,4 +406,7 @@ class BitbankBroker:
             body["price"] = f"{order.price:.8f}"
             # 板に並べる注文だけを出す。約定してテイカーになるくらいなら出さない
             body["post_only"] = True
-        return self._signed_post("/user/spot/order", body)
+        return body
+
+    def place_order(self, order: Order) -> dict:
+        return self._signed_post("/user/spot/order", self.order_body(order))

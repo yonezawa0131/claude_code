@@ -254,11 +254,38 @@ trading/
     test_cross_section.py  銘柄横断の検定（ベータの罠を含む）
     test_goal.py           目標の分解（元本・税制のレバー）
     test_execution_live.py 執行基盤（発注を止められるか）
+    test_connection_check.py 接続確認（1円も動かさないこと）
   run_backtest.py     CLI（検証）
   run_live.py         CLI（執行。既定はペーパー）
 ```
 
-テストは全部で205件。`.venv-trading/bin/python -m pytest trading/tests/ -q` で回る。
+テストは全部で215件。`.venv-trading/bin/python -m pytest trading/tests/ -q` で回る。
+
+## 取引所につなぐ（発注はしない）
+
+`BitbankBroker` は `unverified=True` のまま置いてある。この開発環境から
+取引所に到達できないため、署名の組み立ても応答の解釈も
+**実物に対して一度も確かめていない**。
+
+確かめるのに発注は要らない。署名の仕組み（nonce・HMAC・ヘッダ名）は
+読み取りと発注で共通なので、**読むだけの呼び出しが通れば鍵と署名は確定する**。
+
+```bash
+# APIキーは【取引権限だけ】。**出金権限は絶対に付けないこと**
+BITBANK_API_KEY=... BITBANK_API_SECRET=... \
+    .venv-trading/bin/python trading/run_live.py --check-connection
+```
+
+出るもの:
+
+1. 公開APIで価格が取れるか（署名なし）
+2. 私設APIで資産が読めるか（署名あり）→ **取引所の画面と突き合わせること**
+3. 最小数量で発注するときの本文。**組み立てて表示するだけで、送らない**
+
+3 は `place_order` が実際に送るのと同じ関数で作っているので、表示と送信内容はずれない。
+残る未検証は「発注の応答の解釈」だけになる。
+
+戦略も検証記録も要らない。**この確認と、本番で動かしてよいかは別の問題になる。**
 
 ## 数字についての注意
 
@@ -286,6 +313,9 @@ trading/
 3. `--show-required-return` で、自分の元本だと1日いくらが何%にあたるかを見る
 4. 手元で実データを取得する（**開発環境から取引所APIには到達できない**）
 5. `--compare-all --walk-forward 6` で、買い持ちを安定して上回る戦略があるか探す
+
+口座とAPIキーがあるなら、5と並行して `run_live.py --check-connection` を通しておける。
+**発注しないので、戦略が見つかるかどうかとは独立に進められる。**
 
 **どの期間でも買い持ちを上回る戦略が見つからなければ、そこで止める。**
 見つからないと分かることが、この基盤の一番の成果になりうる。

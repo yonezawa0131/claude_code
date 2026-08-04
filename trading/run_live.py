@@ -24,6 +24,10 @@
 
 ## 使い方
 
+    # 取引所につながるかだけを確かめる（**1円も動かさない**）
+    BITBANK_API_KEY=... BITBANK_API_SECRET=... \
+        python trading/run_live.py --check-connection
+
     # 配線の確認（発注しない）
     python trading/run_live.py --strategy equal_weight_btc --paper-capital 300000
 
@@ -87,6 +91,130 @@ TARGETS = {
     "equal_weight_btc": _equal_weight_btc,
     "half_btc": _half_btc,
 }
+
+#: bitbank の最小注文数量。**取引所の画面で確かめ直すこと。**
+#: ここを大きく見積もると、確認のために必要以上の額を動かすことになる
+MIN_ORDER_AMOUNT = {"btc_jpy": 0.0001, "eth_jpy": 0.0001, "xrp_jpy": 0.0001}
+DEFAULT_MIN_AMOUNT = 0.0001
+
+
+def check_connection(pairs: list[str], journal: Journal) -> int:
+    """**1円も動かさずに**、本番の配線がどこまで正しいかを確かめる。
+
+    ## なぜこれを最初にやるのか
+
+    `BitbankBroker` は `unverified=True` のまま置いてある。この開発環境から
+    取引所に到達できないので、署名の組み立ても応答の解釈も
+    **実物に対して一度も確かめていない**。
+
+    確かめる方法は2つある。
+
+      1. 最小額で1回発注して、取引所の画面と突き合わせる
+      2. **読むだけの呼び出しで、署名と応答の解釈を確かめる**
+
+    1 は約定リスクを負う。2 は負わない。そして署名の仕組み
+    （nonce・HMAC・ヘッダ名）は GET と POST で共通なので、
+    **2 が通れば「鍵と署名が正しい」ことは確定する。**
+
+    ## それでも確かめられないもの
+
+    残るのは POST 側だけ、つまり注文本文の形と応答の解釈になる。
+    ここは読むだけでは触れない。だから本文を**組み立てて表示する**。
+    実際に送る `order_body()` をそのまま呼ぶので、表示と送信内容はずれない。
+
+    ## 鍵の権限について
+
+    **出金権限は付けないこと。** 取引権限だけで足りる。
+    この確認に必要なのは資産照会だけであり、それすら読むだけになる。
+    """
+    key = os.environ.get("BITBANK_API_KEY")
+    secret = os.environ.get("BITBANK_API_SECRET")
+    if not key or not secret:
+        print("エラー: BITBANK_API_KEY と BITBANK_API_SECRET を環境変数で渡してください",
+              file=sys.stderr)
+        print("       出金権限は付けないこと。取引権限だけで足ります。", file=sys.stderr)
+        return 1
+
+    broker = BitbankBroker(api_key=key, api_secret=secret)
+    print(f"接続  : {broker.name}")
+    print("**読むだけです。注文は出しません。**")
+    print()
+
+    # --- 1. 公開API（署名なし）------------------------------------------
+    print("1. 公開API（署名なし）— 価格が取れるか")
+    prices: dict[str, float] = {}
+    for pair in pairs:
+        try:
+            prices[pair] = broker.fetch_price(pair)
+            print(f"   OK  {pair:<12} {prices[pair]:>14,.0f} 円")
+        except BrokerError as exc:
+            print(f"   NG  {pair:<12} {exc}", file=sys.stderr)
+    if not prices:
+        print("\n公開APIに到達できていません。ここが通らなければ先はありません。",
+              file=sys.stderr)
+        journal.write("connection_check", stage="public", ok=False)
+        return 1
+
+    # --- 2. 私設API（署名あり）------------------------------------------
+    print()
+    print("2. 私設API（署名あり）— 鍵・nonce・HMAC・応答の解釈")
+    try:
+        balances = broker.fetch_balances()
+    except BrokerError as exc:
+        print(f"   NG  {exc}", file=sys.stderr)
+        print()
+        print("   よくある原因:")
+        print("     - 鍵か秘密鍵の取り違え（ACCESS-KEY と署名の鍵は別物です）")
+        print("     - APIキーに取引権限が付いていない")
+        print("     - 接続元IPの制限に、今いる場所が入っていない")
+        print("     - 端末の時計がずれている（nonce は現在時刻から作ります）")
+        journal.write("connection_check", stage="private", ok=False, error=str(exc))
+        return 1
+
+    print("   OK  署名が通り、資産を読めました")
+    print()
+    equity = balances.get("jpy", 0.0)
+    for asset, amount in sorted(balances.items()):
+        pair = f"{asset}_jpy"
+        if asset == "jpy":
+            print(f"     {asset:<6} {amount:>18,.4f}")
+        else:
+            value = amount * prices.get(pair, 0.0)
+            equity += value
+            note = "" if pair in prices else "  ← 価格未取得のため総額に入れていません"
+            print(f"     {asset:<6} {amount:>18.8f}  ≒ {value:>12,.0f} 円{note}")
+    print(f"     {'合計':<6} {'':>18} ≒ {equity:>12,.0f} 円")
+    print()
+    print("   **この数字を取引所の画面と突き合わせてください。**")
+    print("   合わなければ、応答の解釈が間違っています。")
+
+    # --- 3. 送らずに、送る中身を見る --------------------------------------
+    print()
+    print("3. 発注本文 — **組み立てるだけで、送りません**")
+    for pair in pairs:
+        if pair not in prices:
+            continue
+        amount = MIN_ORDER_AMOUNT.get(pair, DEFAULT_MIN_AMOUNT)
+        # 現在値から離した指値。すぐには約定しない位置に置く想定
+        order = Order(pair, "buy", amount, round(prices[pair] * 0.995))
+        body = broker.order_body(order)
+        print(f"   POST /user/spot/order  {body}")
+        print(f"     ≒ {order.notional(prices[pair]):,.0f} 円相当"
+              f"（{pair} の最小数量として {amount} を仮定）")
+
+    journal.write("connection_check", stage="private", ok=True,
+                  balances=balances, prices=prices, equity=equity)
+
+    print()
+    print("-" * 70)
+    print("確かめられたこと : 鍵・署名・nonce・ヘッダ・応答の解釈（読み取り側）")
+    print("確かめていないこと: 発注の応答の解釈、post_only の扱い、最小数量の実値")
+    print()
+    print("残りを確かめるには、上の本文を1回だけ実際に送る必要があります。")
+    print("そのときは、約定しない位置の指値を出し、取引所の画面に")
+    print("**同じ数量・同じ価格で並んでいること**を確認してから取り消してください。")
+    print("-" * 70)
+    return 0
 
 
 def _price_ranges(
@@ -155,10 +283,13 @@ def _price_ranges(
 
 def main() -> int:
     p = argparse.ArgumentParser(description="目標の保有に近づける")
-    p.add_argument("--strategy", required=True, choices=sorted(TARGETS),
+    p.add_argument("--strategy", choices=sorted(TARGETS),
                    help="目標を決める方針")
     p.add_argument("--live", action="store_true",
                    help="本番で発注する（関門をすべて通った場合のみ動きます）")
+    p.add_argument("--check-connection", action="store_true",
+                   help=("取引所につながるかだけを確かめる。**注文は出しません。**"
+                         "戦略も検証記録も要りません"))
     p.add_argument("--pairs", default="btc_jpy",
                    help="価格を取る銘柄（カンマ区切り）")
     p.add_argument("--state", type=Path, default=Path("trading/data/paper_state.json"),
@@ -183,6 +314,16 @@ def main() -> int:
 
     journal = Journal(args.journal)
     pairs = [s.strip() for s in args.pairs.split(",") if s.strip()]
+
+    if args.check_connection:
+        print("=" * 70)
+        print("接続確認  — 発注しません")
+        print("=" * 70)
+        return check_connection(pairs, journal)
+
+    if not args.strategy:
+        p.error("--strategy が必要です（--check-connection のときだけ省けます）")
+
     mode = "本番" if args.live else "ペーパー"
 
     print("=" * 70)
