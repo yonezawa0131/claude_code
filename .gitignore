@@ -1,5 +1,19 @@
 .venv-trading/
 __pycache__/
 *.pyc
+.DS_Store
+
 trading/data/*.csv
 !trading/data/.gitkeep
+
+# 取得したデータは各自の手元のもの。サブディレクトリも除く
+trading/data/universe*/
+
+# 実行の記録。**残高と資産額が入る。**
+#
+# `--check-connection` は照会した残高を、本番は約定を記録に残す。
+# これを追跡すると、口座の中身がそのまま公開リポジトリに載ることになる。
+# 記録は手元に置き、リポジトリには入れない。
+trading/data/journal.jsonl
+trading/data/paper_state.json
+trading/data/validation.json
