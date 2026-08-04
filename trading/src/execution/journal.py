@@ -69,3 +69,28 @@ class Journal:
             if rid and rid not in seen:
                 seen.append(rid)
         return seen
+
+    def last_run_time(self) -> str | None:
+        """前回この基盤が動いた時刻。値動きの範囲を取る起点になる。"""
+        records = self.read_all()
+        return records[-1]["time"] if records else None
+
+    def consecutive_misses(self, pair: str) -> int:
+        """その銘柄で、指値が約定しないまま取り消された回数。
+
+        **記憶ではなく記録から数える。** 状態を持たないので、
+        別のマシンから動かしても同じ数になる。
+
+        この数が増え続けるのは「置いても届かない」ということなので、
+        どこかで諦めて成行に切り替える判断材料になる。
+        いつまでも指値で粘ると、**目標にたどり着けないまま相場が離れていく**。
+        """
+        misses = 0
+        for rec in reversed(self.read_all()):
+            if rec.get("pair") != pair:
+                continue
+            if rec.get("event") in ("settled", "order_placed"):
+                break  # 約定した。そこで数え直し
+            if rec.get("event") == "expired":
+                misses += 1
+        return misses

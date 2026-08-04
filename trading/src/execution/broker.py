@@ -237,23 +237,32 @@ class PaperBroker:
                 "side": order.side, "amount": order.amount, "price": order.price,
                 "type": "limit"}
 
-    def settle(self, prices: dict[str, float]) -> list[dict]:
-        """価格が指値に届いていれば約定させる。届いていなければ残す。
+    def settle(self, ranges: dict[str, tuple[float, float]]) -> list[dict]:
+        """前回からの値動きが指値に届いていれば約定させる。
 
         **ここが「指値は必ず約定する」を否定している箇所になる。**
+
+        受け取るのは (安値, 高値) の組であって、瞬間の価格ではない。
+        板に置いた注文は、その間に**一度でも**指値に触れれば約定する。
+        瞬間の価格だけで判定すると、実際には約定していたものを
+        「約定しなかった」と扱うことになり、**今度は逆向きに嘘をつく**。
+
+        バックテスト側の `backtest.MakerFill` が高値安値で判定しているのと
+        同じ理屈になる。片方だけ瞬間値にすると、2つの結果が食い違う。
         """
         state = self._load()
         balances, resting = state["balances"], state["open_orders"]
         filled, still_open = [], []
 
         for o in resting:
-            price = prices.get(o["pair"])
-            if price is None:
+            span = ranges.get(o["pair"])
+            if span is None:
                 still_open.append(o)
                 continue
-            reached = price <= o["price"] if o["side"] == "buy" else price >= o["price"]
+            low, high = float(span[0]), float(span[1])
+            reached = low <= o["price"] if o["side"] == "buy" else high >= o["price"]
             if not reached:
-                still_open.append(o)
+                still_open.append({**o, "closest": low if o["side"] == "buy" else high})
                 continue
             self._apply_fill(
                 balances, o["pair"], o["side"], o["amount"], o["price"], self.fee_maker

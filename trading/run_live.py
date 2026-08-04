@@ -48,6 +48,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from trading.src.execution.broker import (  # noqa: E402
     BitbankBroker,
     BrokerError,
+    Order,
     PaperBroker,
 )
 from trading.src.execution.guards import (  # noqa: E402
@@ -88,6 +89,56 @@ TARGETS = {
 }
 
 
+def _price_ranges(
+    pairs: list[str], since: str | None, fallback: dict[str, float]
+) -> dict[str, tuple[float, float]]:
+    """前回の実行からの値動きの幅（安値, 高値）を返す。
+
+    板に置いた指値は、その間に**一度でも**指値に触れれば約定している。
+    いまの価格だけを見て判定すると、実際には約定していたものを
+    「約定しなかった」と扱うことになる。
+
+    公開APIの日足から求める。取れなければ現在値で代用するが、
+    その場合は**約定を過小に見積もる**ことになるので、そう明示する。
+    """
+    import datetime as _dt
+    import json as _json
+    import urllib.request as _req
+
+    start = None
+    if since:
+        try:
+            start = _dt.datetime.strptime(since, "%Y-%m-%dT%H:%M:%SZ").date()
+        except ValueError:
+            start = None
+
+    out: dict[str, tuple[float, float]] = {}
+    for pair in pairs:
+        price = fallback.get(pair)
+        span = (price, price) if price else None
+        try:
+            year = _dt.datetime.now(_dt.timezone.utc).year
+            url = f"https://public.bitbank.cc/{pair}/candlestick/1day/{year}"
+            with _req.urlopen(url, timeout=15) as resp:
+                payload = _json.loads(resp.read())
+            rows = payload["data"]["candlestick"][0]["ohlcv"]
+            lows, highs = [], []
+            for _o, h, low, _c, _v, ts in rows:
+                day = _dt.datetime.fromtimestamp(int(ts) / 1000, _dt.timezone.utc).date()
+                if start is None or day >= start:
+                    highs.append(float(h))
+                    lows.append(float(low))
+            if lows:
+                span = (min(lows), max(highs))
+                if price:
+                    span = (min(span[0], price), max(span[1], price))
+        except Exception:
+            pass
+        if span:
+            out[pair] = span
+    return out
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description="目標の保有に近づける")
     p.add_argument("--strategy", required=True, choices=sorted(TARGETS),
@@ -111,6 +162,9 @@ def main() -> int:
     p.add_argument("--max-exposure", type=float, default=100_000.0)
     p.add_argument("--market", action="store_true",
                    help="指値ではなく成行で出す（往復コストが約9倍になります）")
+    p.add_argument("--give-up-after", type=int, default=3,
+                   help=("指値がこの回数届かなかったら成行に切り替える。"
+                         "粘りすぎると目標にたどり着けないまま相場が離れる"))
     args = p.parse_args()
 
     journal = Journal(args.journal)
@@ -159,19 +213,29 @@ def main() -> int:
         broker.set_prices(prices)
 
     # 板に残っている注文を、まず片付ける。
-    #   1. 価格が届いていたものは約定させる
+    #   1. 前回からの値動きが指値に届いていたものは約定させる
     #   2. 届かなかったものは取り消して資金を戻す
     # これをやらないと、前回の指値に資金が取られたまま新しい注文を出すことになる
     if isinstance(broker, PaperBroker):
         broker.set_prices(prices)
-        for fill in broker.settle(prices):
-            print(f"  約定していました: {fill['side']} {fill['pair']} "
-                  f"{fill['amount']:.8f} @ {fill['price']:,.0f}")
-            journal.write("settled", **fill)
-        cancelled = broker.cancel_all()
-        if cancelled:
-            print(f"  板に残っていた {cancelled} 件を取り消しました（約定しなかった指値）")
-            journal.write("cancelled", count=cancelled)
+        pending = broker.open_orders()
+        if pending:
+            # **瞬間の価格ではなく、前回からの値動きの幅で判定する。**
+            # 一度でも指値に触れていれば約定しているので、
+            # 瞬間値で見ると「約定しなかった」と嘘をつくことになる
+            ranges = _price_ranges(pairs, journal.last_run_time(), prices)
+            for fill in broker.settle(ranges):
+                print(f"  約定していました: {fill['side']} {fill['pair']} "
+                      f"{fill['amount']:.8f} @ {fill['price']:,.0f}")
+                journal.write("settled", **fill)
+            for miss in broker.open_orders():
+                gap = abs(miss["closest"] / miss["price"] - 1) * 100
+                print(f"  届きませんでした: {miss['pair']} 指値 {miss['price']:,.0f} / "
+                      f"最も近づいた値 {miss['closest']:,.0f}（あと {gap:.3f}%）")
+                journal.write("expired", **miss)
+            cancelled = broker.cancel_all()
+            if cancelled:
+                print(f"  板に残っていた {cancelled} 件を取り消しました")
 
     balances = broker.fetch_balances()
     weights, equity = current_weights(balances, prices)
@@ -187,10 +251,25 @@ def main() -> int:
 
     # --- 2〜3. 目標と差分 -------------------------------------------------
     target = TARGETS[args.strategy](prices)
+
+    # 指値で粘り続けると、目標にたどり着けないまま相場が離れていく。
+    # 何度も届かなかった銘柄は、諦めて成行に切り替える。
+    # **「安く買えるかもしれない」より「持つべきものを持つ」を優先する。**
+    stubborn = {p for p in pairs if journal.consecutive_misses(p) >= args.give_up_after}
+    if stubborn and not args.market:
+        for pair in sorted(stubborn):
+            print(f"\n  {pair} は指値が {journal.consecutive_misses(pair)} 回届きませんでした。"
+                  "成行に切り替えます")
+
     orders, _ = build_orders(
         target, balances, prices,
         limit_offset=None if args.market else 0.0005,
     )
+    if stubborn and not args.market:
+        orders = [
+            Order(o.pair, o.side, o.amount, None) if o.pair in stubborn else o
+            for o in orders
+        ]
 
     print()
     print("目標:")

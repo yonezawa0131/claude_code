@@ -360,12 +360,12 @@ def test_a_limit_order_fills_only_when_the_price_arrives(broker):
     limit = PRICES["btc_jpy"] * 0.99
     broker.place_order(Order("btc_jpy", "buy", 0.01, limit))
 
-    # まだ届いていない
-    assert broker.settle({"btc_jpy": PRICES["btc_jpy"]}) == []
+    # まだ届いていない（期間中の安値が指値より上）
+    assert broker.settle({"btc_jpy": (PRICES["btc_jpy"] * 0.995, PRICES["btc_jpy"])}) == []
     assert len(broker.open_orders()) == 1
 
-    # 届いた
-    fills = broker.settle({"btc_jpy": limit - 1})
+    # 一度でも指値に触れれば約定する
+    fills = broker.settle({"btc_jpy": (limit - 1, PRICES["btc_jpy"])})
     assert len(fills) == 1
     assert broker.open_orders() == []
     assert broker.fetch_balances()["btc"] == pytest.approx(0.01)
@@ -376,8 +376,8 @@ def test_a_sell_limit_fills_only_when_the_price_rises_to_it(broker):
     limit = PRICES["btc_jpy"] * 1.01
     broker.place_order(Order("btc_jpy", "sell", 0.01, limit))
 
-    assert broker.settle({"btc_jpy": PRICES["btc_jpy"]}) == []
-    assert len(broker.settle({"btc_jpy": limit + 1})) == 1
+    assert broker.settle({"btc_jpy": (PRICES["btc_jpy"], limit * 0.999)}) == []
+    assert len(broker.settle({"btc_jpy": (PRICES["btc_jpy"], limit + 1)})) == 1
 
 
 def test_cancelling_returns_the_reserved_funds(broker):
@@ -403,7 +403,7 @@ def test_a_maker_fill_earns_the_rebate(broker):
     limit = PRICES["btc_jpy"] * 0.99
     broker.place_order(Order("btc_jpy", "buy", 0.01, limit))
     before = broker.fetch_balances()["jpy"]
-    broker.settle({"btc_jpy": limit})
+    broker.settle({"btc_jpy": (limit, PRICES["btc_jpy"])})
     after = broker.fetch_balances()["jpy"]
     # 手数料が負（受け取り）なので現金は増える
     assert after - before == pytest.approx(-0.01 * limit * broker.fee_maker)
@@ -432,3 +432,60 @@ def test_a_rebate_needs_no_buffer():
         limit_offset=None, buy_fee=-0.0002,
     )
     assert full[0].amount == pytest.approx(1_000_000.0 / PRICES["btc_jpy"])
+
+
+def test_a_touch_during_the_period_counts_as_a_fill(broker):
+    """**期間中に一度でも指値に触れていれば約定していること。**
+
+    いまの価格だけで判定すると、実際には約定していたものを
+    「約定しなかった」と扱う。片方向に嘘をつくのを直したら、
+    今度は逆向きに嘘をつく、という失敗になる。
+
+    バックテスト側（backtest.MakerFill）が高値安値で判定しているのと
+    同じ理屈にしておかないと、2つの結果が食い違う。
+    """
+    limit = PRICES["btc_jpy"] * 0.99
+    broker.place_order(Order("btc_jpy", "buy", 0.01, limit))
+
+    # 終値は指値より上だが、期間中の安値は指値を下回っていた
+    fills = broker.settle({"btc_jpy": (limit * 0.999, PRICES["btc_jpy"] * 1.01)})
+    assert len(fills) == 1, "触れていたのに約定していません"
+
+
+def test_an_unfilled_order_reports_how_close_it_came(broker):
+    """届かなかった注文が、どこまで近づいたかを残すこと。
+
+    「届きませんでした」だけでは、あと少しなのか全然なのか分からない。
+    """
+    limit = PRICES["btc_jpy"] * 0.99
+    broker.place_order(Order("btc_jpy", "buy", 0.01, limit))
+    broker.settle({"btc_jpy": (PRICES["btc_jpy"] * 0.995, PRICES["btc_jpy"])})
+
+    resting = broker.open_orders()
+    assert len(resting) == 1
+    assert resting[0]["closest"] == pytest.approx(PRICES["btc_jpy"] * 0.995)
+
+
+def test_consecutive_misses_are_counted_from_the_record(tmp_path):
+    """**記憶ではなく記録から数えること。**
+
+    別のマシンから動かしても同じ数になる必要がある。
+    """
+    journal = Journal(tmp_path / "j.jsonl")
+    assert journal.consecutive_misses("btc_jpy") == 0
+
+    for _ in range(3):
+        journal.write("expired", pair="btc_jpy", price=1.0)
+    assert journal.consecutive_misses("btc_jpy") == 3
+
+    # 約定したら数え直し
+    journal.write("settled", pair="btc_jpy", price=1.0)
+    assert journal.consecutive_misses("btc_jpy") == 0
+
+
+def test_misses_on_one_pair_do_not_count_for_another(tmp_path):
+    journal = Journal(tmp_path / "j.jsonl")
+    for _ in range(5):
+        journal.write("expired", pair="eth_jpy", price=1.0)
+    assert journal.consecutive_misses("btc_jpy") == 0
+    assert journal.consecutive_misses("eth_jpy") == 5
