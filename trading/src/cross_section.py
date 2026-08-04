@@ -82,6 +82,60 @@ class CrossSectionResult:
             return float("nan")
         return float(x.mean() / (x.std(ddof=1) / np.sqrt(len(x))))
 
+    def robustness(self) -> str:
+        """平均が、少数の極端な期に支配されていないかを見る。
+
+        暗号資産の週次リターンは片側に大きく裾を引く。
+        **1期の暴騰暴落だけで、全期間の平均の符号が変わることがある。**
+        そのとき平均と t 値は、実質的に1個の観測を報告しているにすぎない。
+
+        中央値と、最大の1期を除いた平均を並べて、そこを見えるようにする。
+        """
+        s = self.spread.dropna()
+        if len(s) < 5:
+            return "期間が少なすぎて頑健性を測れません。"
+
+        biggest = s.abs().idxmax()
+        without = s.drop(biggest)
+        contribution = (s.mean() - without.mean()) * 100
+
+        lines = [
+            "平均が少数の期に支配されていないか",
+            "",
+            f"  平均           : {s.mean() * 100:+.3f} %/期",
+            f"  中央値         : {s.median() * 100:+.3f} %/期",
+            f"  最大の1期を除く: {without.mean() * 100:+.3f} %/期"
+            f"（その1期の寄与 {contribution:+.3f} pt）",
+            f"  最も大きい期   : {biggest:%Y-%m-%d} に {s.loc[biggest] * 100:+.1f} %",
+        ]
+        if s.mean() * without.mean() < 0:
+            lines += [
+                "",
+                "  → **1期を除くだけで符号が変わります。**"
+                "この平均は、実質的に1個の観測を報告しています。",
+            ]
+        elif abs(contribution) > abs(s.mean() * 100) * 0.5:
+            lines += [
+                "",
+                "  → 平均の半分以上が1期から来ています。頑健ではありません。",
+            ]
+        return "\n".join(lines)
+
+    def split_halves(self) -> tuple[pd.Series, pd.Series]:
+        """期間を前後に分ける。
+
+        **パネルを切ってから測り直してはいけない。**
+        切った位置によって週の区切りがずれ、全期間とは別の週を測ることになる。
+        実データでこれをやったとき、全期間 −0.742%/期 に対して
+        前半 −0.012% / 後半 +0.898% という、部分集合として成立しない
+        数字が出た。原因は3日ぶんの区切りのずれだった。
+
+        ここでは**同じ検定の結果を分けるだけ**にする。そうすれば必ず整合する。
+        """
+        s = self.spread.dropna()
+        mid = len(s) // 2
+        return s.iloc[:mid], s.iloc[mid:]
+
     def summary(self, periods_per_year: float | None = None) -> str:
         if periods_per_year is None:
             periods_per_year = 365.0 / self.holding

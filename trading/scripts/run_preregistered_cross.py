@@ -129,6 +129,8 @@ def main() -> int:
     )
     print(result.summary(periods_per_year=ppy))
     print()
+    print(result.robustness())
+    print()
 
     n_periods = len(result.spread.dropna())
     if n_periods < 30:
@@ -171,19 +173,24 @@ def main() -> int:
         PASS if null.percentile >= NULL_PERCENTILE else FAIL,
         f"上位 {100 - null.percentile:.1f} %",
     ))
+    if null.percentile <= 100 - NULL_PERCENTILE:
+        print("  ※ 逆向きに外れています。順位づけには情報があるが、")
+        print("     **文献が報告する向きとは反対**（上位が下位に負ける）。")
+        print("     これは事前登録した仮説ではないので、ここでは合格にしません。")
+        print("     追う場合は新しい検定として、別のデータで測り直すこと。")
+        print()
 
     # --- C. 前半と後半で符号が一致 ---------------------------------------
-    half = len(panel) // 2
-    signs = []
-    for label, part in (("前半", panel.iloc[:half]), ("後半", panel.iloc[half:])):
-        r = cross_sectional_test(
-            part, lookback=LOOKBACK, holding=HOLDING,
-            n_groups=N_GROUPS, min_universe=MIN_UNIVERSE,
-        )
-        m = r.spread.mean() if len(r.spread) else float("nan")
-        signs.append(m)
+    # **同じ検定の結果を分けるだけにする。** パネルを切って測り直すと、
+    # 週の区切りがずれて全期間とは別の週を測ることになる
+    first, second = result.split_halves()
+    signs = [first.mean(), second.mean()]
+    for label, part in (("前半", first), ("後半", second)):
         print(f"  {label}（{part.index[0]:%Y-%m-%d}〜{part.index[-1]:%Y-%m-%d}）: "
-              f"上位−下位 {m * 100:+.3f} %/期（{len(r.spread)} 期）")
+              f"上位−下位 {part.mean() * 100:+.3f} %/期（{len(part)} 期）")
+    combined = pd.concat([first, second]).mean()
+    print(f"  合わせると {combined * 100:+.3f} %/期  "
+          f"（全期間 {result.spread.mean() * 100:+.3f} %/期）")
     print()
     consistent = all(np.isfinite(s) for s in signs) and signs[0] * signs[1] > 0
     verdicts.append((

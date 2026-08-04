@@ -261,3 +261,70 @@ def test_random_group_null_requires_enough_runs():
 
     with pytest.raises(ValueError, match="20回以上"):
         random_group_null(_panel(), n_runs=5)
+
+
+# ---------------------------------------------------------------------------
+# 前後半の比較は、パネルを切らずに結果を分ける
+# ---------------------------------------------------------------------------
+
+
+def test_halves_always_reconcile_with_the_whole():
+    """**前半と後半を合わせたら、全期間に一致すること。**
+
+    実データで、全期間 −0.742%/期 に対して前半 −0.012% / 後半 +0.898% という
+    部分集合として成立しない数字が出た。
+
+    原因はパネルを切ってから測り直していたこと。944日を472日で切ると、
+    後半の検定は479日目から始まる。479 を7で割った余りは3なので、
+    **全期間とは3日ずれた週を測っていた。**
+
+    結果を分けるだけなら、この食い違いは起きない。
+    """
+    result = _run(_panel(theme_scale=0.008))
+    first, second = result.split_halves()
+
+    assert len(first) + len(second) == len(result.spread.dropna())
+    combined = pd.concat([first, second])
+    assert combined.mean() == pytest.approx(result.spread.dropna().mean())
+
+
+def test_halves_do_not_overlap():
+    result = _run(_panel(theme_scale=0.008))
+    first, second = result.split_halves()
+    assert first.index.max() < second.index.min()
+
+
+# ---------------------------------------------------------------------------
+# 平均が少数の期に支配されていないか
+# ---------------------------------------------------------------------------
+
+
+def test_robustness_flags_a_mean_driven_by_one_period():
+    """**1期を除くと符号が変わる平均を、そうと言うこと。**
+
+    暗号資産の週次リターンは大きく裾を引く。1期の暴落だけで
+    全期間の平均の符号が変わるとき、その平均と t 値は
+    実質的に1個の観測を報告しているにすぎない。
+    """
+    result = _run(_panel(theme_scale=0.0))
+    # 1期だけ極端な値を入れる
+    spiked = result.spread.copy()
+    spiked.iloc[len(spiked) // 2] = -abs(spiked).max() * 60
+    result.top = spiked + result.bottom
+
+    text = result.robustness()
+    assert "符号が変わります" in text or "頑健ではありません" in text
+    assert "中央値" in text
+
+
+def test_robustness_reports_the_median_alongside_the_mean():
+    text = _run(_panel(theme_scale=0.010)).robustness()
+    assert "平均" in text and "中央値" in text
+    assert "最大の1期を除く" in text
+
+
+def test_robustness_needs_enough_periods():
+    result = _run(_panel(theme_scale=0.010))
+    result.top = result.top.iloc[:3]
+    result.bottom = result.bottom.iloc[:3]
+    assert "測れません" in result.robustness()
