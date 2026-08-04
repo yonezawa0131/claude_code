@@ -18,6 +18,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import hashlib
 import hmac
 import json
@@ -231,6 +232,9 @@ class PaperBroker:
         state["open_orders"].append({
             "pair": order.pair, "side": order.side,
             "amount": order.amount, "price": order.price,
+            # **いつ板に置いたかを持つ。** これがないと、
+            # 注文を出す前に付いた安値で「約定した」と判定してしまう
+            "placed_at": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         })
         self._save(state)
         return {"paper": True, "status": "resting", "pair": order.pair,

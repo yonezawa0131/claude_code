@@ -489,3 +489,20 @@ def test_misses_on_one_pair_do_not_count_for_another(tmp_path):
         journal.write("expired", pair="eth_jpy", price=1.0)
     assert journal.consecutive_misses("btc_jpy") == 0
     assert journal.consecutive_misses("eth_jpy") == 5
+
+
+def test_a_resting_order_records_when_it_was_placed(broker):
+    """**置いた時刻を持つこと。**
+
+    持っていないと、注文を出す前に付いた安値で「約定した」と判定してしまう。
+    09:00 に置いた指値が、03:00 の安値で約定することはない。
+
+    この基盤は同じ論点で既に2回間違えている。
+      1回目 出した瞬間に約定させ、0.05% の利益を無から作った
+      2回目 瞬間の価格だけで見て、実際には約定していたものを見逃した
+    どちらに倒しても嘘になる。起点は「置いた時刻」しかない。
+    """
+    broker.place_order(Order("btc_jpy", "buy", 0.01, PRICES["btc_jpy"] * 0.99))
+    resting = broker.open_orders()[0]
+    assert "placed_at" in resting
+    assert resting["placed_at"].endswith("Z")

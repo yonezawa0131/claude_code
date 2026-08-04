@@ -90,44 +90,58 @@ TARGETS = {
 
 
 def _price_ranges(
-    pairs: list[str], since: str | None, fallback: dict[str, float]
+    pending: list[dict], fallback: dict[str, float]
 ) -> dict[str, tuple[float, float]]:
-    """前回の実行からの値動きの幅（安値, 高値）を返す。
+    """板に置いてからの値動きの幅（安値, 高値）を、銘柄ごとに返す。
 
-    板に置いた指値は、その間に**一度でも**指値に触れれば約定している。
-    いまの価格だけを見て判定すると、実際には約定していたものを
-    「約定しなかった」と扱うことになる。
+    ## 起点は「注文を出した時刻」であって、その日の始まりではない
 
-    公開APIの日足から求める。取れなければ現在値で代用するが、
-    その場合は**約定を過小に見積もる**ことになるので、そう明示する。
+    09:00 に指値を置いたのに、03:00 に付いた安値で「約定した」と判定すると、
+    **約定を過大に見積もる**ことになる。板に置く前の値動きでは約定しない。
+
+    この基盤は同じ論点で既に2回間違えている。
+      1回目 出した瞬間に約定させ、0.05% の利益を無から作った
+      2回目 瞬間の価格だけで見て、実際には約定していたものを見逃した
+    どちらに倒しても嘘になるので、**置いた時刻から数える**。
+
+    1時間足で求める。取れなければ現在値で代用するが、
+    その場合は約定を過小に見積もるので、呼び出し側でそう表示する。
     """
     import datetime as _dt
     import json as _json
     import urllib.request as _req
 
-    start = None
-    if since:
-        try:
-            start = _dt.datetime.strptime(since, "%Y-%m-%dT%H:%M:%SZ").date()
-        except ValueError:
-            start = None
+    by_pair: dict[str, str] = {}
+    for o in pending:
+        placed = o.get("placed_at")
+        if placed and (o["pair"] not in by_pair or placed < by_pair[o["pair"]]):
+            by_pair[o["pair"]] = placed
 
     out: dict[str, tuple[float, float]] = {}
-    for pair in pairs:
+    for pair, placed_at in by_pair.items():
         price = fallback.get(pair)
         span = (price, price) if price else None
         try:
-            year = _dt.datetime.now(_dt.timezone.utc).year
-            url = f"https://public.bitbank.cc/{pair}/candlestick/1day/{year}"
-            with _req.urlopen(url, timeout=15) as resp:
-                payload = _json.loads(resp.read())
-            rows = payload["data"]["candlestick"][0]["ohlcv"]
+            since = _dt.datetime.strptime(placed_at, "%Y-%m-%dT%H:%M:%SZ").replace(
+                tzinfo=_dt.timezone.utc
+            )
+            now = _dt.datetime.now(_dt.timezone.utc)
+            days = [
+                (since + _dt.timedelta(days=i)).strftime("%Y%m%d")
+                for i in range((now.date() - since.date()).days + 1)
+            ][:8]  # 取りすぎない
+
             lows, highs = [], []
-            for _o, h, low, _c, _v, ts in rows:
-                day = _dt.datetime.fromtimestamp(int(ts) / 1000, _dt.timezone.utc).date()
-                if start is None or day >= start:
-                    highs.append(float(h))
-                    lows.append(float(low))
+            for day in days:
+                url = f"https://public.bitbank.cc/{pair}/candlestick/1hour/{day}"
+                with _req.urlopen(url, timeout=15) as resp:
+                    payload = _json.loads(resp.read())
+                for _o, h, low, _c, _v, ts in payload["data"]["candlestick"][0]["ohlcv"]:
+                    bar = _dt.datetime.fromtimestamp(int(ts) / 1000, _dt.timezone.utc)
+                    # **置いた時刻より前のバーは使わない**
+                    if bar >= since - _dt.timedelta(hours=1):
+                        highs.append(float(h))
+                        lows.append(float(low))
             if lows:
                 span = (min(lows), max(highs))
                 if price:
@@ -219,11 +233,15 @@ def main() -> int:
     if isinstance(broker, PaperBroker):
         broker.set_prices(prices)
         pending = broker.open_orders()
-        if pending:
+        if not pending:
+            print("  板に残っている注文はありません")
+        else:
+            print(f"  板に {len(pending)} 件残っています。"
+                  "置いてからの値動きで約定を判定します")
             # **瞬間の価格ではなく、前回からの値動きの幅で判定する。**
             # 一度でも指値に触れていれば約定しているので、
             # 瞬間値で見ると「約定しなかった」と嘘をつくことになる
-            ranges = _price_ranges(pairs, journal.last_run_time(), prices)
+            ranges = _price_ranges(pending, prices)
             for fill in broker.settle(ranges):
                 print(f"  約定していました: {fill['side']} {fill['pair']} "
                       f"{fill['amount']:.8f} @ {fill['price']:,.0f}")
