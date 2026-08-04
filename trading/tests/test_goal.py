@@ -127,7 +127,7 @@ def test_levers_are_ordered_by_certainty():
     """
     text = levers_summary()
     assert text.index("元本を増やす") < text.index("優位性を見つける")
-    assert "5戦略とも否定された" in text
+    assert "6戦略とも否定" in text
 
 
 def test_zero_capital_is_rejected():

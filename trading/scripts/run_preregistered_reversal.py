@@ -94,8 +94,12 @@ MIN_UNIVERSE = 15
 NULL_RUNS = 500
 NULL_PERCENTILE = 5.0
 
-#: 仮説を見つけた期間。**ここと重なるデータでは検証できない**
+#: 仮説を見つけたデータの範囲。**ここと重なるデータでは検証できない**
 DISCOVERY_START = pd.Timestamp("2024-01-01", tz="UTC")
+DISCOVERY_END = pd.Timestamp("2026-08-01", tz="UTC")
+
+#: 判定に必要な最小の期数
+MIN_PERIODS = 30
 
 PASS, FAIL = "合格", "不合格"
 
@@ -128,16 +132,29 @@ def main() -> int:
 
     panel = _load_panel(args.dir)
 
-    # **仮説を見つけたデータでは検証できない。** ここは譲れない
-    if panel.index.max() >= DISCOVERY_START:
+    # **仮説を見つけたデータでは検証できない。** ここは譲れない。
+    # 使えるのは「発見より前」か「発見より後」のどちらか
+    before = panel.index.max() < DISCOVERY_START
+    after = panel.index.min() > DISCOVERY_END
+    if not (before or after):
         raise SystemExit(
-            f"このデータは {panel.index.max():%Y-%m-%d} まで含んでいます。\n"
-            f"この仮説は {DISCOVERY_START:%Y-%m-%d} 以降のデータを見て思いついたものなので、\n"
-            "**そこと重なる期間では検証になりません。**\n"
-            f"  {DISCOVERY_START:%Y-%m-%d} より前で終わるデータを用意してください:\n"
-            "  python trading/scripts/fetch_universe.py \\\n"
-            "      --start 2021-01-01 --end 2023-12-31 --out-dir trading/data/universe_2021"
+            f"このデータは {panel.index.min():%Y-%m-%d} 〜 {panel.index.max():%Y-%m-%d} です。\n"
+            f"この仮説は {DISCOVERY_START:%Y-%m-%d} 〜 {DISCOVERY_END:%Y-%m-%d} のデータを\n"
+            "見て思いついたものなので、**そこと重なる期間では検証になりません。**\n"
+            "\n"
+            "  使えるのは次のどちらかです:\n"
+            f"\n"
+            f"  【過去】{DISCOVERY_START:%Y-%m-%d} より前で終わるデータ\n"
+            "    → ただし2021〜2023年は上場銘柄が12種類しかなく、**判定できません**。\n"
+            "      日本のアルトコイン市場が、この検定に必要なだけ古くありません。\n"
+            f"\n"
+            f"  【未来】{DISCOVERY_END:%Y-%m-%d} より後に始まるデータ\n"
+            "    → **こちらが本命になります。** 私がまだ見ていない期間だからです。\n"
+            f"      {MIN_PERIODS} 期（約{MIN_PERIODS * 7 // 30}か月）たまれば判定できます。\n"
+            "      python trading/scripts/fetch_universe.py \\\n"
+            "          --start 2026-08-02 --end <今日> --out-dir trading/data/universe_fwd"
         )
+    window = "発見より前の期間" if before else "**発見より後の期間（前向き検証）**"
 
     ppy = 365.0 / HOLDING
     print("=" * 72)
@@ -148,8 +165,8 @@ def main() -> int:
           f"（{len(panel)} 日）")
     print(f"設定     : ルックバック {LOOKBACK}日 / 保有 {HOLDING}日 / {N_GROUPS}分位")
     print("")
-    print("この仮説は 2024-01〜2026-08 のデータで見つけたもので、")
-    print("**いま測っているのはそれとは別の期間**になります。")
+    print(f"この仮説は {DISCOVERY_START:%Y-%m}〜{DISCOVERY_END:%Y-%m} のデータで見つけたもので、")
+    print(f"いま測っているのは {window} になります。")
     print("=" * 72)
     print()
 
@@ -163,8 +180,11 @@ def main() -> int:
     print()
 
     n_periods = len(result.spread.dropna())
-    if n_periods < 30:
-        print(f"→ 期間が {n_periods} 期しかありません。**判定不能。**")
+    if n_periods < MIN_PERIODS:
+        print(f"→ 期間が {n_periods} 期しかありません（最低 {MIN_PERIODS} 期）。")
+        print("  **判定不能。** 「効果がない」ではなく「まだ確かめられない」です。")
+        print(f"  あと {MIN_PERIODS - n_periods} 期"
+              f"（約{(MIN_PERIODS - n_periods) * 7 // 30}か月）ためてから測り直してください。")
         return 2
 
     print("-" * 72)
