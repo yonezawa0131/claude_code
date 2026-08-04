@@ -215,9 +215,22 @@ def check_connection(pairs: list[str], journal: Journal, exchange: str = "bitban
         journal.write("connection_check", stage="private", ok=False, error=str(exc))
         return 1
 
-    print("   OK  署名が通り、資産を読めました")
+    print("   OK  署名が通り、応答が返りました")
     print()
     equity = balances.get("jpy", 0.0)
+    if not balances:
+        # **空の応答は、2つのことを同時に意味しうる。**
+        #   1. 口座に資産が無い（正しく読めている）
+        #   2. 応答の解釈を間違えていて、何も拾えていない
+        # 見分けがつかないので、「読めました」で済ませない。
+        # ここを濁すと、確かめていないものを確かめたことにしてしまう
+        print("   ※ **資産が1件も返っていません。**")
+        print("      これは次の2つを区別できません。")
+        print("        1. 口座に資産がない（正しく読めている）")
+        print("        2. 応答の解釈を間違えていて、何も拾えていない")
+        print("      **入金してから、もう一度これを実行してください。**")
+        print("      金額が画面と一致して、はじめて読み取り側が確かめられます。")
+        print()
     for asset, amount in sorted(balances.items()):
         pair = f"{asset}_jpy"
         if asset == "jpy":
@@ -228,9 +241,10 @@ def check_connection(pairs: list[str], journal: Journal, exchange: str = "bitban
             note = "" if pair in prices else "  ← 価格未取得のため総額に入れていません"
             print(f"     {asset:<6} {amount:>18.8f}  ≒ {value:>12,.0f} 円{note}")
     print(f"     {'合計':<6} {'':>18} ≒ {equity:>12,.0f} 円")
-    print()
-    print("   **この数字を取引所の画面と突き合わせてください。**")
-    print("   合わなければ、応答の解釈が間違っています。")
+    if balances:
+        print()
+        print("   **この数字を取引所の画面と突き合わせてください。**")
+        print("   合わなければ、応答の解釈が間違っています。")
 
     # --- 3. 送らずに、送る中身を見る --------------------------------------
     print()
@@ -258,8 +272,13 @@ def check_connection(pairs: list[str], journal: Journal, exchange: str = "bitban
 
     print()
     print("-" * 70)
-    print("確かめられたこと : 鍵・署名・nonce・ヘッダ・応答の解釈（読み取り側）")
-    print("確かめていないこと: 発注の応答の解釈、post_only の扱い、最小数量の実値")
+    if balances:
+        print("確かめられたこと : 鍵・署名・時刻・ヘッダ・応答の解釈（読み取り側）")
+        print("確かめていないこと: 発注の応答の解釈、板に並ぶかどうか")
+    else:
+        print("確かめられたこと : 鍵・署名・時刻・ヘッダ（取引所が受理した）")
+        print("確かめていないこと: **応答の解釈**（資産が空なので突き合わせられない）、")
+        print("                    発注の応答の解釈、板に並ぶかどうか")
     print()
     print("残りを確かめるには、上の本文を1回だけ実際に送る必要があります。")
     print("そのときは、約定しない位置の指値を出し、取引所の画面に")

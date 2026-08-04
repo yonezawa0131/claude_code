@@ -260,7 +260,7 @@ trading/
   run_live.py         CLI（執行。既定はペーパー）
 ```
 
-テストは全部で234件。`.venv-trading/bin/python -m pytest trading/tests/ -q` で回る。
+テストは全部で239件。`.venv-trading/bin/python -m pytest trading/tests/ -q` で回る。
 
 ## 取引所につなぐ（発注はしない）
 

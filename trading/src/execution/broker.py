@@ -441,6 +441,28 @@ GMO_LEVERAGE_SYMBOLS = frozenset(
 )
 
 
+def plain_decimal(value: float) -> str:
+    """指数表記にせず、末尾の余計なゼロも付けずに数値を文字列にする。
+
+    ## なぜ専用の関数が要るのか
+
+    Python の `str()` は小さい数を**指数表記にする**。
+
+        str(0.00001)   → '1e-05'    ← 取引所に送ると弾かれる
+        str(9985024.0) → '9985024.0'
+
+    GMO の BTC 現物の最小注文数量は 0.00001 なので、
+    **最小数量で出すたびに `1e-05` になる**。つまり
+    「一番小さい注文から順に試す」という一番やりたい確認が、
+    そこだけ通らないことになる。
+
+    実際に接続確認でこの形が出て、送る前に気づいた。
+    送っていれば「署名は通るのに注文だけ弾かれる」となり、
+    署名を疑って時間を溶かしていた。
+    """
+    return format(Decimal(str(value)).normalize(), "f")
+
+
 @dataclass
 class GmoBroker:
     """GMOコインの API を叩く。**現物だけ。**
@@ -638,11 +660,11 @@ class GmoBroker:
             "symbol": self.symbol(order.pair),
             "side": "BUY" if order.side == "buy" else "SELL",
             "executionType": "LIMIT" if order.price is not None else "MARKET",
-            "size": str(order.amount),
+            # **指数表記で送らない。** 最小数量ほど指数表記になりやすい
+            "size": plain_decimal(order.amount),
         }
         if order.price is not None:
-            body["price"] = str(int(order.price)) if float(order.price).is_integer() \
-                else str(order.price)
+            body["price"] = plain_decimal(order.price)
         return body
 
     def place_order(self, order: Order) -> dict:

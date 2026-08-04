@@ -291,6 +291,42 @@ def test_rules_come_from_the_exchange_not_from_memory(monkeypatch):
     assert calls == ["/v1/symbols"], "毎回取りに行っています"
 
 
+def test_the_smallest_size_is_not_sent_in_scientific_notation(gmo):
+    """**`1e-05` を送らないこと。**
+
+    GMO の BTC 現物の最小注文数量は 0.00001。Python の `str()` は
+    これを `'1e-05'` にする。つまり**最小数量で出すたびに**指数表記になる。
+
+    「一番小さい注文から順に試す」のは、確認の手順として一番やりたいこと。
+    そこだけ通らないのが一番たちが悪い。しかも症状は「注文が弾かれる」なので、
+    署名を疑って時間を溶かすことになる。
+
+    実際に接続確認の出力にこの形が出た。送る前に気づけた。
+    """
+    gmo._rules["BTC"] = {**gmo._rules["BTC"], "minOrderSize": "0.00001",
+                         "sizeStep": "0.00001"}
+    body = gmo.order_body(gmo.conform(Order("btc_jpy", "buy", 0.00001, 9_985_024.0)))
+
+    assert body["size"] == "0.00001", f"指数表記です: {body['size']}"
+    assert "e" not in body["size"].lower()
+    assert "e" not in body["price"].lower()
+
+
+def test_a_whole_price_has_no_trailing_zero(gmo):
+    """刻みが1の銘柄で `9985024.0` と送らないこと。"""
+    body = gmo.order_body(Order("btc_jpy", "buy", 0.001, 9_985_024.0))
+    assert body["price"] == "9985024"
+
+
+def test_plain_decimal_covers_both_directions():
+    from trading.src.execution.broker import plain_decimal
+
+    assert plain_decimal(0.00001) == "0.00001"
+    assert plain_decimal(9_985_024.0) == "9985024"
+    assert plain_decimal(0.0001) == "0.0001"
+    assert plain_decimal(123.45) == "123.45"
+
+
 def test_placing_an_order_conforms_first(gmo, monkeypatch):
     """発注の直前に丸めること。丸め忘れた注文が取引所に届かないこと。"""
     sent = {}

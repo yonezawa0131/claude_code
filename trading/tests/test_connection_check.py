@@ -219,6 +219,36 @@ def test_the_result_is_recorded(spy, tmp_path):
     assert record["equity"] == pytest.approx(300_000.0 + 0.005 * 10_000_000.0)
 
 
+def test_an_empty_balance_is_not_reported_as_verified(spy, tmp_path, capsys):
+    """**資産が空のとき、「読めました」で済ませないこと。**
+
+    空の応答は2つのことを同時に意味しうる。
+
+      1. 口座に資産がない（正しく読めている）
+      2. 応答の解釈を間違えていて、何も拾えていない
+
+    区別がつかないのに「確かめられた」と書くと、
+    **確かめていないものを確かめたことにしてしまう。**
+    そのまま本番に進めば、残高を読み違えたまま注文を出すことになる。
+    """
+    spy.fetch_balances = lambda: {}
+    assert check_connection(["btc_jpy"], Journal(tmp_path / "j.jsonl")) == 0
+
+    out = capsys.readouterr().out
+    assert "資産が1件も返っていません" in out
+    assert "入金してから" in out
+    assert "**応答の解釈**（資産が空なので突き合わせられない）" in out
+    assert "この数字を取引所の画面と突き合わせて" not in out
+
+
+def test_a_populated_balance_asks_for_reconciliation(spy, tmp_path, capsys):
+    """資産があるときは、画面と突き合わせるよう言うこと。"""
+    check_connection(["btc_jpy"], Journal(tmp_path / "j.jsonl"))
+    out = capsys.readouterr().out
+    assert "取引所の画面と突き合わせて" in out
+    assert "資産が1件も返っていません" not in out
+
+
 def test_the_shown_amount_is_the_exchange_minimum(spy, tmp_path, capsys):
     """表示する数量が、最小数量であること。
 
