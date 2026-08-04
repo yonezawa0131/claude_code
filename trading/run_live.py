@@ -25,8 +25,8 @@
 ## 使い方
 
     # 取引所につながるかだけを確かめる（**1円も動かさない**）
-    BITBANK_API_KEY=... BITBANK_API_SECRET=... \
-        python trading/run_live.py --check-connection
+    GMO_API_KEY=... GMO_API_SECRET=... \
+        python trading/run_live.py --check-connection --exchange gmo
 
     # 配線の確認（発注しない）
     python trading/run_live.py --strategy equal_weight_btc --paper-capital 300000
@@ -52,9 +52,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from trading.src.execution.broker import (  # noqa: E402
     BitbankBroker,
     BrokerError,
+    GmoBroker,
     Order,
     PaperBroker,
 )
+
+#: 取引所ごとの実装。**どちらも実物に対して検証されていない**
+EXCHANGES = {"bitbank": BitbankBroker, "gmo": GmoBroker}
 from trading.src.execution.guards import (  # noqa: E402
     GuardContext,
     Limits,
@@ -93,12 +97,39 @@ TARGETS = {
 }
 
 #: bitbank の最小注文数量。**取引所の画面で確かめ直すこと。**
-#: ここを大きく見積もると、確認のために必要以上の額を動かすことになる
+#: ここを大きく見積もると、確認のために必要以上の額を動かすことになる。
+#: GMOコインは `/public/v1/symbols` から実際の値を読むので、この表を使わない
 MIN_ORDER_AMOUNT = {"btc_jpy": 0.0001, "eth_jpy": 0.0001, "xrp_jpy": 0.0001}
 DEFAULT_MIN_AMOUNT = 0.0001
 
 
-def check_connection(pairs: list[str], journal: Journal) -> int:
+def _credentials(exchange: str) -> tuple[str | None, str | None, str, str]:
+    """環境変数から鍵を読む。名前は取引所ごとに分ける。
+
+    同じ名前を使い回すと、bitbank の鍵で GMO に接続を試みることになる。
+    """
+    prefix = {"bitbank": "BITBANK", "gmo": "GMO"}[exchange]
+    key_name, secret_name = f"{prefix}_API_KEY", f"{prefix}_API_SECRET"
+    return os.environ.get(key_name), os.environ.get(secret_name), key_name, secret_name
+
+
+def _minimum_amount(broker, pair: str) -> tuple[float, str]:
+    """最小注文数量を、できるかぎり**取引所から**取る。
+
+    取れない取引所では、こちらが持っている表を使う。
+    どちらから来た値かは表示する。**出どころを隠さない。**
+    """
+    rules = getattr(broker, "trading_rules", None)
+    if rules is not None:
+        try:
+            row = rules(pair)
+            return float(row["minOrderSize"]), "取引所が公開している値"
+        except (BrokerError, KeyError, TypeError, ValueError):
+            pass
+    return MIN_ORDER_AMOUNT.get(pair, DEFAULT_MIN_AMOUNT), "**こちらの手持ちの表（未確認）**"
+
+
+def check_connection(pairs: list[str], journal: Journal, exchange: str = "bitbank") -> int:
     """**1円も動かさずに**、本番の配線がどこまで正しいかを確かめる。
 
     ## なぜこれを最初にやるのか
@@ -127,18 +158,31 @@ def check_connection(pairs: list[str], journal: Journal) -> int:
     **出金権限は付けないこと。** 取引権限だけで足りる。
     この確認に必要なのは資産照会だけであり、それすら読むだけになる。
     """
-    key = os.environ.get("BITBANK_API_KEY")
-    secret = os.environ.get("BITBANK_API_SECRET")
+    key, secret, key_name, secret_name = _credentials(exchange)
     if not key or not secret:
-        print("エラー: BITBANK_API_KEY と BITBANK_API_SECRET を環境変数で渡してください",
+        print(f"エラー: {key_name} と {secret_name} を環境変数で渡してください",
               file=sys.stderr)
         print("       出金権限は付けないこと。取引権限だけで足ります。", file=sys.stderr)
         return 1
 
-    broker = BitbankBroker(api_key=key, api_secret=secret)
+    broker = EXCHANGES[exchange](api_key=key, api_secret=secret)
     print(f"接続  : {broker.name}")
     print("**読むだけです。注文は出しません。**")
     print()
+
+    # --- 0. 取引所が開いているか -----------------------------------------
+    # メンテナンス中の失敗は配線の問題ではない。
+    # 切り分けられないと、直っているものを直そうとして時間を溶かす
+    status_of = getattr(broker, "exchange_status", None)
+    if status_of is not None:
+        try:
+            status = status_of()
+            print(f"0. 取引所の状態 — {status}")
+            if status != "OPEN":
+                print("   ※ いま開いていません。この先が失敗しても配線のせいとは限りません")
+        except BrokerError as exc:
+            print(f"0. 取引所の状態 — 取れませんでした（{exc}）")
+        print()
 
     # --- 1. 公開API（署名なし）------------------------------------------
     print("1. 公開API（署名なし）— 価格が取れるか")
@@ -194,15 +238,22 @@ def check_connection(pairs: list[str], journal: Journal) -> int:
     for pair in pairs:
         if pair not in prices:
             continue
-        amount = MIN_ORDER_AMOUNT.get(pair, DEFAULT_MIN_AMOUNT)
+        amount, source = _minimum_amount(broker, pair)
         # 現在値から離した指値。すぐには約定しない位置に置く想定
         order = Order(pair, "buy", amount, round(prices[pair] * 0.995))
+        conform = getattr(broker, "conform", None)
+        if conform is not None:
+            try:
+                order = conform(order)
+            except BrokerError as exc:
+                print(f"   {pair}: 注文ルールに合わせられませんでした — {exc}")
+                continue
         body = broker.order_body(order)
-        print(f"   POST /user/spot/order  {body}")
+        print(f"   POST {getattr(broker, 'order_path', '/v1/order')}  {body}")
         print(f"     ≒ {order.notional(prices[pair]):,.0f} 円相当"
-              f"（{pair} の最小数量として {amount} を仮定）")
+              f"（最小数量 {amount} / 出どころ: {source}）")
 
-    journal.write("connection_check", stage="private", ok=True,
+    journal.write("connection_check", exchange=exchange, stage="private", ok=True,
                   balances=balances, prices=prices, equity=equity)
 
     print()
@@ -234,6 +285,12 @@ def _price_ranges(
 
     1時間足で求める。取れなければ現在値で代用するが、
     その場合は約定を過小に見積もるので、呼び出し側でそう表示する。
+
+    ## 足の出どころは bitbank に固定してある
+
+    取引所をまたいだ値差のぶん、判定はわずかにずれる。ペーパーで確かめるのは
+    **配線であって成績ではない**ので許容するが、黙ってやると気づけない。
+    `--exchange` が bitbank でないときは、呼び出し側でその旨を表示する。
     """
     import datetime as _dt
     import json as _json
@@ -290,6 +347,8 @@ def main() -> int:
     p.add_argument("--check-connection", action="store_true",
                    help=("取引所につながるかだけを確かめる。**注文は出しません。**"
                          "戦略も検証記録も要りません"))
+    p.add_argument("--exchange", default="bitbank", choices=sorted(EXCHANGES),
+                   help="つなぐ取引所。鍵の環境変数名もこれで決まります")
     p.add_argument("--pairs", default="btc_jpy",
                    help="価格を取る銘柄（カンマ区切り）")
     p.add_argument("--state", type=Path, default=Path("trading/data/paper_state.json"),
@@ -317,9 +376,9 @@ def main() -> int:
 
     if args.check_connection:
         print("=" * 70)
-        print("接続確認  — 発注しません")
+        print(f"接続確認  {args.exchange}  — 発注しません")
         print("=" * 70)
-        return check_connection(pairs, journal)
+        return check_connection(pairs, journal, args.exchange)
 
     if not args.strategy:
         p.error("--strategy が必要です（--check-connection のときだけ省けます）")
@@ -332,13 +391,12 @@ def main() -> int:
 
     # --- 取引所につなぐ --------------------------------------------------
     if args.live:
-        key = os.environ.get("BITBANK_API_KEY")
-        secret = os.environ.get("BITBANK_API_SECRET")
+        key, secret, key_name, secret_name = _credentials(args.exchange)
         if not key or not secret:
-            print("エラー: BITBANK_API_KEY と BITBANK_API_SECRET を環境変数で渡してください",
+            print(f"エラー: {key_name} と {secret_name} を環境変数で渡してください",
                   file=sys.stderr)
             return 1
-        broker = BitbankBroker(api_key=key, api_secret=secret)
+        broker = EXCHANGES[args.exchange](api_key=key, api_secret=secret)
         print(f"接続  : {broker.name}")
         if broker.unverified:
             print("  ※ この発注経路は実物に対して検証されていません。")
@@ -358,8 +416,8 @@ def main() -> int:
         if args.live:
             print(f"エラー: 価格を取得できません。{exc}", file=sys.stderr)
             return 1
-        from trading.src.execution.broker import BitbankBroker as _Pub
-        pub = _Pub(api_key="", api_secret="")
+        # ペーパーでも価格は本物を使う。取引所は選んだものに合わせる
+        pub = EXCHANGES[args.exchange](api_key="", api_secret="")
         try:
             prices = {pair: pub.fetch_price(pair) for pair in pairs}
         except BrokerError as exc2:
@@ -379,6 +437,9 @@ def main() -> int:
         else:
             print(f"  板に {len(pending)} 件残っています。"
                   "置いてからの値動きで約定を判定します")
+            if args.exchange != "bitbank":
+                print("  ※ 約定判定に使う足は bitbank のものです。"
+                      f"価格は {args.exchange} から取っているので、わずかにずれます")
             # **瞬間の価格ではなく、前回からの値動きの幅で判定する。**
             # 一度でも指値に触れていれば約定しているので、
             # 瞬間値で見ると「約定しなかった」と嘘をつくことになる

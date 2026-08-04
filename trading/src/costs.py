@@ -106,10 +106,12 @@ class CostModel:
 # 販売所でのデイトレードは、下の数字を見れば分かるとおり成立しない。
 # ---------------------------------------------------------------------------
 
-#: GMOコイン 取引所形式（BTC/ETH/XRP/DAI）
-#: Maker -0.01% / Taker 0.05% は公開情報で確認できた
+#: GMOコイン 取引所形式・**現物**（BTC/ETH/XRP/DAI）
+#: Maker -0.01% / Taker 0.05% は公開情報で確認できた。
+#: **銘柄名は BTC。** GMO で `BTC_JPY` と書くとレバレッジを指し、
+#: 建玉に1日0.04%かかる別物になる（`execution/broker.py` の対応表を参照）
 GMO_EXCHANGE = CostModel.from_bps(
-    name="GMOコイン（取引所・BTC_JPY）",
+    name="GMOコイン（取引所・BTC現物）",
     taker_fee_bps=5.0,
     maker_fee_bps=-1.0,
     half_spread_bps=2.0,

@@ -227,7 +227,7 @@ trading/
     cross_section.py 銘柄横断の検定（ベータの罠を避ける）
     goal.py         目標を達成条件に翻訳（元本・税制・コスト・優位性）
     execution/      執行基盤
-      broker.py     取引所（ペーパー / bitbank）
+      broker.py     取引所（ペーパー / bitbank / GMOコイン現物）
       reconcile.py  目標と現在の差分から注文を作る
       guards.py     本番の関門（検証済みか・上限・損失制限）
       journal.py    追記専用の記録
@@ -255,37 +255,48 @@ trading/
     test_goal.py           目標の分解（元本・税制のレバー）
     test_execution_live.py 執行基盤（発注を止められるか）
     test_connection_check.py 接続確認（1円も動かさないこと）
+    test_gmo.py            GMOコイン（現物とレバレッジの取り違え）
   run_backtest.py     CLI（検証）
   run_live.py         CLI（執行。既定はペーパー）
 ```
 
-テストは全部で215件。`.venv-trading/bin/python -m pytest trading/tests/ -q` で回る。
+テストは全部で234件。`.venv-trading/bin/python -m pytest trading/tests/ -q` で回る。
 
 ## 取引所につなぐ（発注はしない）
 
-`BitbankBroker` は `unverified=True` のまま置いてある。この開発環境から
-取引所に到達できないため、署名の組み立ても応答の解釈も
-**実物に対して一度も確かめていない**。
+対応するのは **bitbank** と **GMOコイン（取引所・現物）**。
+どちらも `unverified=True` のまま置いてある。この開発環境から取引所に
+到達できないため、署名の組み立ても応答の解釈も**実物に対して一度も確かめていない**。
 
-確かめるのに発注は要らない。署名の仕組み（nonce・HMAC・ヘッダ名）は
+確かめるのに発注は要らない。署名の仕組み（時刻・HMAC・ヘッダ名）は
 読み取りと発注で共通なので、**読むだけの呼び出しが通れば鍵と署名は確定する**。
 
 ```bash
 # APIキーは【取引権限だけ】。**出金権限は絶対に付けないこと**
+GMO_API_KEY=... GMO_API_SECRET=... \
+    .venv-trading/bin/python trading/run_live.py --check-connection --exchange gmo
+
+# bitbank なら
 BITBANK_API_KEY=... BITBANK_API_SECRET=... \
     .venv-trading/bin/python trading/run_live.py --check-connection
 ```
 
 出るもの:
 
+0. 取引所が開いているか（GMOのみ。メンテ中の失敗は配線のせいではない）
 1. 公開APIで価格が取れるか（署名なし）
 2. 私設APIで資産が読めるか（署名あり）→ **取引所の画面と突き合わせること**
 3. 最小数量で発注するときの本文。**組み立てて表示するだけで、送らない**
 
 3 は `place_order` が実際に送るのと同じ関数で作っているので、表示と送信内容はずれない。
+最小数量は、GMOなら `/public/v1/symbols` から**取引所の値を読む**。
 残る未検証は「発注の応答の解釈」だけになる。
 
 戦略も検証記録も要らない。**この確認と、本番で動かしてよいかは別の問題になる。**
+
+手順の詳細と、GMO特有の落とし穴は `docs/10-GMOコインAPI接続手順.md` に書いた。
+要点は1つ、**`BTC` が現物で `BTC_JPY` はレバレッジ**になる。取り違えると、
+現物を買ったつもりで建玉を持ち、1日0.04%を払い続けることになる。
 
 ## 数字についての注意
 
@@ -316,6 +327,7 @@ BITBANK_API_KEY=... BITBANK_API_SECRET=... \
 
 口座とAPIキーがあるなら、5と並行して `run_live.py --check-connection` を通しておける。
 **発注しないので、戦略が見つかるかどうかとは独立に進められる。**
+GMOコインの手順は `docs/10-GMOコインAPI接続手順.md` にある。
 
 **どの期間でも買い持ちを上回る戦略が見つからなければ、そこで止める。**
 見つからないと分かることが、この基盤の一番の成果になりうる。

@@ -24,7 +24,12 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from trading.run_live import MIN_ORDER_AMOUNT, check_connection, main  # noqa: E402
+from trading.run_live import (  # noqa: E402
+    EXCHANGES,
+    MIN_ORDER_AMOUNT,
+    check_connection,
+    main,
+)
 from trading.src.execution.broker import BitbankBroker, BrokerError, Order  # noqa: E402
 from trading.src.execution.journal import Journal  # noqa: E402
 
@@ -107,7 +112,7 @@ class _ReadOnlyBroker:
 @pytest.fixture
 def spy(monkeypatch, tmp_path):
     watcher = _ReadOnlyBroker()
-    monkeypatch.setattr("trading.run_live.BitbankBroker", lambda **_kw: watcher)
+    monkeypatch.setitem(EXCHANGES, "bitbank", lambda **_kw: watcher)
     monkeypatch.setenv("BITBANK_API_KEY", "key")
     monkeypatch.setenv("BITBANK_API_SECRET", "secret")
     return watcher
@@ -143,8 +148,8 @@ def test_the_check_needs_no_strategy_and_no_validation(spy, tmp_path, monkeypatc
 def test_missing_credentials_stop_before_any_call(monkeypatch, tmp_path, capsys):
     monkeypatch.delenv("BITBANK_API_KEY", raising=False)
     monkeypatch.delenv("BITBANK_API_SECRET", raising=False)
-    monkeypatch.setattr(
-        "trading.run_live.BitbankBroker",
+    monkeypatch.setitem(
+        EXCHANGES, "bitbank",
         lambda **_kw: pytest.fail("鍵がないのに接続しようとしました"),
     )
     journal = Journal(tmp_path / "j.jsonl")
