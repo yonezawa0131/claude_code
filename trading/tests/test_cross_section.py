@@ -328,3 +328,54 @@ def test_robustness_needs_enough_periods():
     result.top = result.top.iloc[:3]
     result.bottom = result.bottom.iloc[:3]
     assert "測れません" in result.robustness()
+
+
+# ---------------------------------------------------------------------------
+# 反転の陽性対照
+# ---------------------------------------------------------------------------
+
+
+def test_flipping_the_theme_sign_does_not_create_reversal():
+    """**テーマの符号を変えても反転にはならない。**
+
+    テーマは対称なゆらぎなので、符号を変えても「持続する固有の動き」のままで、
+    順位づけはやはりモメンタムを拾う。
+
+    ここを取り違えると、反転の検定器を壊れたまま使うことになる。
+    実際に一度、符号を反転させた対照で「合格するはず」と考えて外した。
+    """
+    flipped = _run(_panel(theme_scale=-0.010))
+    assert flipped.spread.mean() > 0, "符号を変えただけで反転になってしまっています"
+
+
+def test_a_real_reversal_is_generated_and_detected():
+    """前の期間のリターンを次の期間から引くと、はじめて反転になる。"""
+    reversed_panel = _panel(theme_scale=0.0, reversal=0.6)
+    result = _run(reversed_panel)
+    assert result.spread.mean() < 0
+    assert _t(result.spread) < -4.0, f"t = {_t(result.spread):.2f}"
+
+
+def test_reversal_strength_scales_the_spread():
+    spreads = [
+        _run(_panel(theme_scale=0.0, reversal=r)).spread.mean()
+        for r in (0.0, 0.3, 0.6, 0.9)
+    ]
+    assert spreads == sorted(spreads, reverse=True), spreads
+
+
+def test_the_randomisation_test_is_what_discriminates():
+    """**無作為割当が判別を担っていること。**
+
+    反転なしの対照では「上位−下位が負」「前後半で符号一致」「1期に
+    支配されていない」がどれも偶然通りうる。無作為割当だけが弾く。
+
+    だから反転の検定では、これを主判定にしてある。
+    """
+    from trading.src.cross_section import random_group_null
+
+    absent = random_group_null(_panel(theme_scale=0.0), n_runs=120)
+    present = random_group_null(_panel(theme_scale=0.0, reversal=0.6), n_runs=120)
+
+    assert present.percentile <= 5.0, f"反転を検出できていません（下位 {present.percentile:.1f}%）"
+    assert absent.percentile > 5.0, f"反転がないのに検出しています（下位 {absent.percentile:.1f}%）"

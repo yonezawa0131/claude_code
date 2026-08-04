@@ -55,6 +55,8 @@ def make_panel(
     market_drift: float = 0.0,
     market_vol: float = 0.030,
     idio_vol: float = 0.030,
+    reversal: float = 0.0,
+    reversal_period: int = 7,
 ) -> dict[str, pd.DataFrame]:
     """銘柄ごとの日足 OHLCV を作って返す。
 
@@ -66,6 +68,16 @@ def make_panel(
         ベータのばらつき。0なら全銘柄が同じ感応度
     market_drift:
         市場の日次ドリフト。正にすると強気相場になる
+    reversal:
+        **横断の反転**の強さ。前の期間に上がった銘柄ほど、次の期間で下がる。
+
+        テーマの符号を反転させても反転相場にはならない。テーマは対称な
+        ゆらぎなので、符号を変えても「持続する固有の動き」のままになり、
+        順位づけはやはりモメンタムを拾う。
+
+        反転を作るには、**前の期間のリターンそのものを次の期間から引く**必要がある。
+    reversal_period:
+        何日ぶんのリターンを、次の何日から引くか
     """
     if n_assets < 4:
         raise ValueError("銘柄数は4以上にしてください")
@@ -84,6 +96,14 @@ def make_panel(
 
     idio = idio_vol * rng.standard_normal((n_days, n_assets))
     returns = market[:, None] * betas[None, :] + theme_scale * theme + idio
+
+    if reversal != 0.0:
+        # 前の期間の固有リターンを、次の期間から引く。
+        # 市場成分は引かない（引くと市場そのものが反転してしまう）
+        own = theme_scale * theme + idio
+        for start in range(reversal_period, n_days - reversal_period + 1, reversal_period):
+            prev = own[start - reversal_period : start].sum(axis=0)
+            returns[start : start + reversal_period] -= reversal * prev / reversal_period
 
     log_prices = np.log(100_000.0) + np.cumsum(returns, axis=0)
     closes = np.exp(log_prices)
@@ -120,6 +140,8 @@ def _parse_args() -> argparse.Namespace:
                    help="テーマ成分の大きさ（0で横断モメンタムなし）")
     p.add_argument("--beta-spread", type=float, default=0.0, help="ベータのばらつき")
     p.add_argument("--market-drift", type=float, default=0.0, help="市場の日次ドリフト")
+    p.add_argument("--reversal", type=float, default=0.0,
+                   help="横断の反転の強さ（前期間に上がった銘柄が次期間に下がる）")
     p.add_argument("--out-dir", type=str, required=True, help="出力ディレクトリ")
     return p.parse_args()
 
@@ -132,6 +154,7 @@ def main() -> None:
             theme_scale=args.theme,
             beta_spread=args.beta_spread,
             market_drift=args.market_drift,
+            reversal=args.reversal,
         )
     except ValueError as exc:
         print(f"エラー: {exc}", file=sys.stderr)
