@@ -87,6 +87,7 @@ def build_orders(
     prices: dict[str, float],
     min_trade_jpy: float = 2_000.0,
     limit_offset: float | None = 0.0005,
+    buy_fee: float = 0.0012,
 ) -> tuple[list[Order], float]:
     """目標と現在の差分から注文を作る。
 
@@ -100,6 +101,13 @@ def build_orders(
         None なら成行。**既定は指値**にしてある。
         週次のような入れ替えなら約定を待つ時間があり、
         この基盤の測定では往復コストが 0.18% からほぼ0まで下がる
+    buy_fee:
+        買いにかかる手数料率。**この分だけ買付額を減らす。**
+
+        比率100%を指示されたとき、資金を全部使って買おうとすると
+        手数料を払う現金が残らず、取引所に拒否される。
+        「100%投じる」は「手数料込みで100%」の意味になる。
+        受け取り（負の手数料）のときは余裕を取らない
 
     Returns
     -------
@@ -125,7 +133,11 @@ def build_orders(
             continue
 
         side = "buy" if diff > 0 else "sell"
-        amount = abs(diff) / price
+        notional = abs(diff)
+        if side == "buy" and buy_fee > 0:
+            # 手数料を払う現金を残す。残さないと取引所に拒否される
+            notional /= 1.0 + buy_fee
+        amount = notional / price
         if limit_offset is None:
             limit = None
         else:

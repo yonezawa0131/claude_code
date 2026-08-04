@@ -158,6 +158,21 @@ def main() -> int:
             return 1
         broker.set_prices(prices)
 
+    # 板に残っている注文を、まず片付ける。
+    #   1. 価格が届いていたものは約定させる
+    #   2. 届かなかったものは取り消して資金を戻す
+    # これをやらないと、前回の指値に資金が取られたまま新しい注文を出すことになる
+    if isinstance(broker, PaperBroker):
+        broker.set_prices(prices)
+        for fill in broker.settle(prices):
+            print(f"  約定していました: {fill['side']} {fill['pair']} "
+                  f"{fill['amount']:.8f} @ {fill['price']:,.0f}")
+            journal.write("settled", **fill)
+        cancelled = broker.cancel_all()
+        if cancelled:
+            print(f"  板に残っていた {cancelled} 件を取り消しました（約定しなかった指値）")
+            journal.write("cancelled", count=cancelled)
+
     balances = broker.fetch_balances()
     weights, equity = current_weights(balances, prices)
     exposure = exposure_jpy(balances, prices)
@@ -225,17 +240,21 @@ def main() -> int:
     # --- 5. 執行 ----------------------------------------------------------
     if not args.live:
         print()
-        print("ペーパーなので、そのまま反映します（発注はしていません）。")
+        print("ペーパーなので、板に置くところまでを再現します（発注はしていません）。")
+        resting = 0
         for o in orders:
             try:
-                broker.place_order(o)
-                journal.write("paper_fill", **o.__dict__)
+                response = broker.place_order(o)
+                journal.write("paper_order", status=response["status"], **o.__dict__)
+                if response["status"] == "resting":
+                    resting += 1
             except BrokerError as exc:
                 print(f"  スキップ: {o.pair} {o.side} — {exc}")
                 journal.write("paper_reject", reason=str(exc), **o.__dict__)
-        after = broker.fetch_balances()
-        _, new_equity = current_weights(after, prices)
-        print(f"\n反映後の総資産: {new_equity:,.0f} 円")
+        if resting:
+            print(f"  {resting} 件を板に置きました。"
+                  "**指値なので、価格が届くまで約定しません。**")
+            print("  次に実行したときに、届いていれば約定します。")
         return 0
 
     if violations:

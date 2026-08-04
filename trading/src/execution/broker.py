@@ -87,78 +87,201 @@ class PaperBroker:
 
     **既定はこちら。** 本番は明示的に選ばないと動かない。
 
-    価格は外から与える（`set_prices`）。バックテストではなく、
-    「配線が正しいか」を確かめるためのものになる。
-    約定は指値でも即時・全量成立として扱うので、
-    **成績の見積もりには使えない**。それはバックテスト側の仕事になる。
+    ## 指値は、その値段に来るまで約定しない
+
+    最初の実装は、指値を出した瞬間にその指値価格で約定させていた。
+    現在値 9,989,404 円のときに 9,984,409 円の買い指値を出すと、
+    **出した瞬間に 0.05% 得をする**計算になり、
+    30万円の口座が1回の売買で 300,150 円になった。
+
+    これは**この基盤がバックテスト側で見つけて直したのと同じ誤り**になる
+    （`docs/02` の項目2、`backtest.MakerFill`）。片方で直して、片方で再現させた。
+
+    指値が約定するのは「価格が自分のところまで来たとき」だけになる。
+    だからここでは、指値注文を**板に置いたまま保持し**、
+    次に価格を受け取ったときに届いていれば約定させる。届かなければ残る。
+
+    この違いは無視できない。**約定しない指値がある**という事実こそ、
+    この基盤が測って「1回きりの機会を狙う戦略では指値が成行より悪くなる」
+    という結論を出した根拠になっている。
+
+    ## 手数料も乗せる
+
+    メイカーは受け取り（bitbank は −0.02%）、テイカーは支払い（0.12%）。
+    ゼロにしておくと、成績が実際より良く出る。
+
+    ## それでもこれは成績の見積もりには使えない
+
+    板の厚みも、キューの順番も、部分約定も入っていない。
+    ここで確かめるのは**配線が正しいか**だけになる。
     """
 
     state_path: Path
     name: str = "ペーパー（発注しません）"
+    #: メイカー手数料（負なら受け取り）。bitbank の実料率
+    fee_maker: float = -0.0002
+    #: テイカー手数料
+    fee_taker: float = 0.0012
     _prices: dict[str, float] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         self.state_path = Path(self.state_path)
         if not self.state_path.exists():
             os.makedirs(self.state_path.parent, exist_ok=True)
-            self._save({"jpy": 0.0})
+            self._save({"balances": {"jpy": 0.0}, "open_orders": []})
 
-    def _load(self) -> dict[str, float]:
+    def _load(self) -> dict:
         with open(self.state_path, encoding="utf-8") as fh:
-            return {k: float(v) for k, v in json.load(fh).items()}
+            state = json.load(fh)
+        # 旧形式（残高だけ）からの読み替え
+        if "balances" not in state:
+            state = {"balances": state, "open_orders": []}
+        state["balances"] = {k: float(v) for k, v in state["balances"].items()}
+        state.setdefault("open_orders", [])
+        return state
 
-    def _save(self, balances: dict[str, float]) -> None:
+    def _save(self, state: dict) -> None:
         with open(self.state_path, "w", encoding="utf-8") as fh:
-            json.dump(balances, fh, ensure_ascii=False, indent=2, sort_keys=True)
+            json.dump(state, fh, ensure_ascii=False, indent=2, sort_keys=True)
 
     def set_prices(self, prices: dict[str, float]) -> None:
         self._prices = dict(prices)
 
     def deposit(self, currency: str, amount: float) -> None:
         """初期資金を置く。ペーパー用。"""
-        balances = self._load()
-        balances[currency] = balances.get(currency, 0.0) + amount
-        self._save(balances)
+        state = self._load()
+        state["balances"][currency] = state["balances"].get(currency, 0.0) + amount
+        self._save(state)
 
     def fetch_balances(self) -> dict[str, float]:
-        return self._load()
+        """**注文に取られていない**残高を返す。
+
+        指値を出して板に置いている間、その資金は使えない。
+        使える額として返すと、二重に使えることになる。
+        """
+        return dict(self._load()["balances"])
+
+    def open_orders(self) -> list[dict]:
+        return list(self._load()["open_orders"])
 
     def fetch_price(self, pair: str) -> float:
         if pair not in self._prices:
             raise BrokerError(f"価格が設定されていません: {pair}（set_prices を呼んでください）")
         return self._prices[pair]
 
-    def place_order(self, order: Order) -> dict:
-        base = order.pair.split("_")[0]
-        quote = order.pair.split("_")[1]
-        price = order.price if order.price is not None else self.fetch_price(order.pair)
-        cost = order.amount * price
+    def _apply_fill(
+        self, balances: dict, pair: str, side: str, amount: float, price: float, fee: float
+    ) -> None:
+        """約定を残高に反映する。予約済みの資金は差し引き済みとして扱う。"""
+        base, quote = pair.split("_")
+        gross = amount * price
+        if side == "buy":
+            # 予約時に quote を引いてあるので、ここでは受け取りだけ
+            balances[base] = balances.get(base, 0.0) + amount
+            balances[quote] = balances.get(quote, 0.0) - gross * fee
+        else:
+            balances[quote] = balances.get(quote, 0.0) + gross - gross * fee
 
-        balances = self._load()
+    def place_order(self, order: Order) -> dict:
+        state = self._load()
+        balances = state["balances"]
+        base, quote = order.pair.split("_")
+
+        if order.price is None:
+            # 成行は即時。テイカー手数料
+            price = self.fetch_price(order.pair)
+            need = order.amount * price
+            if order.side == "buy":
+                if balances.get(quote, 0.0) < need * (1 + self.fee_taker):
+                    raise BrokerError(
+                        f"{quote} が足りません"
+                        f"（必要 {need:,.0f} / 保有 {balances.get(quote, 0.0):,.0f}）"
+                    )
+                balances[quote] = balances.get(quote, 0.0) - need
+            else:
+                if balances.get(base, 0.0) < order.amount - 1e-12:
+                    raise BrokerError(
+                        f"{base} が足りません"
+                        f"（必要 {order.amount} / 保有 {balances.get(base, 0.0)}）"
+                    )
+                balances[base] = balances.get(base, 0.0) - order.amount
+            self._apply_fill(balances, order.pair, order.side, order.amount, price, self.fee_taker)
+            self._save(state)
+            return {"paper": True, "status": "filled", "pair": order.pair,
+                    "side": order.side, "amount": order.amount, "price": price,
+                    "type": "market"}
+
+        # 指値は板に置くだけ。資金を予約して、約定は価格が来るまで待つ
+        need = order.amount * order.price
         if order.side == "buy":
-            if balances.get(quote, 0.0) < cost:
+            if balances.get(quote, 0.0) < need:
                 raise BrokerError(
-                    f"{quote} が足りません（必要 {cost:,.0f} / 保有 {balances.get(quote, 0.0):,.0f}）"
+                    f"{quote} が足りません"
+                    f"（必要 {need:,.0f} / 保有 {balances.get(quote, 0.0):,.0f}）"
                 )
-            balances[quote] = balances.get(quote, 0.0) - cost
-            balances[base] = balances.get(base, 0.0) + order.amount
+            balances[quote] = balances.get(quote, 0.0) - need
         else:
             if balances.get(base, 0.0) < order.amount - 1e-12:
                 raise BrokerError(
-                    f"{base} が足りません（必要 {order.amount} / 保有 {balances.get(base, 0.0)}）"
+                    f"{base} が足りません"
+                    f"（必要 {order.amount} / 保有 {balances.get(base, 0.0)}）"
                 )
             balances[base] = balances.get(base, 0.0) - order.amount
-            balances[quote] = balances.get(quote, 0.0) + cost
-        self._save(balances)
 
-        return {
-            "paper": True,
-            "pair": order.pair,
-            "side": order.side,
-            "amount": order.amount,
-            "price": price,
-            "type": order.order_type,
-        }
+        state["open_orders"].append({
+            "pair": order.pair, "side": order.side,
+            "amount": order.amount, "price": order.price,
+        })
+        self._save(state)
+        return {"paper": True, "status": "resting", "pair": order.pair,
+                "side": order.side, "amount": order.amount, "price": order.price,
+                "type": "limit"}
+
+    def settle(self, prices: dict[str, float]) -> list[dict]:
+        """価格が指値に届いていれば約定させる。届いていなければ残す。
+
+        **ここが「指値は必ず約定する」を否定している箇所になる。**
+        """
+        state = self._load()
+        balances, resting = state["balances"], state["open_orders"]
+        filled, still_open = [], []
+
+        for o in resting:
+            price = prices.get(o["pair"])
+            if price is None:
+                still_open.append(o)
+                continue
+            reached = price <= o["price"] if o["side"] == "buy" else price >= o["price"]
+            if not reached:
+                still_open.append(o)
+                continue
+            self._apply_fill(
+                balances, o["pair"], o["side"], o["amount"], o["price"], self.fee_maker
+            )
+            filled.append({**o, "status": "filled", "fee": self.fee_maker})
+
+        state["open_orders"] = still_open
+        self._save(state)
+        return filled
+
+    def cancel_all(self) -> int:
+        """板に置いた注文を全部取り消し、予約していた資金を戻す。
+
+        入れ替えのたびに古い注文を消してから出し直す。
+        残したまま新しい注文を出すと、資金が二重に取られる。
+        """
+        state = self._load()
+        balances = state["balances"]
+        for o in state["open_orders"]:
+            base, quote = o["pair"].split("_")
+            if o["side"] == "buy":
+                balances[quote] = balances.get(quote, 0.0) + o["amount"] * o["price"]
+            else:
+                balances[base] = balances.get(base, 0.0) + o["amount"]
+        count = len(state["open_orders"])
+        state["open_orders"] = []
+        self._save(state)
+        return count
 
 
 @dataclass

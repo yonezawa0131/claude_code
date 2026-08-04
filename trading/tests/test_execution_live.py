@@ -83,7 +83,7 @@ def test_state_comes_from_the_broker_not_from_memory(broker, tmp_path):
     毎回読み直すなら壊れない。
     """
     target = TargetPortfolio(weights={"btc_jpy": 1.0})
-    orders, _ = build_orders(target, broker.fetch_balances(), PRICES)
+    orders, _ = build_orders(target, broker.fetch_balances(), PRICES, limit_offset=None)
     for o in orders:
         broker.place_order(o)
 
@@ -91,7 +91,7 @@ def test_state_comes_from_the_broker_not_from_memory(broker, tmp_path):
     outside = PaperBroker(state_path=tmp_path / "state.json")
     outside.set_prices(PRICES)
     held = outside.fetch_balances()["btc"]
-    outside.place_order(Order("btc_jpy", "sell", held / 2, PRICES["btc_jpy"]))
+    outside.place_order(Order("btc_jpy", "sell", held / 2, None))
 
     # 何も伝えていないのに、次の差分は正しく「買い戻し」になる
     again, _ = build_orders(target, broker.fetch_balances(), PRICES)
@@ -124,19 +124,19 @@ def test_running_twice_does_not_trade_twice(broker):
     """
     target = TargetPortfolio(weights={"btc_jpy": 1.0})
 
-    first, _ = build_orders(target, broker.fetch_balances(), PRICES)
+    first, _ = build_orders(target, broker.fetch_balances(), PRICES, limit_offset=None)
     assert first, "1回目は注文が出るはず"
     for o in first:
         broker.place_order(o)
 
-    second, _ = build_orders(target, broker.fetch_balances(), PRICES)
+    second, _ = build_orders(target, broker.fetch_balances(), PRICES, limit_offset=None)
     assert second == [], f"2回目に {len(second)} 件出ています"
 
 
 def test_small_differences_are_not_traded(broker):
     """わずかなずれを追いかけないこと。動くこと自体にコストがかかる。"""
     target = TargetPortfolio(weights={"btc_jpy": 1.0})
-    for o in build_orders(target, broker.fetch_balances(), PRICES)[0]:
+    for o in build_orders(target, broker.fetch_balances(), PRICES, limit_offset=None)[0]:
         broker.place_order(o)
 
     nudged = TargetPortfolio(weights={"btc_jpy": 0.999})
@@ -293,20 +293,142 @@ def test_journal_records_the_inputs_behind_a_decision(tmp_path):
 
 def test_paper_broker_cannot_spend_money_it_does_not_have(broker):
     with pytest.raises(BrokerError, match="足りません"):
-        broker.place_order(Order("btc_jpy", "buy", 1.0, 10_000_000.0))
+        broker.place_order(Order("btc_jpy", "buy", 1.0, None))
 
 
 def test_paper_broker_cannot_sell_what_it_does_not_hold(broker):
     with pytest.raises(BrokerError, match="足りません"):
-        broker.place_order(Order("btc_jpy", "sell", 1.0, 10_000_000.0))
+        broker.place_order(Order("btc_jpy", "sell", 1.0, None))
 
 
-def test_paper_round_trip_conserves_value(broker):
+def test_paper_round_trip_costs_only_the_fee(broker):
+    """成行の往復で、減るのは手数料ぶんだけであること。"""
     before = broker.fetch_balances()["jpy"]
-    broker.place_order(Order("btc_jpy", "buy", 0.01, 10_000_000.0))
-    broker.place_order(Order("btc_jpy", "sell", 0.01, 10_000_000.0))
-    assert broker.fetch_balances()["jpy"] == pytest.approx(before)
+    broker.place_order(Order("btc_jpy", "buy", 0.01, None))
+    broker.place_order(Order("btc_jpy", "sell", 0.01, None))
+    after = broker.fetch_balances()["jpy"]
+    expected_fee = 0.01 * 10_000_000.0 * broker.fee_taker * 2
+    assert before - after == pytest.approx(expected_fee, rel=1e-6)
 
 
 def test_exposure_excludes_cash():
     assert exposure_jpy({"jpy": 500_000.0, "btc": 0.05}, PRICES) == pytest.approx(500_000.0)
+
+
+# ---------------------------------------------------------------------------
+# 指値は、その値段に来るまで約定しない
+# ---------------------------------------------------------------------------
+
+
+def test_a_limit_order_does_not_fill_on_placement(broker):
+    """**最初の実装が作っていたバグの再発防止。**
+
+    現在値より下に買い指値を置いた瞬間に約定させると、
+    その差額が利益として計上される。30万円の口座が1回の売買で
+    300,150円になり、**0.05%が何もないところから生まれていた**。
+
+    バックテスト側で同じ誤りを見つけて直したのに、執行側で再現させた。
+    """
+    before = broker.fetch_balances()["jpy"]
+    limit = PRICES["btc_jpy"] * 0.9995
+
+    response = broker.place_order(Order("btc_jpy", "buy", 0.01, limit))
+    assert response["status"] == "resting", "出した瞬間に約定しています"
+    assert broker.fetch_balances().get("btc", 0.0) == 0.0
+
+    # 資金は予約されるだけ。増えも減りもしない
+    reserved = 0.01 * limit
+    assert broker.fetch_balances()["jpy"] == pytest.approx(before - reserved)
+
+
+def test_equity_does_not_change_from_merely_placing_an_order(broker):
+    """注文を出しただけで総資産が動かないこと。
+
+    ここが動くなら、どこかで値段を作っている。
+    """
+    _, before = current_weights(broker.fetch_balances(), PRICES)
+    limit = PRICES["btc_jpy"] * 0.9995
+    broker.place_order(Order("btc_jpy", "buy", 0.01, limit))
+
+    balances = broker.fetch_balances()
+    reserved = sum(o["amount"] * o["price"] for o in broker.open_orders())
+    _, after = current_weights(balances, PRICES)
+    assert after + reserved == pytest.approx(before)
+
+
+def test_a_limit_order_fills_only_when_the_price_arrives(broker):
+    limit = PRICES["btc_jpy"] * 0.99
+    broker.place_order(Order("btc_jpy", "buy", 0.01, limit))
+
+    # まだ届いていない
+    assert broker.settle({"btc_jpy": PRICES["btc_jpy"]}) == []
+    assert len(broker.open_orders()) == 1
+
+    # 届いた
+    fills = broker.settle({"btc_jpy": limit - 1})
+    assert len(fills) == 1
+    assert broker.open_orders() == []
+    assert broker.fetch_balances()["btc"] == pytest.approx(0.01)
+
+
+def test_a_sell_limit_fills_only_when_the_price_rises_to_it(broker):
+    broker.place_order(Order("btc_jpy", "buy", 0.01, None))
+    limit = PRICES["btc_jpy"] * 1.01
+    broker.place_order(Order("btc_jpy", "sell", 0.01, limit))
+
+    assert broker.settle({"btc_jpy": PRICES["btc_jpy"]}) == []
+    assert len(broker.settle({"btc_jpy": limit + 1})) == 1
+
+
+def test_cancelling_returns_the_reserved_funds(broker):
+    before = broker.fetch_balances()["jpy"]
+    broker.place_order(Order("btc_jpy", "buy", 0.01, PRICES["btc_jpy"] * 0.99))
+    assert broker.fetch_balances()["jpy"] < before
+
+    assert broker.cancel_all() == 1
+    assert broker.fetch_balances()["jpy"] == pytest.approx(before)
+    assert broker.open_orders() == []
+
+
+def test_reserved_funds_cannot_be_spent_twice(broker):
+    """板に置いた注文の資金を、別の注文に使えないこと。"""
+    limit = PRICES["btc_jpy"] * 0.99
+    broker.place_order(Order("btc_jpy", "buy", 0.1, limit))  # 約99万円を予約
+    with pytest.raises(BrokerError, match="足りません"):
+        broker.place_order(Order("btc_jpy", "buy", 0.1, limit))
+
+
+def test_a_maker_fill_earns_the_rebate(broker):
+    """メイカーの受け取りが反映されること。ゼロにすると成績が良く出る。"""
+    limit = PRICES["btc_jpy"] * 0.99
+    broker.place_order(Order("btc_jpy", "buy", 0.01, limit))
+    before = broker.fetch_balances()["jpy"]
+    broker.settle({"btc_jpy": limit})
+    after = broker.fetch_balances()["jpy"]
+    # 手数料が負（受け取り）なので現金は増える
+    assert after - before == pytest.approx(-0.01 * limit * broker.fee_maker)
+
+
+def test_a_full_allocation_leaves_room_for_the_fee(broker):
+    """比率100%の指示で、手数料を払う現金が残ること。
+
+    資金を全部使って買おうとすると、手数料ぶんが足りず取引所に拒否される。
+    最初の実装はこれで失敗した。「100%投じる」は「手数料込みで100%」になる。
+    """
+    orders, _ = build_orders(
+        TargetPortfolio(weights={"btc_jpy": 1.0}),
+        broker.fetch_balances(), PRICES, limit_offset=None,
+    )
+    # 拒否されずに通ること
+    for o in orders:
+        broker.place_order(o)
+    assert broker.fetch_balances()["jpy"] >= 0.0
+
+
+def test_a_rebate_needs_no_buffer():
+    """受け取り（負の手数料）のときは余裕を取らないこと。"""
+    full, _ = build_orders(
+        TargetPortfolio(weights={"btc_jpy": 1.0}), {"jpy": 1_000_000.0}, PRICES,
+        limit_offset=None, buy_fee=-0.0002,
+    )
+    assert full[0].amount == pytest.approx(1_000_000.0 / PRICES["btc_jpy"])
