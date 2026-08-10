@@ -665,6 +665,19 @@ class GmoBroker:
         }
         if order.price is not None:
             body["price"] = plain_decimal(order.price)
+            # **板に並ぶ注文だけを出す。**
+            #
+            # SOK（Post-Only）は、その指値が出した瞬間に約定してしまう位置なら
+            # 注文自体を成立させない。約定してテイカーになるくらいなら出さない。
+            #
+            # 付けないと、板を叩いた指値がテイカーになる。GMOの取引所現物では
+            # メイカー −0.01%（受け取り）に対しテイカー +0.05%（支払い）なので、
+            # **符号が変わる。** 往復で 0.12pt の差になり、この基盤が測った
+            # 「必要な粗利 18bp」の水準では無視できない。
+            #
+            # 約定しなかった指値は run_live.py 側が数えていて、3回届かなければ
+            # 成行に切り替える。だから「並ばずに消える」ことは行き止まりにならない。
+            body["timeInForce"] = "SOK"
         return body
 
     def place_order(self, order: Order) -> dict:
@@ -677,3 +690,26 @@ class GmoBroker:
             "amount": conformed.amount,
             "price": conformed.price,
         }
+
+    def active_orders(self, pair: str) -> list[dict]:
+        """板に残っている注文を読む。
+
+        発注の応答を信じずに、**取引所に並んでいるかを別の経路で確かめる**ために使う。
+        発注が成功したという応答と、実際に並んでいることは別の事実になる。
+        """
+        data = self._signed("GET", f"/v1/activeOrders?symbol={self.symbol(pair)}")
+        if not data:
+            return []
+        return list(data.get("list") or [])
+
+    def cancel_order(self, order_id) -> None:
+        """注文を取り消す。
+
+        `orderId` は数値で渡す必要がある。発注の応答は文字列で返ることがあるので、
+        ここで直す。**取り消せないまま放置するのが一番まずい。**
+        """
+        try:
+            identifier = int(order_id)
+        except (TypeError, ValueError):
+            identifier = order_id
+        self._signed("POST", "/v1/cancelOrder", {"orderId": identifier})

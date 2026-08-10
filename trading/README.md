@@ -254,13 +254,13 @@ trading/
     test_cross_section.py  銘柄横断の検定（ベータの罠を含む）
     test_goal.py           目標の分解（元本・税制のレバー）
     test_execution_live.py 執行基盤（発注を止められるか）
-    test_connection_check.py 接続確認（1円も動かさないこと）
+    test_connection_check.py 接続確認（旗を立てない限り発注しないこと）
     test_gmo.py            GMOコイン（現物とレバレッジの取り違え）
   run_backtest.py     CLI（検証）
   run_live.py         CLI（執行。既定はペーパー）
 ```
 
-テストは全部で239件。`.venv-trading/bin/python -m pytest trading/tests/ -q` で回る。
+テストは全部で251件。`.venv-trading/bin/python -m pytest trading/tests/ -q` で回る。
 
 ## 取引所につなぐ（発注はしない）
 
@@ -291,6 +291,14 @@ BITBANK_API_KEY=... BITBANK_API_SECRET=... \
 3 は `place_order` が実際に送るのと同じ関数で作っているので、表示と送信内容はずれない。
 最小数量は、GMOなら `/public/v1/symbols` から**取引所の値を読む**。
 残る未検証は「発注の応答の解釈」だけになる。
+
+そこまで確かめるなら `--send-test-order` を足す。**実際に1件だけ発注する。**
+最小数量（≒100円）を現在値の5%下に指値で出し、**別の経路で板を読んで確かめ、
+取り消す**。約定しない位置なので損失は出ない。
+
+これは関門を通らない道になる。関門の第一項は「検定に合格しているか」で、
+合格記録が1つも無いので本番の経路では1回も注文を出せないため。
+**関門を緩めるのではなく、関門の外に、関門より厳しい別の道を作ってある。**
 
 戦略も検証記録も要らない。**この確認と、本番で動かしてよいかは別の問題になる。**
 

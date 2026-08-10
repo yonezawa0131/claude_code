@@ -56,9 +56,6 @@ from trading.src.execution.broker import (  # noqa: E402
     Order,
     PaperBroker,
 )
-
-#: 取引所ごとの実装。**どちらも実物に対して検証されていない**
-EXCHANGES = {"bitbank": BitbankBroker, "gmo": GmoBroker}
 from trading.src.execution.guards import (  # noqa: E402
     GuardContext,
     Limits,
@@ -73,6 +70,9 @@ from trading.src.execution.reconcile import (  # noqa: E402
     current_weights,
     exposure_jpy,
 )
+
+#: 取引所ごとの実装。**どちらも実物に対して検証されていない**
+EXCHANGES = {"bitbank": BitbankBroker, "gmo": GmoBroker}
 
 #: 目標を決める関数。戦略ごとにここへ足す。
 #: **どれも、検証を通るまで本番では動かない。**
@@ -129,7 +129,145 @@ def _minimum_amount(broker, pair: str) -> tuple[float, str]:
     return MIN_ORDER_AMOUNT.get(pair, DEFAULT_MIN_AMOUNT), "**こちらの手持ちの表（未確認）**"
 
 
-def check_connection(pairs: list[str], journal: Journal, exchange: str = "bitbank") -> int:
+#: テスト注文で動かしてよい上限（円）。**配線の確認に必要以上の額は要らない。**
+#: 取引所が返す最小数量が想定外に大きかったときの歯止めにもなる
+MAX_TEST_ORDER_JPY = 2_000.0
+
+#: テスト注文を現在値からどれだけ離すか。**約定させないための距離**
+TEST_ORDER_MARGIN = 0.05
+
+
+def send_test_order(broker, pair: str, price: float, journal: Journal) -> int:
+    """**実際に1回だけ注文を出し、板を確認して、取り消す。**
+
+    ## なぜこれを別の道にしたのか
+
+    本番の経路（`--live`）は関門を通る。関門の第一項は
+    「その戦略は事前登録した検定に合格しているか」で、合格記録のある戦略は
+    **1つも無い**。だから本番の経路では1回も注文を出せない。
+
+    それは正しい。**優位性のない戦略を自動で動かさない**ための関門だから。
+
+    しかしここでやりたいのは戦略の実行ではなく、**配線の確認**になる。
+    「発注の応答をこちらが正しく解釈できるか」は、戦略とは無関係な別の問題で、
+    確かめるには実際に1回出すしかない。だから経路を分ける。
+
+    関門を緩めるのではなく、**関門の外に、関門より厳しい別の道を作る**。
+
+    ## この道が自分に課している制限
+
+      - 出すのは**1件だけ**。戦略も目標保有も関与しない
+      - **最小数量**。取引所が公開している値を使う
+      - 現在値から **5% 下**。約定しない位置に置く
+      - Post-Only。**万一その位置が板を叩くなら、注文自体が成立しない**
+      - 金額の上限を別に持つ。最小数量が想定外でも歯止めになる
+      - 出したら**別の経路で板を読み**、並んでいることを確かめる
+      - 確かめたら**必ず取り消す**。取り消せなければ大きく警告する
+
+    買いだけを出す。売りは現物を持っていないと出せない。
+    """
+    amount, source = _minimum_amount(broker, pair)
+    limit = price * (1.0 - TEST_ORDER_MARGIN)
+    order = Order(pair, "buy", amount, limit)
+
+    conform = getattr(broker, "conform", None)
+    if conform is not None:
+        order = conform(order)
+
+    notional = order.notional(price)
+    print()
+    print("=" * 70)
+    print("テスト注文 — **実際に発注します**")
+    print("=" * 70)
+    print(f"  銘柄     : {pair}")
+    print(f"  数量     : {order.amount}（最小数量 / 出どころ: {source}）")
+    print(f"  指値     : {order.price:,.0f} 円（現在値 {price:,.0f} の "
+          f"{TEST_ORDER_MARGIN * 100:.0f}% 下）")
+    print(f"  想定金額 : {notional:,.0f} 円")
+    print()
+
+    if notional > MAX_TEST_ORDER_JPY:
+        print(f"中止: {notional:,.0f} 円は上限 {MAX_TEST_ORDER_JPY:,.0f} 円を超えます。",
+              file=sys.stderr)
+        print("      最小数量が想定と違う可能性があります。確かめてください。",
+              file=sys.stderr)
+        journal.write("test_order_refused", pair=pair, notional=notional)
+        return 1
+
+    # --- 出す -------------------------------------------------------------
+    try:
+        response = broker.place_order(order)
+    except BrokerError as exc:
+        print(f"  発注できませんでした: {exc}", file=sys.stderr)
+        print()
+        print("  よくある原因:")
+        print("    - 残高が足りない（入金が反映されていない）")
+        print("    - APIキーに注文の権限が付いていない")
+        print("    - 最小注文数量や刻み幅の解釈が違う")
+        journal.write("test_order_failed", pair=pair, reason=str(exc))
+        return 1
+
+    order_id = response.get("orderId")
+    print(f"  出しました。注文番号 {order_id}")
+    journal.write("test_order_placed", pair=pair, order_id=str(order_id),
+                  amount=order.amount, price=order.price)
+
+    # --- 別の経路で確かめる -------------------------------------------------
+    # 発注の応答と、実際に板に並んでいることは**別の事実**になる。
+    # 応答だけを信じると、応答の解釈が間違っていたときに気づけない
+    print()
+    print("  板を読み直して、並んでいるか確かめます")
+    listed = None
+    try:
+        for row in broker.active_orders(pair):
+            if str(row.get("orderId")) == str(order_id):
+                listed = row
+                break
+    except BrokerError as exc:
+        print(f"  板を読めませんでした: {exc}", file=sys.stderr)
+
+    if listed is not None:
+        print(f"    並んでいます: {listed.get('side')} {listed.get('size')} "
+              f"@ {listed.get('price')}  状態 {listed.get('status')}")
+        print("    **この内容が、出したものと一致しているか確かめてください。**")
+    else:
+        print("    見つかりませんでした。次のどれかです。")
+        print("      - Post-Only で弾かれた（その位置が板を叩いた）")
+        print("      - 応答の解釈が違っていて、別の注文番号を見ている")
+        print("      - すでに約定した（**5%下なので、ふつう起きません**）")
+
+    # --- 必ず取り消す -------------------------------------------------------
+    print()
+    print("  取り消します")
+    try:
+        broker.cancel_order(order_id)
+        print("    取り消しました")
+        journal.write("test_order_cancelled", pair=pair, order_id=str(order_id))
+    except BrokerError as exc:
+        print(f"    **取り消せませんでした: {exc}**", file=sys.stderr)
+        print(f"    **取引所の画面で、注文番号 {order_id} を手で取り消してください。**",
+              file=sys.stderr)
+        journal.write("test_order_cancel_failed", pair=pair,
+                      order_id=str(order_id), reason=str(exc))
+        return 1
+
+    print()
+    print("-" * 70)
+    if listed is not None:
+        print("発注・板の確認・取消がすべて通りました。")
+        print("**取引所の画面で、注文が残っていないことを確かめてください。**")
+        print("残っていなければ、この経路は実物に対して確かめられたことになります。")
+    else:
+        print("発注と取消は通りましたが、**板で確かめられませんでした**。")
+        print("応答の解釈が正しいと言い切れません。取引所の画面を確認してください。")
+    print("-" * 70)
+    return 0
+
+
+def check_connection(
+    pairs: list[str], journal: Journal, exchange: str = "bitbank",
+    test_order: bool = False,
+) -> int:
     """**1円も動かさずに**、本番の配線がどこまで正しいかを確かめる。
 
     ## なぜこれを最初にやるのか
@@ -279,12 +417,28 @@ def check_connection(pairs: list[str], journal: Journal, exchange: str = "bitban
         print("確かめられたこと : 鍵・署名・時刻・ヘッダ（取引所が受理した）")
         print("確かめていないこと: **応答の解釈**（資産が空なので突き合わせられない）、")
         print("                    発注の応答の解釈、板に並ぶかどうか")
-    print()
-    print("残りを確かめるには、上の本文を1回だけ実際に送る必要があります。")
-    print("そのときは、約定しない位置の指値を出し、取引所の画面に")
-    print("**同じ数量・同じ価格で並んでいること**を確認してから取り消してください。")
+    if not test_order:
+        print()
+        print("残りを確かめるには、上の本文を1回だけ実際に送る必要があります。")
+        print("  --send-test-order を付けると、最小数量・現在値の5%下の指値を")
+        print("  1件だけ出し、板を読んで確かめ、取り消すところまでやります。")
+        print("  **約定しない位置なので、損失は出ません。**")
     print("-" * 70)
-    return 0
+
+    if not test_order:
+        return 0
+
+    if not balances:
+        print()
+        print("テスト注文は見送ります: **残高がありません。**", file=sys.stderr)
+        print("入金が反映されてから、もう一度実行してください。", file=sys.stderr)
+        return 1
+
+    target = pairs[0]
+    if target not in prices:
+        print(f"\nテスト注文は見送ります: {target} の価格が取れていません", file=sys.stderr)
+        return 1
+    return send_test_order(broker, target, prices[target], journal)
 
 
 def _price_ranges(
@@ -368,6 +522,10 @@ def main() -> int:
                          "戦略も検証記録も要りません"))
     p.add_argument("--exchange", default="bitbank", choices=sorted(EXCHANGES),
                    help="つなぐ取引所。鍵の環境変数名もこれで決まります")
+    p.add_argument("--send-test-order", action="store_true",
+                   help=("**実際に1件だけ発注します。** 最小数量・現在値の5%%下の指値を"
+                         "出し、板を読んで確かめ、取り消します。--check-connection と"
+                         "一緒に使います"))
     p.add_argument("--pairs", default="btc_jpy",
                    help="価格を取る銘柄（カンマ区切り）")
     p.add_argument("--state", type=Path, default=Path("trading/data/paper_state.json"),
@@ -397,7 +555,10 @@ def main() -> int:
         print("=" * 70)
         print(f"接続確認  {args.exchange}  — 発注しません")
         print("=" * 70)
-        return check_connection(pairs, journal, args.exchange)
+        return check_connection(pairs, journal, args.exchange, args.send_test_order)
+
+    if args.send_test_order:
+        p.error("--send-test-order は --check-connection と一緒に使ってください")
 
     if not args.strategy:
         p.error("--strategy が必要です（--check-connection のときだけ省けます）")

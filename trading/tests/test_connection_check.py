@@ -249,6 +249,169 @@ def test_a_populated_balance_asks_for_reconciliation(spy, tmp_path, capsys):
     assert "資産が1件も返っていません" not in out
 
 
+# ---------------------------------------------------------------------------
+# テスト注文 — **本物の金を動かす唯一の経路**
+# ---------------------------------------------------------------------------
+
+
+class _OrderSpy:
+    """発注できるが、何を出したか全部覚えている見張り役。"""
+
+    name = "見張り（発注可）"
+    unverified = True
+
+    def __init__(self, *, listed=True, cancel_fails=False):
+        self.placed: list = []
+        self.cancelled: list = []
+        self._listed = listed
+        self._cancel_fails = cancel_fails
+        self.rules = {"minOrderSize": "0.00001", "sizeStep": "0.00001", "tickSize": "1"}
+
+    def fetch_price(self, pair):
+        return 10_000_000.0
+
+    def fetch_balances(self):
+        return {"jpy": 10_000.0}
+
+    def trading_rules(self, _pair):
+        return self.rules
+
+    def conform(self, order):
+        return order
+
+    def order_body(self, order):
+        return {"symbol": "BTC", "size": str(order.amount)}
+
+    def place_order(self, order):
+        self.placed.append(order)
+        return {"orderId": "12345"}
+
+    def active_orders(self, _pair):
+        if not self._listed:
+            return []
+        o = self.placed[-1]
+        return [{"orderId": "12345", "side": "BUY", "size": str(o.amount),
+                 "price": str(o.price), "status": "ORDERED"}]
+
+    def cancel_order(self, order_id):
+        if self._cancel_fails:
+            raise BrokerError("取引所がエラーを返しました（ERR-5122）")
+        self.cancelled.append(order_id)
+
+
+@pytest.fixture
+def order_spy(monkeypatch):
+    watcher = _OrderSpy()
+    monkeypatch.setitem(EXCHANGES, "gmo", lambda **_kw: watcher)
+    monkeypatch.setenv("GMO_API_KEY", "key")
+    monkeypatch.setenv("GMO_API_SECRET", "secret")
+    return watcher
+
+
+def test_no_order_is_sent_without_the_explicit_flag(order_spy, tmp_path):
+    """**旗を立てない限り、1件も出さないこと。**
+
+    接続確認は「読むだけ」であり続けなければならない。
+    発注が既定に紛れ込んだ瞬間、この道具は安全に実行できなくなる。
+    """
+    check_connection(["btc_jpy"], Journal(tmp_path / "j.jsonl"), "gmo")
+    assert order_spy.placed == []
+
+
+def test_the_test_order_is_placed_far_below_the_market(order_spy, tmp_path):
+    """**約定しない位置に置くこと。**
+
+    確かめたいのは配線であって、売買ではない。
+    現在値の近くに置くと、確認のつもりが取引になる。
+    """
+    check_connection(["btc_jpy"], Journal(tmp_path / "j.jsonl"), "gmo", test_order=True)
+
+    assert len(order_spy.placed) == 1, "1件だけ出すこと"
+    order = order_spy.placed[0]
+    assert order.side == "buy", "現物を持っていないので売りは出せない"
+    assert order.price == pytest.approx(10_000_000.0 * 0.95)
+    assert order.amount == pytest.approx(0.00001), "最小数量で出すこと"
+
+
+def test_the_test_order_is_always_cancelled(order_spy, tmp_path, capsys):
+    """出したら必ず取り消すこと。**置き去りにしない。**"""
+    assert check_connection(
+        ["btc_jpy"], Journal(tmp_path / "j.jsonl"), "gmo", test_order=True) == 0
+    assert order_spy.cancelled == ["12345"]
+
+
+def test_a_failed_cancel_is_loud_and_names_the_order(tmp_path, monkeypatch, capsys):
+    """**取り消せなかったときが一番危ない。**
+
+    黙って終わると、注文が板に残ったまま忘れられる。
+    番号を出して、手で取り消すよう言うこと。
+    """
+    watcher = _OrderSpy(cancel_fails=True)
+    monkeypatch.setitem(EXCHANGES, "gmo", lambda **_kw: watcher)
+    monkeypatch.setenv("GMO_API_KEY", "k")
+    monkeypatch.setenv("GMO_API_SECRET", "s")
+
+    journal = Journal(tmp_path / "j.jsonl")
+    assert check_connection(["btc_jpy"], journal, "gmo", test_order=True) == 1
+
+    err = capsys.readouterr().err
+    assert "12345" in err, "注文番号を出すこと"
+    assert "手で取り消して" in err
+    assert journal.read_all()[-1]["event"] == "test_order_cancel_failed"
+
+
+def test_an_order_above_the_cap_is_refused(tmp_path, monkeypatch, capsys):
+    """最小数量が想定外に大きければ、出さずに止まること。
+
+    取引所が返す値をそのまま信じるので、**別の歯止め**が要る。
+    """
+    watcher = _OrderSpy()
+    watcher.rules = {"minOrderSize": "1", "sizeStep": "1", "tickSize": "1"}
+    monkeypatch.setitem(EXCHANGES, "gmo", lambda **_kw: watcher)
+    monkeypatch.setenv("GMO_API_KEY", "k")
+    monkeypatch.setenv("GMO_API_SECRET", "s")
+
+    assert check_connection(
+        ["btc_jpy"], Journal(tmp_path / "j.jsonl"), "gmo", test_order=True) == 1
+    assert watcher.placed == [], "上限を超えたのに発注しています"
+    assert "上限" in capsys.readouterr().err
+
+
+def test_no_order_is_sent_when_the_account_is_empty(tmp_path, monkeypatch, capsys):
+    """残高が無いなら、発注を試みる前に止まること。
+
+    失敗するに決まっている注文を出しても、確かめたいことは確かめられない。
+    """
+    watcher = _OrderSpy()
+    watcher.fetch_balances = lambda: {}
+    monkeypatch.setitem(EXCHANGES, "gmo", lambda **_kw: watcher)
+    monkeypatch.setenv("GMO_API_KEY", "k")
+    monkeypatch.setenv("GMO_API_SECRET", "s")
+
+    assert check_connection(
+        ["btc_jpy"], Journal(tmp_path / "j.jsonl"), "gmo", test_order=True) == 1
+    assert watcher.placed == []
+    assert "残高がありません" in capsys.readouterr().err
+
+
+def test_an_order_missing_from_the_book_is_not_called_verified(tmp_path, monkeypatch, capsys):
+    """板で見つからなかったら、「確かめられた」と言わないこと。
+
+    発注の応答が返ったことと、板に並んでいることは**別の事実**になる。
+    """
+    watcher = _OrderSpy(listed=False)
+    monkeypatch.setitem(EXCHANGES, "gmo", lambda **_kw: watcher)
+    monkeypatch.setenv("GMO_API_KEY", "k")
+    monkeypatch.setenv("GMO_API_SECRET", "s")
+
+    check_connection(["btc_jpy"], Journal(tmp_path / "j.jsonl"), "gmo", test_order=True)
+
+    out = capsys.readouterr().out
+    assert "板で確かめられませんでした" in out
+    assert "すべて通りました" not in out
+    assert watcher.cancelled == ["12345"], "確かめられなくても取り消すこと"
+
+
 def test_the_shown_amount_is_the_exchange_minimum(spy, tmp_path, capsys):
     """表示する数量が、最小数量であること。
 

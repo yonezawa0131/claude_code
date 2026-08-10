@@ -117,6 +117,54 @@ def test_the_order_body_carries_the_spot_symbol(gmo):
 
 
 # ---------------------------------------------------------------------------
+# 板に並ぶ注文だけを出す / 取り消す
+# ---------------------------------------------------------------------------
+
+
+def test_a_limit_order_is_post_only(gmo):
+    """**指値は板に並ぶ注文としてだけ出すこと。**
+
+    GMO の `timeInForce: "SOK"`（Post-Only）は、その指値が出した瞬間に
+    約定してしまう位置なら、注文自体を成立させない。
+
+    付けないと、板を叩いた指値がテイカーになる。取引所現物では
+    メイカー −0.01%（受け取り）に対しテイカー +0.05%（支払い）で、**符号が変わる**。
+    往復 0.12pt の差は、この基盤が測った「必要な粗利 18bp」の水準では無視できない。
+    """
+    body = gmo.order_body(Order("btc_jpy", "buy", 0.0001, 9_950_000))
+    assert body["timeInForce"] == "SOK"
+
+
+def test_a_market_order_is_not_post_only(gmo):
+    """成行に Post-Only は付かないこと。付けたら成立しない。"""
+    body = gmo.order_body(Order("btc_jpy", "buy", 0.0001))
+    assert "timeInForce" not in body
+
+
+def test_cancel_sends_a_numeric_order_id(gmo, monkeypatch):
+    """注文番号を数値で送ること。発注の応答は文字列で返ることがある。"""
+    sent = {}
+    monkeypatch.setattr(gmo, "_open", lambda req: sent.update(
+        body=json.loads(req.data), url=req.full_url) or {})
+    gmo.cancel_order("12345")
+
+    assert sent["body"] == {"orderId": 12345}
+    assert sent["url"].endswith("/private/v1/cancelOrder")
+
+
+def test_active_orders_unwraps_the_list(gmo, monkeypatch):
+    monkeypatch.setattr(gmo, "_open", lambda _req: {
+        "pagination": {"currentPage": 1}, "list": [{"orderId": 1}, {"orderId": 2}]})
+    assert [o["orderId"] for o in gmo.active_orders("btc_jpy")] == [1, 2]
+
+
+def test_active_orders_tolerates_an_empty_response(gmo, monkeypatch):
+    """板が空のとき、落ちずに空リストを返すこと。"""
+    monkeypatch.setattr(gmo, "_open", lambda _req: None)
+    assert gmo.active_orders("btc_jpy") == []
+
+
+# ---------------------------------------------------------------------------
 # 2. 署名
 # ---------------------------------------------------------------------------
 
